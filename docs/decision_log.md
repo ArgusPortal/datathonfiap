@@ -2,41 +2,45 @@
 
 **Projeto**: Datathon FIAP - Passos Mágicos  
 **Data**: Janeiro 2026  
-**Versão**: 0.1 (MVP)  
-**Status**: Decisões iniciais travadas para Fase 0
+**Versão**: 0.2 (Fase 1 completa)  
+**Status**: Data Product v1 pronto
 
 ---
 
 ## D1: Target (Variável Resposta)
 
 **Definição MVP**: variável binária `em_risco` (0/1)
-- `em_risco = 1`: estudante com defasagem moderada OU severa no ano t+1
-- `em_risco = 0`: estudante sem defasagem OU defasagem leve no ano t+1
+- `em_risco = 1`: estudante com Defasagem < 0 no ano t+1
+- `em_risco = 0`: estudante com Defasagem ≥ 0 no ano t+1
+
+**Implementação (Fase 1)**:
+```python
+em_risco = (defasagem < 0).astype(int)
+```
+
+**Distribuição no dataset de modelagem (2023→2024)**:
+- em_risco=1: 308 (40.3%)
+- em_risco=0: 457 (59.7%)
+- Total: 765 alunos
 
 **Rationale**:
-- Foco em casos que demandam intervenção intensiva (moderada + severa)
-- Defasagem leve tratada como "não prioritário" no MVP
-- {{Verificar: critérios exatos de classificação leve/moderada/severa no PEDE/IAN}}
-
-**Evolução futura (pós-MVP)**:
-- Predição multiclasse (leve/moderada/severa) se houver demanda operacional
-- Predição de magnitude da defasagem (regressão do IAN)
+- Defasagem negativa indica aluno atrás da fase ideal
+- Distribuição relativamente balanceada (~40/60), bom para modelagem
 
 ---
 
 ## D2: Horizonte Temporal
 
-**Escolha MVP**: predição **t → t+1** (usar dados do ano t para predizer risco no ano t+1)
+**Escolha MVP**: predição **t → t+1** (features 2023 → label 2024)
 
-**Rationale**:
-- Alinha com ciclo de decisão (matrícula/alocação acontece entre anos letivos)
-- Reduz vazamento de informação (não usa variáveis contemporâneas ao target)
-- Permite validação temporal realista (treino em 2022-2023, validação em 2024)
+**Implementação (Fase 1)**:
+- Features extraídas de PEDE2023
+- Labels extraídos de PEDE2024 (Defasagem → em_risco)
+- Join por RA: 765 alunos com match
 
-**Restrições**:
-- Features devem estar disponíveis até o final do ano t
-- Não usar informações de desempenho/presença do próprio ano t+1
-- {{Confirmar: janela exata de coleta de features no calendário escolar}}
+**Restrições implementadas**:
+- BLOCKED_COLUMNS: defasagem, ponto_virada, pedra, destaque_*, rec_*
+- Essas colunas são resultado do ano t+1 e causariam leakage
 
 ---
 
@@ -44,36 +48,41 @@
 
 **Métrica principal**: **Recall da classe positiva** (em risco)
 - Target MVP: Recall ≥ 0.75
-- Justifica: custo de falso negativo > custo de falso positivo (não identificar aluno em risco é crítico)
+- Justifica: custo de falso negativo > custo de falso positivo
 
-**Métricas secundárias**:
-- **PR-AUC**: avaliar trade-off precision/recall independente de threshold
-- **Precision @ Recall=0.75**: entender taxa de falsos positivos no ponto de operação
-- **F2-Score**: (opcional) balanceia recall e precision com peso maior em recall
-
-**Por que não accuracy**:
-- Dataset pode ser desbalanceado (poucos casos em risco)
-- Accuracy alta não garante identificação adequada da classe minoritária
+**Protocolo de validação** (docs/evaluation_protocol.md):
+- Treino: features 2022+2023 → labels 2024
+- Teste (holdout): split por RA, 20% dos alunos
+- Threshold: ajustar para maximizar F2 ou atingir Recall ≥ 0.75
 
 ---
 
 ## D4: População e Recorte
 
-**Escolha MVP**: estudantes em **Fases 0–7** (todas as fases do programa)
-
-**Rationale**:
-- Modelo único mais simples de operar inicialmente
-- Permite avaliar se padrões de risco são consistentes entre fases
-- {{Verificar: distribuição de defasagem por fase — há desequilíbrio crítico?}}
-
-**Mitigação de heterogeneidade**:
-- Incluir `fase` como feature (encoding apropriado)
-- Análise pós-treino: performance estratificada por fase
-- Se performance divergir muito (Δ Recall > 0.15), considerar modelos separados em fases futuras
+**Dataset de modelagem (Fase 1)**:
+- 765 alunos (RAs com dados em 2023 E 2024)
+- 10 features disponíveis após anti-leakage
+- Features: indicadores INDE, IAN, IDA, IEG, IAA, IPS, IPP, IPV, IPM + fase
 
 **Exclusões**:
-- Alunos sem dados completos do ano t (missing crítico em >30% das features)
-- {{Confirmar: regras de elegibilidade do programa que impactam população}}
+- Alunos sem RA em 2023 ou 2024
+- Colunas com >30% missing (warning, não bloqueante)
+
+---
+
+## D5: Features Disponíveis (NOVO - Fase 1)
+
+**ALLOWED_FEATURE_COLUMNS**:
+- Identificação: ra, nome, instituicao, idade, genero
+- Fase/Tempo: fase, anos_pm, bolsista
+- Indicadores: inde, ian, ida, ieg, iaa, ips, ipp, ipv, ipm
+- Nutricional: indicador_nutricional
+
+**BLOCKED_COLUMNS** (causam leakage):
+- defasagem, fase_ideal
+- ponto_virada, pedra
+- destaque_inde, destaque_ida, destaque_ieg
+- rec_ava, rec_inde
 
 ---
 
@@ -82,22 +91,25 @@
 **Proibido usar como features**:
 - IDs diretos (estudante, turma, escola) → risco de overfitting
 - Informações do ano t+1 (vazamento temporal)
-- Variáveis derivadas do target (ex: se houver flag "indicador_risco_calculado")
-- {{Adicionar: colunas específicas do dicionário após revisão}}
+- Colunas listadas em BLOCKED_COLUMNS
 
-**Privacidade**:
-- Não usar nome, CPF, endereço completo, dados familiares sensíveis
-- Features socioeconômicas agregadas permitidas (ex: nível de vulnerabilidade categorizado)
+**Verificação automática**:
+- `DataQualityChecker.check_leakage()` valida antes de salvar
+- Pipeline falha se detectar leakage
 
 ---
 
 ## Assunções e Riscos
 
-**Assunções**:
-- Dados 2022–2024 são representativos do comportamento futuro
-- Critério de defasagem (moderada/severa) permanece estável no tempo
-- Features disponíveis no momento de predição não mudam estruturalmente
-- {{Confirmar: processo de coleta de dados é consistente entre anos}}
+**Assunções validadas (Fase 1)**:
+- ✅ Dados 2022–2024 disponíveis em PEDE2024.xlsx
+- ✅ Colunas normalizáveis entre anos (com tratamento de tipos mistos)
+- ✅ RA é chave única por ano (sem duplicatas)
+
+**Riscos identificados**:
+- Missing values alto em algumas colunas (23 colunas >30% em 2023)
+- Tipos de dados inconsistentes entre anos (tratados com conversão automática)
+- Apenas 765 alunos no dataset final (pode limitar poder estatístico)
 
 **Riscos**:
 - **Data drift**: características da população podem mudar (ex: pós-pandemia)
