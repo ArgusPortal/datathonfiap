@@ -9,7 +9,12 @@ from pathlib import Path
 # Paths
 BASE_DIR = Path(__file__).parent.parent
 ARTIFACTS_DIR = BASE_DIR / "artifacts"
+REGISTRY_DIR = BASE_DIR / os.getenv("REGISTRY_DIR", "models/registry")
 
+# Model version: "champion" usa registry, ou versão específica, ou path direto
+MODEL_VERSION = os.getenv("MODEL_VERSION", "")  # "champion", "v1.1.0", ou vazio
+
+# Paths diretos (fallback se MODEL_VERSION não configurado)
 MODEL_PATH = Path(os.getenv("MODEL_PATH", str(ARTIFACTS_DIR / "model_v1.joblib")))
 METADATA_PATH = Path(os.getenv("METADATA_PATH", str(ARTIFACTS_DIR / "model_metadata_v1.json")))
 SIGNATURE_PATH = Path(os.getenv("SIGNATURE_PATH", str(ARTIFACTS_DIR / "model_signature_v1.json")))
@@ -28,3 +33,4 @@ EXTRA_FEATURE_POLICY = os.getenv("EXTRA_FEATURE_POLICY", "reject")  # "reject" o
 
 # Threshold (carregado do metadata, mas pode ser sobrescrito)
 DEFAULT_THRESHOLD = float(os.getenv("THRESHOLD", "0.040"))
+

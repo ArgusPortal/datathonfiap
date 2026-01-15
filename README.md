@@ -211,6 +211,69 @@ curl http://localhost:8000/health
 
 ---
 
+## 11. Operação Contínua (Fase 7 — MLOps)
+
+### Model Registry
+Versionamento folder-based em `models/registry/vX.Y.Z/`:
+```bash
+# Registrar nova versão
+python -m src.registry register --version v1.2.0 \
+  --model artifacts/model.joblib \
+  --metadata artifacts/metadata.json \
+  --signature artifacts/signature.json
+
+# Promover para champion
+python -m src.registry promote --version v1.2.0
+
+# Rollback para versão anterior
+python -m src.registry rollback --version v1.1.0
+
+# Listar versões
+python -m src.registry list
+```
+
+### Retraining
+```bash
+# Treinar novo challenger e comparar com champion
+python -m src.retrain --new_version v1.2.0 \
+  --data data/processed/dataset_2024.parquet \
+  --registry models/registry
+
+# Guardrails automáticos: recall delta ≤ 2%, precision delta ≤ 5%
+```
+
+### CI/CD (GitHub Actions)
+- **CI** (`.github/workflows/ci.yml`): pytest + coverage ≥ 80%
+- **CD** (`.github/workflows/cd.yml`): Docker build + push GHCR
+
+```bash
+# Rodar CI local
+pytest tests/ --cov=src --cov=app --cov=monitoring --cov-fail-under=80
+```
+
+### Schema Validation
+```bash
+# Validar dados de inferência
+python -c "from src.schema_validation import validate_inference_batch; validate_inference_batch(df)"
+
+# Validar dados de treino
+python -c "from src.schema_validation import validate_training_data; validate_training_data(df)"
+```
+
+### Performance Drift (com Labels)
+```bash
+# Gera relatório de performance quando labels disponíveis (lag ~90 dias)
+python -m monitoring.performance_drift --window 30
+```
+
+### Documentação Adicional
+- [Data Contract v2](docs/data_contract_v2.md) — Schema com validações
+- [Retraining Policy](docs/retraining_policy.md) — Triggers e processo
+- [Labels Ingestion](docs/labels_ingestion.md) — Como ingerir ground truth
+- [Ops Runbook v2](docs/ops_runbook_v2.md) — Procedimentos operacionais
+
+---
+
 ## Documentação
 
 - [Product Brief](docs/product_brief.md)

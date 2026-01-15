@@ -1,5 +1,6 @@
 """
 Carregamento de modelo e metadados.
+Suporta resolução via registry (MODEL_VERSION=champion ou vX.Y.Z).
 """
 
 import json
@@ -9,9 +10,69 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import joblib
 
-from app.config import MODEL_PATH, METADATA_PATH, SIGNATURE_PATH, DEFAULT_THRESHOLD
+from app.config import (
+    MODEL_PATH, METADATA_PATH, SIGNATURE_PATH, DEFAULT_THRESHOLD,
+    MODEL_VERSION, REGISTRY_DIR
+)
 
 logger = logging.getLogger("api")
+
+
+class ModelLoadError(Exception):
+    """Erro ao carregar modelo."""
+    pass
+
+
+def resolve_model_paths() -> Tuple[Path, Path, Path]:
+    """
+    Resolve caminhos do modelo baseado em MODEL_VERSION.
+    
+    Estratégias:
+    - MODEL_VERSION="" → usa MODEL_PATH direto (fallback)
+    - MODEL_VERSION="champion" → lê champion.json do registry
+    - MODEL_VERSION="vX.Y.Z" → usa versão específica do registry
+    
+    Returns:
+        Tuple (model_path, metadata_path, signature_path)
+    """
+    if not MODEL_VERSION:
+        logger.info("MODEL_VERSION não definido, usando paths diretos")
+        return MODEL_PATH, METADATA_PATH, SIGNATURE_PATH
+    
+    registry_path = Path(REGISTRY_DIR)
+    
+    if MODEL_VERSION == "champion":
+        # Resolve via champion.json
+        champion_file = registry_path / "champion.json"
+        if not champion_file.exists():
+            logger.warning(f"champion.json não encontrado em {registry_path}, usando paths diretos")
+            return MODEL_PATH, METADATA_PATH, SIGNATURE_PATH
+        
+        try:
+            with open(champion_file, "r") as f:
+                champion_info = json.load(f)
+            version = champion_info.get("version")
+            if not version:
+                raise ValueError("champion.json sem campo 'version'")
+            logger.info(f"Champion resolvido: {version}")
+        except Exception as e:
+            logger.error(f"Erro ao ler champion.json: {e}")
+            return MODEL_PATH, METADATA_PATH, SIGNATURE_PATH
+    else:
+        version = MODEL_VERSION
+    
+    # Resolve paths da versão específica
+    version_dir = registry_path / version
+    if not version_dir.exists():
+        logger.warning(f"Versão {version} não encontrada em {registry_path}, usando paths diretos")
+        return MODEL_PATH, METADATA_PATH, SIGNATURE_PATH
+    
+    model_path = version_dir / "model.joblib"
+    metadata_path = version_dir / "metadata.json"
+    signature_path = version_dir / "signature.json"
+    
+    logger.info(f"Paths resolvidos do registry: {version_dir}")
+    return model_path, metadata_path, signature_path
 
 
 class ModelLoadError(Exception):
