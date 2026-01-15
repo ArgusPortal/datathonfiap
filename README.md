@@ -363,6 +363,80 @@ Eventos de drift são registrados em `logs/drift_events.jsonl` sem PII:
 }
 ```
 
+### Inference Store
+
+O Inference Store captura estatísticas agregadas das predições para análise de drift:
+
+**Localização**: `monitoring/inference_store/`  
+**Formato**: Parquet com partições diárias  
+**Modo Padrão**: `aggregate_only` (sem dados brutos - LGPD compliant)
+
+```bash
+# Estrutura de diretórios
+monitoring/
+├── inference_store/
+│   └── dt=2026-01-15/
+│       └── events_001.parquet
+├── baselines/
+│   └── v1.1.0/
+│       ├── feature_profile.json
+│       ├── score_profile.json
+│       └── baseline_metadata.json
+└── reports/
+    ├── drift_report_20260115.html
+    └── drift_metrics_20260115.json
+```
+
+### Baseline Profile
+
+Gera perfis de referência a partir de dados de treinamento:
+
+```bash
+# Gerar baseline para versão atual do modelo
+python -m monitoring.build_baseline \
+  --model_version v1.1.0 \
+  --signature artifacts/model_signature_v1.json \
+  --source data/processed/train.parquet
+
+# Verificar baseline gerado
+ls monitoring/baselines/v1.1.0/
+```
+
+**Arquivos gerados**:
+- `feature_profile.json`: distribuições das features (quantis, missing rate)
+- `score_profile.json`: distribuição dos scores (quantis)
+- `baseline_metadata.json`: metadados (data, versão, samples)
+
+### Drift Report
+
+Gera relatório HTML comparando dados de produção com baseline:
+
+```bash
+# Gerar relatório de drift (últimos 7 dias vs baseline)
+python -m monitoring.drift_report \
+  --model_version v1.1.0 \
+  --last_n_days 7
+
+# Abrir relatório
+start monitoring/reports/drift_report_20260115.html  # Windows
+open monitoring/reports/drift_report_20260115.html   # macOS
+```
+
+**Métricas calculadas**:
+- **PSI** (Population Stability Index): mede shift na distribuição
+- **Missing Rate Delta**: variação na taxa de missing values
+- **Score Distribution Shift**: mudança na distribuição das predições
+
+### Interpretação de Status
+
+| Status | PSI | Ação |
+|--------|-----|------|
+| 🟢 **Verde** | < 0.10 | Normal, sem ação necessária |
+| 🟡 **Amarelo** | 0.10 - 0.25 | Investigar causa, monitorar de perto |
+| 🔴 **Vermelho** | > 0.25 | Drift significativo, considerar retrain |
+
+**Runbook completo**: [docs/monitoring_runbook.md](docs/monitoring_runbook.md)
+
 ---
 
 ## Comandos Principais
@@ -375,6 +449,8 @@ Eventos de drift são registrados em `logs/drift_events.jsonl` sem PII:
 | `pytest --cov` | Rodar testes com cobertura |
 | `docker build -t datathon-api .` | Build Docker image |
 | `docker run -p 8000:8000 datathon-api` | Run container |
+| `python -m monitoring.build_baseline` | Gerar baseline profile |
+| `python -m monitoring.drift_report` | Gerar relatório de drift |
 
 ---
 
@@ -384,6 +460,7 @@ Eventos de drift são registrados em `logs/drift_events.jsonl` sem PII:
 - **[Decision Log](docs/decision_log.md)**: decisões técnicas (target, horizonte, métrica, população)
 - **[Data Contract](docs/data_contract.md)**: schema, features, regras de qualidade, leakage watchlist
 - **[Model Report](artifacts/model_report_v1.md)**: métricas, comparação de modelos, análise de calibração
+- **[Monitoring Runbook](docs/monitoring_runbook.md)**: diagnóstico, mitigação, procedimentos de rotina
 
 ---
 
@@ -434,7 +511,15 @@ Eventos de drift são registrados em `logs/drift_events.jsonl` sem PII:
 - [x] Testes 85%+ coverage (156 testes)
 - [x] Documentação atualizada
 
-### 🔜 Fase 5: Produção
+### ✅ Fase 5: Observabilidade
+- [x] Logs estruturados JSON (observability.py)
+- [x] Inference Store (aggregate_only, Parquet)
+- [x] Baseline Profile (feature_profile, score_profile)
+- [x] Drift Dashboard HTML (PSI analysis)
+- [x] Runbook de operação (monitoring_runbook.md)
+- [x] Testes de monitoramento (45+ testes)
+
+### 🔜 Fase 6: Produção
 - [ ] CI/CD pipeline (GitHub Actions)
 - [ ] Monitoring dashboard
 - [ ] A/B testing framework

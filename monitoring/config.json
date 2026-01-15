@@ -1,0 +1,19 @@
+{
+  "model_version": "v1.1.0",
+  "privacy_mode": "aggregate_only",
+  "inference_store_format": "parquet",
+  "drift_window_days_default": 7,
+  "thresholds": {
+    "feature_psi_warn": 0.1,
+    "feature_psi_alert": 0.25,
+    "score_psi_warn": 0.1,
+    "score_psi_alert": 0.25,
+    "missing_rate_delta_warn": 0.05,
+    "missing_rate_delta_alert": 0.10,
+    "yellow_feature_pct": 0.2
+  },
+  "baseline_source": "train_data",
+  "artifacts_dir": "artifacts/",
+  "monitoring_dir": "monitoring/",
+  "pii_fields": ["ra", "nome", "id", "estudante_id", "student_id", "telefone", "endereco", "email"]
+}

@@ -5,6 +5,8 @@ Passos Mágicos - Datathon FIAP 2025
 
 import time
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -23,6 +25,7 @@ from app.config import (
 from app.drift_store import drift_store
 from app.logging_config import RequestLogger, generate_request_id, setup_logging
 from app.model_loader import ModelManager
+from app.observability import log_inference_request
 from app.schema import (
     ErrorResponse,
     HealthResponse,
@@ -33,11 +36,29 @@ from app.schema import (
     validate_batch_features,
 )
 
+# Base directory
+BASE_DIR = Path(__file__).parent.parent
+
+# Try to import inference store
+INFERENCE_STORE_ENABLED = False
+try:
+    from monitoring.inference_store import InferenceStore
+    INFERENCE_STORE_ENABLED = True
+except ImportError:
+    pass
+
+def get_inference_store(store_dir: Path) -> "InferenceStore":
+    """Lazy factory for inference store."""
+    return InferenceStore(store_dir=store_dir)
+
 # Setup logging
 logger = setup_logging(LOG_LEVEL)
 
 # Model manager global
 model_manager = ModelManager()
+
+# Inference store (lazy init)
+_inference_store = None
 
 # Track startup time
 _startup_time: float = 0.0
@@ -160,8 +181,11 @@ async def predict(request: Request, payload: PredictRequest):
     Aceita batch de instâncias (até 1000).
     Retorna score de risco (0-1) e label binário (0/1).
     """
+    global _inference_store
+    
     request_id = getattr(request.state, "request_id", generate_request_id())
     start_time = time.time()
+    warnings_list = []
     
     if model_manager.model is None:
         raise HTTPException(status_code=503, detail="Modelo não carregado")
@@ -197,7 +221,19 @@ async def predict(request: Request, payload: PredictRequest):
         
         processing_time = (time.time() - start_time) * 1000
         
-        # Log drift stats (assíncrono, não bloqueia)
+        # Log completo de inferência (observability)
+        log_inference_request(
+            request_id=request_id,
+            model_version=model_manager.version,
+            instances=[dict(inst) for inst in payload.instances],
+            predictions=[p.model_dump() for p in predictions],
+            expected_features=model_manager.expected_features,
+            latency_ms=processing_time,
+            status_code=200,
+            warnings=warnings_list,
+        )
+        
+        # Log drift stats (legacy)
         try:
             drift_store.log_event(
                 request_id=request_id,
@@ -207,6 +243,26 @@ async def predict(request: Request, payload: PredictRequest):
             )
         except Exception as e:
             logger.warning(f"Falha ao logar drift: {e}")
+        
+        # Log to inference store (if enabled)
+        if INFERENCE_STORE_ENABLED:
+            try:
+                if _inference_store is None:
+                    _inference_store = get_inference_store(
+                        store_dir=BASE_DIR / "monitoring" / "inference_store"
+                    )
+                _inference_store.append_event(
+                    request_id=request_id,
+                    model_version=model_manager.version,
+                    timestamp=datetime.now(timezone.utc),
+                    instances=[dict(inst) for inst in payload.instances],
+                    predictions=[p.model_dump() for p in predictions],
+                    expected_features=model_manager.expected_features,
+                    latency_ms=processing_time,
+                    warnings=warnings_list,
+                )
+            except Exception as e:
+                logger.warning(f"Falha ao logar inference store: {e}")
         
         return PredictResponse(
             predictions=predictions,
