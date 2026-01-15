@@ -14,6 +14,8 @@ from feature_engineering import (
     make_features,
     create_delta_features,
     create_risk_composites,
+    create_missing_indicators,
+    create_tenure_feature,
     get_feature_list,
     validate_features_for_year,
 )
@@ -186,6 +188,86 @@ class TestMakeFeatures:
         # Deve preservar originais
         assert 'ian_2023' in result.columns
         assert 'ra' in result.columns
+
+
+class TestCreateMissingIndicators:
+    """Testes para criação de indicadores de missing."""
+    
+    def test_creates_indicators_when_missing_above_threshold(self):
+        """Cria indicadores quando missing >= threshold."""
+        df = pd.DataFrame({
+            'ida_2023': [5.0, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],  # 90% missing
+            'ieg_2023': [5.0, 6.0, 7.0, 8.0, 9.0, 10.0, np.nan, np.nan, np.nan, np.nan],  # 40% missing
+        })
+        
+        result = create_missing_indicators(df, min_missing_pct=0.05)
+        
+        assert 'ida_2023_missing' in result.columns
+        assert 'ieg_2023_missing' in result.columns
+        assert result['ida_2023_missing'].sum() == 9  # 9 missings
+        assert result['ieg_2023_missing'].sum() == 4  # 4 missings
+    
+    def test_skips_when_missing_below_threshold(self):
+        """Não cria indicadores quando missing < threshold."""
+        df = pd.DataFrame({
+            'ida_2023': [5.0, 6.0, 7.0, 8.0, np.nan],  # 20% missing
+        })
+        
+        result = create_missing_indicators(df, min_missing_pct=0.25)  # Threshold 25%
+        
+        assert 'ida_2023_missing' not in result.columns
+    
+    def test_respects_column_filter(self):
+        """Respeita filtro de colunas."""
+        df = pd.DataFrame({
+            'ida_2023': [np.nan] * 10,  # 100% missing
+            'other_2023': [np.nan] * 10,  # 100% missing
+        })
+        
+        result = create_missing_indicators(df, columns=['ida'])
+        
+        assert 'ida_2023_missing' in result.columns
+        assert 'other_2023_missing' not in result.columns
+
+
+class TestCreateTenureFeature:
+    """Testes para criação de feature de tempo na instituição."""
+    
+    def test_creates_tenure_from_ano_ingresso(self):
+        """Cria anos_pm a partir de ano_ingresso."""
+        df = pd.DataFrame({
+            'ano_ingresso': [2020, 2021, 2022],
+            'ian_2023': [5.0, 6.0, 7.0],  # Para detectar ano de referência
+        })
+        
+        result = create_tenure_feature(df, reference_year=2023)
+        
+        assert 'anos_pm_2023' in result.columns
+        np.testing.assert_array_equal(result['anos_pm_2023'], [3, 2, 1])
+    
+    def test_clips_unreasonable_values(self):
+        """Limita valores a range razoável (0-15)."""
+        df = pd.DataFrame({
+            'ano_ingresso': [2000, 2030, 2020],  # Valores extremos
+            'ian_2023': [5.0, 6.0, 7.0],
+        })
+        
+        result = create_tenure_feature(df, reference_year=2023)
+        
+        assert result['anos_pm_2023'].max() <= 15
+        assert result['anos_pm_2023'].min() >= 0
+    
+    def test_handles_missing_ano_ingresso(self):
+        """Não quebra se ano_ingresso não existe."""
+        df = pd.DataFrame({
+            'ian_2023': [5.0, 6.0, 7.0],
+        })
+        
+        result = create_tenure_feature(df)
+        
+        # Não deve criar coluna se ano_ingresso não existe
+        tenure_cols = [c for c in result.columns if 'anos_pm' in c]
+        assert len(tenure_cols) == 0
 
 
 if __name__ == "__main__":

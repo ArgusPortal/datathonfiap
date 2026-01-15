@@ -61,7 +61,7 @@
     "nome_anonimizado",
     "data_de_nasc",
     "idade",
-    "gênero",
+    "genero",
     "ano_ingresso",
     "instituicao",
     "pedra_20",
@@ -73,7 +73,7 @@
     "cg",
     "cf",
     "ct",
-    "nº_av",
+    "no_av",
     "avaliador1",
     "rec_av1",
     "avaliador2",
@@ -116,7 +116,7 @@
     "nome_anonimizado": "object",
     "data_de_nasc": "datetime64[ns]",
     "idade": "int64",
-    "gênero": "object",
+    "genero": "object",
     "ano_ingresso": "int64",
     "instituicao": "object",
     "pedra_20": "object",
@@ -128,7 +128,7 @@
     "cg": "float64",
     "cf": "float64",
     "ct": "float64",
-    "nº_av": "int64",
+    "no_av": "int64",
     "avaliador1": "object",
     "rec_av1": "float64",
     "avaliador2": "object",
@@ -160,5 +160,5 @@
     "ativo/_inativo.1": "object",
     "ano": "int64"
   },
-  "created_at": "2026-01-15T16:38:03.592093"
+  "created_at": "2026-01-15T20:02:25.259084"
 }

@@ -1,0 +1,73 @@
+{
+  "model_version": "v1.1.0",
+  "created_at": "2026-01-15T20:03:57.858557",
+  "seed": 42,
+  "target_mode": "binary_future_t_plus_1",
+  "target_definition": "em_risco=1 se defasagem<0 em t+1 (aluno atrasado)",
+  "training_periods": [
+    "2023->2024 (val split interno)"
+  ],
+  "test_period": "2023->2024 (holdout 20%)",
+  "population_filter": "all_phases",
+  "expected_features": [
+    "ano_ingresso_2023",
+    "anos_pm_2023",
+    "fase_2023",
+    "genero_2023",
+    "iaa_2023",
+    "iaa_2023_missing",
+    "ian_2023",
+    "ida_2023",
+    "ida_2023_missing",
+    "idade_2023",
+    "ieg_2023",
+    "ieg_2023_missing",
+    "instituicao_2023",
+    "ipp_2023",
+    "ipp_2023_missing",
+    "ips_2023",
+    "ips_2023_missing",
+    "ipv_2023",
+    "ipv_2023_missing",
+    "max_indicador",
+    "media_indicadores",
+    "min_indicador",
+    "range_indicadores",
+    "std_indicadores"
+  ],
+  "blocked_features": [
+    "ra",
+    "nome",
+    "em_risco_*",
+    "defasagem_*",
+    "ponto_virada_*",
+    "pedra_*",
+    "fase_ideal_*"
+  ],
+  "preprocessing_summary": [
+    "SimpleImputer(median) para numéricos",
+    "SimpleImputer('missing') para categóricos",
+    "OneHotEncoder(handle_unknown='ignore')",
+    "StandardScaler para numéricos"
+  ],
+  "model_family": "hist_gb",
+  "calibration": "sigmoid",
+  "threshold_policy": {
+    "objective": "max_recall",
+    "min_recall": 0.75,
+    "min_precision": null,
+    "threshold_value": 0.026820049108277275
+  },
+  "libs_versions": {
+    "sklearn": "1.8.0",
+    "pandas": "2.3.3",
+    "numpy": "1.26.4",
+    "joblib": "1.5.3"
+  },
+  "assumptions": [
+    "Features de 2023 predizem risco em 2024",
+    "Sem backtest multi-ano (apenas 2023->2024)",
+    "Split holdout simples (sem GroupKFold por escola)",
+    "Calibração sigmoid aplicada"
+  ]
+}

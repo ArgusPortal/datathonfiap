@@ -13,6 +13,7 @@ Outputs:
 
 import os
 import json
+import unicodedata
 import pandas as pd
 import numpy as np
 from pathlib import Path
@@ -87,15 +88,20 @@ COLUMN_MAPPING = {
     'indicador_nutricional': 'indicador_nutricional',
     'indicador nutricional': 'indicador_nutricional',
     
-    # Gênero
+    # Gênero (com e sem acento)
     'genero': 'genero',
+    'gênero': 'genero',
     'sexo': 'genero',
+    
+    # Ano de ingresso
+    'ano_ingresso': 'ano_ingresso',
+    'ano ingresso': 'ano_ingresso',
 }
 
 # Colunas que são permitidas como features (sem risco de leakage)
 ALLOWED_FEATURE_COLUMNS = [
     'ra', 'nome', 'instituicao', 'idade', 'genero',
-    'fase', 'anos_pm', 'bolsista',
+    'fase', 'anos_pm', 'ano_ingresso', 'bolsista',
     'inde', 'ian', 'ida', 'ieg', 'iaa', 'ips', 'ipp', 'ipv', 'ipm',
     'indicador_nutricional',
 ]
@@ -106,6 +112,12 @@ BLOCKED_COLUMNS = [
     'destaque_inde', 'destaque_ida', 'destaque_ieg',
     'rec_ava', 'rec_inde',
 ]
+
+
+def remove_accents(text: str) -> str:
+    """Remove acentos de uma string."""
+    nfkd = unicodedata.normalize('NFKD', text)
+    return ''.join(c for c in nfkd if not unicodedata.combining(c))
 
 
 def normalize_column_name(col: str) -> str:
@@ -124,12 +136,103 @@ def normalize_column_name(col: str) -> str:
     # Remove caracteres especiais
     col_clean = col_clean.replace('_', ' ')
     
-    # Busca no mapeamento
+    # Busca no mapeamento (com acento original)
     if col_clean in COLUMN_MAPPING:
         return COLUMN_MAPPING[col_clean]
     
-    # Se não encontrou, retorna versão limpa
-    return col_clean.replace(' ', '_')
+    # Tenta sem acento
+    col_no_accent = remove_accents(col_clean)
+    if col_no_accent in COLUMN_MAPPING:
+        return COLUMN_MAPPING[col_no_accent]
+    
+    # Se não encontrou, retorna versão limpa sem acentos
+    return col_no_accent.replace(' ', '_')
+
+
+def fix_excel_date_as_number(value) -> Optional[int]:
+    """
+    Corrige valores de idade que foram interpretados como datas pelo Excel.
+    
+    Excel serializa datas como dias desde 1900-01-01.
+    Então '1900-01-07' = dia 7 = idade 7.
+    
+    Args:
+        value: Valor a corrigir (pode ser int, float, str, datetime)
+        
+    Returns:
+        Idade como inteiro ou None
+    """
+    if pd.isna(value):
+        return None
+    
+    # Se já é número válido
+    if isinstance(value, (int, float)) and not pd.isna(value):
+        val = int(value)
+        if 5 <= val <= 30:  # Range válido de idade
+            return val
+        return None
+    
+    # Se é string numérica
+    if isinstance(value, str):
+        try:
+            val = int(float(value))
+            if 5 <= val <= 30:
+                return val
+        except (ValueError, TypeError):
+            pass
+        
+        # Se é data serializada do Excel (1900-01-XX)
+        if value.startswith('1900-01-'):
+            try:
+                day = int(value.split('-')[-1])
+                if 5 <= day <= 30:  # Range válido de idade
+                    return day
+            except (ValueError, IndexError):
+                pass
+        
+        # Tenta parse de data genérica
+        try:
+            from datetime import datetime as dt
+            parsed = dt.strptime(value, '%Y-%m-%d')
+            if parsed.year == 1900:
+                return parsed.day if 5 <= parsed.day <= 30 else None
+        except (ValueError, TypeError):
+            pass
+    
+    return None
+
+
+def normalize_instituicao(value: str) -> str:
+    """
+    Normaliza valores da coluna instituição para categorias padronizadas.
+    
+    Args:
+        value: Valor original
+        
+    Returns:
+        Categoria normalizada
+    """
+    if pd.isna(value):
+        return 'Desconhecido'
+    
+    value_lower = str(value).strip().lower()
+    value_no_accent = remove_accents(value_lower)
+    
+    # Mapeamento para categorias padronizadas
+    if 'publica' in value_no_accent:
+        return 'Publica'
+    elif 'apadrinhamento' in value_no_accent:
+        return 'Privada_Apadrinhamento'
+    elif 'bolsa' in value_no_accent or 'parceira' in value_no_accent:
+        return 'Privada_Bolsa'
+    elif 'privada' in value_no_accent:
+        return 'Privada'
+    elif 'concluiu' in value_no_accent or '3' in value_no_accent and 'em' in value_no_accent:
+        return 'Concluiu_EM'
+    elif 'nenhuma' in value_no_accent:
+        return 'Outro'
+    else:
+        return 'Outro'
 
 
 def load_and_normalize_sheet(
@@ -185,6 +288,18 @@ def load_and_normalize_sheet(
                         return x.strftime('%Y-%m-%d')
                     return str(x)
                 df[col] = df[col].apply(safe_str)
+    
+    # === CORREÇÕES ESPECÍFICAS DE COLUNAS ===
+    
+    # Fix idade corrompida pelo Excel (datas serializadas como 1900-01-XX)
+    if 'idade' in df.columns:
+        df['idade'] = df['idade'].apply(fix_excel_date_as_number)
+        print(f"    ✅ Coluna 'idade' corrigida: {df['idade'].notna().sum()} valores válidos")
+    
+    # Normaliza instituição para categorias padronizadas
+    if 'instituicao' in df.columns:
+        df['instituicao'] = df['instituicao'].apply(normalize_instituicao)
+        print(f"    ✅ Coluna 'instituicao' normalizada: {df['instituicao'].nunique()} categorias")
     
     # Adiciona coluna de ano
     df['ano'] = year
