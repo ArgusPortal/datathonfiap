@@ -147,10 +147,14 @@ docker restart datathon-api
 # 1. Verificar versões disponíveis
 ls -la artifacts/
 
-# 2. Atualizar variáveis de ambiente
-export MODEL_PATH=artifacts/model_v0.joblib
-export METADATA_PATH=artifacts/model_metadata_v0.json
-export SIGNATURE_PATH=artifacts/model_signature_v0.json
+# 2. Atualizar variáveis de ambiente (desenvolvimento)
+export MODEL_PATH=artifacts/model_v1.joblib
+export METADATA_PATH=artifacts/model_metadata_v1.json
+export SIGNATURE_PATH=artifacts/model_signature_v1.json
+
+# OU usar versão do registry (produção)
+export MODEL_VERSION=champion  # ou v1.1.0
+export REGISTRY_DIR=models/registry
 
 # 3. Reiniciar container
 docker restart datathon-api

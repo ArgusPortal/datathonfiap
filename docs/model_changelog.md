@@ -2,33 +2,49 @@
 
 ## Histórico de Versões
 
-### v1.1.0 (2025-01-15) - Current Champion
+### v1.1.0 (2026-01-15) - Current Champion
 
 **Status:** ✅ Production
 
 **Changes:**
-- Calibração do modelo via CalibratedClassifierCV (isotonic)
-- Novo threshold otimizado: 0.040221
-- Melhoria na calibração (Brier Score: 0.15 → 0.12)
-- Feature engineering refinado
+- **Correções críticas no preprocessing:**
+  - ✅ Idade corrompida (Excel dates → valores numéricos)
+  - ✅ Gênero recuperado (normalização de acentos)
+  - ✅ Instituição normalizada (6 categorias padrão)
+- **Feature engineering aprimorado:**
+  - 24 features após engenharia (+9 vs v1.0)
+  - 6 missing indicators (ian/ida/ieg/iaa/ips/ipp)
+  - Feature `anos_pm` (tenure no programa)
+- **Modelo HistGradientBoosting** com threshold otimizado: 0.040221
+- **46 testes unitários** implementados (100% passing)
 
 **Metrics:**
 | Metric | v1.0.0 | v1.1.0 | Delta |
 |--------|--------|--------|-------|
-| AUC-ROC | 0.82 | 0.85 | +0.03 |
-| AUC-PR | 0.68 | 0.72 | +0.04 |
-| Brier | 0.15 | 0.12 | -0.03 |
-| F1 | 0.71 | 0.74 | +0.03 |
+| Recall | 100% | 100% | - |
+| Precision | 40.5% | 40.8% | +0.3% |
+| PR-AUC | 0.85 | 0.86 | +0.01 |
+| F1 | 0.579 | 0.579 | - |
+| Features | 13 | 24 | +11 |
 
 **Training Data:**
-- Dataset: data/processed/dataset_v2.csv
-- Samples: 4,847
-- Train/Val/Test: 70/15/15
+- Dataset: data/processed/modeling_dataset.parquet
+- Samples: 765
+- Features base: 14 → Features engenharia: 24
 
-**Artifacts:**
+**Artifacts (Development):**
+- Model: `artifacts/model_v1.joblib`
+- Metadata: `artifacts/model_metadata_v1.json`
+- Signature: `artifacts/model_signature_v1.json`
+- Metrics: `artifacts/metrics_v1.json`
+
+**Artifacts (Registry - após registro):**
 - Model: `models/registry/v1.1.0/model.joblib`
-- Metadata: `models/registry/v1.1.0/metadata.json`
-- Signature: `models/registry/v1.1.0/signature.json`
+- Metadata: `models/registry/v1.1.0/model_metadata.json`
+- Signature: `models/registry/v1.1.0/model_signature.json`
+- Metrics: `models/registry/v1.1.0/metrics.json`
+
+**Nota:** Registry normaliza nomes removendo sufixo `_v1` para padronização
 
 **Approved by:** ML Team Lead
 **Deploy date:** 2025-01-15

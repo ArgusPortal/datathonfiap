@@ -2,7 +2,9 @@
   "input_schema": {
     "instituicao_2023": "object",
     "idade_2023": "float64",
+    "genero_2023": "float64",
     "fase_2023": "object",
+    "ano_ingresso_2023": "float64",
     "ian_2023": "float64",
     "ida_2023": "float64",
     "ieg_2023": "float64",
@@ -10,6 +12,13 @@
     "ips_2023": "float64",
     "ipp_2023": "float64",
     "ipv_2023": "float64",
+    "ida_2023_missing": "float64",
+    "ieg_2023_missing": "float64",
+    "iaa_2023_missing": "float64",
+    "ips_2023_missing": "float64",
+    "ipp_2023_missing": "float64",
+    "ipv_2023_missing": "float64",
+    "anos_pm_2023": "float64",
     "media_indicadores": "float64",
     "min_indicador": "float64",
     "max_indicador": "float64",
@@ -24,9 +33,9 @@
   "example_request": {
     "instituicao_2023": "A",
     "idade_2023": 5.0,
+    "genero_2023": 5.0,
     "fase_2023": "A",
-    "ian_2023": 5.0,
-    "ida_2023": 5.0
+    "ano_ingresso_2023": 5.0
   },
   "example_response": {
     "risk_score": 0.72,

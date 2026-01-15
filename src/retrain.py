@@ -40,6 +40,7 @@ def load_champion_metrics(registry_dir: Path) -> Optional[Dict[str, Any]]:
         logger.warning("Nenhum champion encontrado")
         return None
     
+    # Registry usa nomes padronizados (sem _v1)
     metrics_path = champion_path / "metrics.json"
     if not metrics_path.exists():
         logger.warning(f"Métricas do champion não encontradas: {metrics_path}")
@@ -130,15 +131,17 @@ def run_training(
     
     logger.info("Treino concluído")
     
-    # Carrega métricas geradas
+    # Carrega métricas geradas (train.py gera com _v1)
     metrics_path = artifacts_dir / "metrics_v1.json"
     if not metrics_path.exists():
+        # Fallback para nome antigo
         metrics_path = artifacts_dir / "metrics.json"
     
     if metrics_path.exists():
         with open(metrics_path, "r", encoding="utf-8") as f:
             return json.load(f)
     
+    logger.warning("Nenhuma métrica encontrada após treino")
     return {}
 
 

@@ -194,7 +194,18 @@ datathonfiap/
 │   └── retention.py          # Política de retenção
 ├── 📁 tests/                  # 368 testes automatizados
 ├── 📁 docs/                   # Documentação completa
-├── 📁 artifacts/              # Modelo serializado
+├── 📁 artifacts/              # Modelo serializado (dev)
+│   ├── model_v1.joblib
+│   ├── model_metadata_v1.json
+│   ├── model_signature_v1.json
+│   └── metrics_v1.json
+├── 📁 models/registry/        # Versões registradas
+│   ├── champion.json
+│   └── v1.1.0/
+│       ├── model.joblib       # Normalizado (sem _v1)
+│       ├── model_metadata.json
+│       ├── model_signature.json
+│       └── metrics.json
 ├── 🐳 Dockerfile              # Container hardened
 └── 📄 requirements.txt        # Dependências
 ```
@@ -391,6 +402,7 @@ Score → Intervenção → Desfecho → Retraining
 | [Data Contract v2](docs/data_contract_v2.md) | Schema com validações |
 | [Model Card](docs/model_card.md) | Documentação completa do modelo |
 | [Model Changelog](docs/model_changelog.md) | Histórico de versões |
+| [Artifacts Architecture](docs/artifacts_architecture.md) | Sistema de versionamento |
 | [Retraining Policy](docs/retraining_policy.md) | Triggers e processo |
 
 </details>
@@ -465,8 +477,14 @@ pytest tests/test_api_integration.py -v
 <summary><b>🔄 MLOps</b></summary>
 
 ```bash
-# Registrar nova versão
-python -m src.registry register --version v1.2.0 --model artifacts/model.joblib
+# Registrar nova versão (copia artifacts dev → registry)
+python -m src.registry register --version v1.2.0 --artifacts artifacts/
+
+# Artifacts em dev usam sufixo _v1:
+# - model_v1.joblib → copiado como model.joblib
+# - model_metadata_v1.json → copiado como model_metadata.json
+# - model_signature_v1.json → copiado como model_signature.json
+# - metrics_v1.json → copiado como metrics.json
 
 # Promover para champion
 python -m src.registry promote --version v1.2.0

@@ -1,13 +1,13 @@
 # Model Report - v1.1.0
 
-**Gerado em:** 2026-01-15 16:55
+**Gerado em:** 2026-01-15 20:18
 
 ## 1. Definição do Problema
 
 - **Target:** em_risco=1 se defasagem<0 em t+1 (aluno atrasado)
 - **Período:** 2023->2024 (val split interno)
 - **População:** all_phases
-- **Modelo:** rf (calibração: sigmoid)
+- **Modelo:** hist_gb (calibração: sigmoid)
 
 ## 2. Por que Recall como Métrica Principal?
 
@@ -20,18 +20,18 @@
 | Métrica | Valor |
 |---------|-------|
 | **Recall** | **1.000** |
-| Precision | 0.405 |
-| F1 | 0.577 |
-| F2 | 0.773 |
-| PR-AUC | 0.848 |
-| Brier Score | 0.1123704342892352 |
+| Precision | 0.408 |
+| F1 | 0.579 |
+| F2 | 0.775 |
+| PR-AUC | 0.860 |
+| Brier Score | 0.1194269424278455 |
 
-**Threshold:** 0.0402
+**Threshold:** 0.0268
 
 ### Matriz de Confusão
 ```
               Pred=0   Pred=1
-Real=0 (ok)       0      91
+Real=0 (ok)       1      90
 Real=1 (risco)    0      62
 ```
 
@@ -41,15 +41,15 @@ Real=1 (risco)    0      62
 
 | Rank | Modelo | Recall | Precision | PR-AUC |
 |------|--------|--------|-----------|--------|
-| 1 | logreg | 1.000 | 0.405 | 0.894 |
-| 2 | hist_gb | 1.000 | 0.408 | 0.826 |
-| 3 | rf | 1.000 | 0.405 | 0.848 |
+| 1 | logreg | 1.000 | 0.408 | 0.892 |
+| 2 | hist_gb | 1.000 | 0.408 | 0.860 |
+| 3 | rf | 1.000 | 0.405 | 0.879 |
 
 ## 5. Threshold Trade-off
 
 - Objetivo: maximizar recall com min_recall ≥ 0.75
-- Threshold escolhido em validação: 0.0402
-- Recall final: 1.000 | Precision: 0.405
+- Threshold escolhido em validação: 0.0268
+- Recall final: 1.000 | Precision: 0.408
 
 ## 6. Riscos e Limitações
 

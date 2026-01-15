@@ -3,12 +3,12 @@
     {
       "model": "logreg",
       "recall": 1.0,
-      "precision": 0.40522875816993464,
-      "f1": 0.5767441860465117,
-      "f2": 0.773067331670823,
-      "pr_auc": 0.8938491339669301,
-      "brier_score": 0.10946593347867462,
-      "threshold": 0.001132154897403378,
+      "precision": 0.40789473684210525,
+      "f1": 0.5794392523364486,
+      "f2": 0.775,
+      "pr_auc": 0.8916179412504904,
+      "brier_score": 0.10959549295983537,
+      "threshold": 0.001261100954992868,
       "rank": 1
     },
     {
@@ -17,9 +17,9 @@
       "precision": 0.40789473684210525,
       "f1": 0.5794392523364486,
       "f2": 0.775,
-      "pr_auc": 0.8255757281824033,
-      "brier_score": 0.1353230430738866,
-      "threshold": 0.043553539423706156,
+      "pr_auc": 0.8599550514832259,
+      "brier_score": 0.1194269424278455,
+      "threshold": 0.026820049108277275,
       "rank": 2
     },
     {
@@ -28,41 +28,41 @@
       "precision": 0.40522875816993464,
       "f1": 0.5767441860465117,
       "f2": 0.773067331670823,
-      "pr_auc": 0.8479750632744052,
-      "brier_score": 0.1123704342892352,
-      "threshold": 0.040221165307181304,
+      "pr_auc": 0.8791298761139686,
+      "brier_score": 0.10278906879382112,
+      "threshold": 0.047614940923235906,
       "rank": 3
     }
   ],
   "best_model": "logreg",
   "best_metrics": {
     "recall": 1.0,
-    "precision": 0.40522875816993464,
-    "f1": 0.5767441860465117,
-    "f2": 0.773067331670823,
+    "precision": 0.40789473684210525,
+    "f1": 0.5794392523364486,
+    "f2": 0.775,
     "confusion_matrix": [
       [
-        0,
-        91
+        1,
+        90
       ],
       [
         0,
         62
       ]
     ],
-    "true_negatives": 0,
-    "false_positives": 91,
+    "true_negatives": 1,
+    "false_positives": 90,
     "false_negatives": 0,
     "true_positives": 62,
-    "pr_auc": 0.8938491339669301,
+    "pr_auc": 0.8916179412504904,
     "n_samples": 153,
     "n_positive": 62,
     "n_negative": 91,
     "baseline_rate": 0.40522875816993464,
     "model_name": "logreg",
-    "brier_score": 0.10946593347867462,
-    "calibration_error": 0.07904152812591117,
-    "threshold": 0.001132154897403378
+    "brier_score": 0.10959549295983537,
+    "calibration_error": 0.08126550215645587,
+    "threshold": 0.001261100954992868
   },
   "primary_metric": "recall",
   "constraints_applied": {
@@ -71,7 +71,7 @@
   "trade_offs": {
     "recall_vs_precision": {
       "chosen_recall": 1.0,
-      "chosen_precision": 0.40522875816993464
+      "chosen_precision": 0.40789473684210525
     }
   },
   "validation_results": {
@@ -94,11 +94,11 @@
       "false_positives": 74,
       "false_negatives": 0,
       "true_positives": 49,
-      "pr_auc": 0.8244823093819249,
-      "threshold": 0.001132154897403378,
+      "pr_auc": 0.790171582057333,
+      "threshold": 0.001261100954992868,
       "fpr": 0,
-      "brier_score": 0.1326008882539255,
-      "calibration_error": 0.07592440382490072,
+      "brier_score": 0.13888994966396817,
+      "calibration_error": 0.1051348898589679,
       "model_name": "logreg"
     },
     "hist_gb": {
@@ -120,11 +120,11 @@
       "false_positives": 74,
       "false_negatives": 0,
       "true_positives": 49,
-      "pr_auc": 0.7863420843075661,
-      "threshold": 0.043553539423706156,
+      "pr_auc": 0.858699541992097,
+      "threshold": 0.026820049108277275,
       "fpr": 0,
-      "brier_score": 0.13206484857555237,
-      "calibration_error": 0.10088832970102389,
+      "brier_score": 0.12015556679833723,
+      "calibration_error": 0.10155450547689071,
       "model_name": "hist_gb"
     },
     "rf": {
@@ -146,43 +146,43 @@
       "false_positives": 74,
       "false_negatives": 0,
       "true_positives": 49,
-      "pr_auc": 0.825918232636378,
-      "threshold": 0.040221165307181304,
+      "pr_auc": 0.8571143108475866,
+      "threshold": 0.047614940923235906,
       "fpr": 0,
-      "brier_score": 0.11708816524161855,
-      "calibration_error": 0.11307744454665052,
+      "brier_score": 0.10877910387222461,
+      "calibration_error": 0.13809446851026733,
       "model_name": "rf"
     }
   },
   "test_results": {
     "logreg": {
       "recall": 1.0,
-      "precision": 0.40522875816993464,
-      "f1": 0.5767441860465117,
-      "f2": 0.773067331670823,
+      "precision": 0.40789473684210525,
+      "f1": 0.5794392523364486,
+      "f2": 0.775,
       "confusion_matrix": [
         [
-          0,
-          91
+          1,
+          90
         ],
         [
           0,
           62
         ]
       ],
-      "true_negatives": 0,
-      "false_positives": 91,
+      "true_negatives": 1,
+      "false_positives": 90,
       "false_negatives": 0,
       "true_positives": 62,
-      "pr_auc": 0.8938491339669301,
+      "pr_auc": 0.8916179412504904,
       "n_samples": 153,
       "n_positive": 62,
       "n_negative": 91,
       "baseline_rate": 0.40522875816993464,
       "model_name": "logreg",
-      "brier_score": 0.10946593347867462,
-      "calibration_error": 0.07904152812591117,
-      "threshold": 0.001132154897403378
+      "brier_score": 0.10959549295983537,
+      "calibration_error": 0.08126550215645587,
+      "threshold": 0.001261100954992868
     },
     "hist_gb": {
       "recall": 1.0,
@@ -203,15 +203,15 @@
       "false_positives": 90,
       "false_negatives": 0,
       "true_positives": 62,
-      "pr_auc": 0.8255757281824033,
+      "pr_auc": 0.8599550514832259,
       "n_samples": 153,
       "n_positive": 62,
       "n_negative": 91,
       "baseline_rate": 0.40522875816993464,
       "model_name": "hist_gb",
-      "brier_score": 0.1353230430738866,
-      "calibration_error": 0.10644291210703151,
-      "threshold": 0.043553539423706156
+      "brier_score": 0.1194269424278455,
+      "calibration_error": 0.10590735846806099,
+      "threshold": 0.026820049108277275
     },
     "rf": {
       "recall": 1.0,
@@ -232,15 +232,15 @@
       "false_positives": 91,
       "false_negatives": 0,
       "true_positives": 62,
-      "pr_auc": 0.8479750632744052,
+      "pr_auc": 0.8791298761139686,
       "n_samples": 153,
       "n_positive": 62,
       "n_negative": 91,
       "baseline_rate": 0.40522875816993464,
       "model_name": "rf",
-      "brier_score": 0.1123704342892352,
-      "calibration_error": 0.1296871088761645,
-      "threshold": 0.040221165307181304
+      "brier_score": 0.10278906879382112,
+      "calibration_error": 0.14305840581966286,
+      "threshold": 0.047614940923235906
     }
   },
   "selection_criteria": "max recall em validação"

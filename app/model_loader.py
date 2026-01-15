@@ -68,8 +68,8 @@ def resolve_model_paths() -> Tuple[Path, Path, Path]:
         return MODEL_PATH, METADATA_PATH, SIGNATURE_PATH
     
     model_path = version_dir / "model.joblib"
-    metadata_path = version_dir / "metadata.json"
-    signature_path = version_dir / "signature.json"
+    metadata_path = version_dir / "model_metadata.json"
+    signature_path = version_dir / "model_signature.json"
     
     logger.info(f"Paths resolvidos do registry: {version_dir}")
     return model_path, metadata_path, signature_path
