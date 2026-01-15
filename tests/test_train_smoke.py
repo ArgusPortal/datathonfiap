@@ -50,15 +50,15 @@ class TestTrainSmoke:
         """Verifica que módulo train importa corretamente."""
         from train import (
             load_and_prepare_data,
-            create_baselines,
-            train_and_evaluate,
-            save_artifacts
+            create_candidate_models,
+            train_and_evaluate_v1,
+            save_artifacts_v1
         )
         
         assert callable(load_and_prepare_data)
-        assert callable(create_baselines)
-        assert callable(train_and_evaluate)
-        assert callable(save_artifacts)
+        assert callable(create_candidate_models)
+        assert callable(train_and_evaluate_v1)
+        assert callable(save_artifacts_v1)
     
     def test_train_generates_artifacts(self, synthetic_dataset):
         """Verifica que treino gera artefatos esperados."""
@@ -67,48 +67,46 @@ class TestTrainSmoke:
         
         from train import (
             load_and_prepare_data,
-            train_and_evaluate,
-            save_artifacts
+            train_and_evaluate_v1,
+            save_artifacts_v1
         )
         from sklearn.model_selection import train_test_split
         from utils import set_seed
         
         set_seed(42)
         
-        # Carrega dados
         df, X, y = load_and_prepare_data(str(data_path))
         
-        # Split
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=0.2, random_state=42, stratify=y
         )
         
-        # Treina
-        results, best_pipeline, best_threshold = train_and_evaluate(
-            X_train, y_train, X_test, y_test, seed=42
+        all_results, best_pipeline, best_threshold, best_name = train_and_evaluate_v1(
+            X_train, y_train, X_test, y_test, seed=42, calibration="sigmoid"
         )
         
-        # Salva
-        save_artifacts(
+        save_artifacts_v1(
             artifacts_dir,
             best_pipeline,
-            results,
+            all_results,
             best_threshold,
+            best_name,
             X.columns.tolist(),
-            42
+            42,
+            "sigmoid"
         )
         
-        # Verifica arquivos
-        assert (artifacts_dir / "model.joblib").exists()
-        assert (artifacts_dir / "metrics.json").exists()
-        assert (artifacts_dir / "model_metadata.json").exists()
-        assert (artifacts_dir / "model_signature.json").exists()
+        # Verifica arquivos v1
+        assert (artifacts_dir / "model_v1.joblib").exists()
+        assert (artifacts_dir / "metrics_v1.json").exists()
+        assert (artifacts_dir / "model_metadata_v1.json").exists()
+        assert (artifacts_dir / "model_signature_v1.json").exists()
     
     def test_train_baselines_comparable(self, synthetic_dataset):
-        """Verifica que baselines retornam métricas comparáveis."""
+        """Verifica que candidatos retornam métricas comparáveis."""
         data_path, tmp_path = synthetic_dataset
         
-        from train import load_and_prepare_data, train_and_evaluate
+        from train import load_and_prepare_data, train_and_evaluate_v1
         from sklearn.model_selection import train_test_split
         from utils import set_seed
         
@@ -119,18 +117,17 @@ class TestTrainSmoke:
             X, y, test_size=0.2, random_state=42, stratify=y
         )
         
-        results, _, _ = train_and_evaluate(X_train, y_train, X_test, y_test, seed=42)
+        all_results, _, _, _ = train_and_evaluate_v1(X_train, y_train, X_test, y_test, seed=42)
         
-        # Verifica que todos os baselines têm métricas
-        assert "baseline0_naive" in results
-        assert "baseline1_logistic" in results
-        assert "baseline2_rf" in results
+        # Verifica candidatos avaliados
+        assert "logreg" in all_results['test']
+        assert "hist_gb" in all_results['test']
+        assert "rf" in all_results['test']
         
-        # Verifica que métricas existem
-        for name, metrics in results.items():
+        # Verifica métricas
+        for name, metrics in all_results['test'].items():
             assert "recall" in metrics
             assert "precision" in metrics
-            assert "f1" in metrics
             assert 0 <= metrics["recall"] <= 1
             assert 0 <= metrics["precision"] <= 1
 

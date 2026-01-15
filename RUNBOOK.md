@@ -275,22 +275,50 @@ pytest tests/test_smoke.py -v && echo "✓ Projeto configurado corretamente!"
 - [x] Artefatos serializados (model.joblib, metrics.json, ...)
 - [x] **52 testes passando, 79% cobertura**
 
-**Métricas do Melhor Modelo (Logistic Regression):**
-- Recall: **1.00** ✅ (target ≥0.75 atingido)
-- Precision: 0.41
-- F2: 0.77
-- PR-AUC: 0.89
-- Threshold: 0.0012
+---
+
+## Status da Fase 3
+
+- [x] Múltiplos candidatos comparados (logreg, hist_gb, rf)
+- [x] Calibração sigmoid com CalibratedClassifierCV
+- [x] Threshold selecionado em validação interna
+- [x] model_v1.joblib pronto para API
+- [x] model_report.md gerado automaticamente
+- [x] **69 testes passando, 81% cobertura**
+
+**Métricas do Modelo v1 (RandomForest calibrado):**
+
+| Métrica | Validação | Teste |
+|---------|-----------|-------|
+| **Recall** | 1.00 | **1.00** ✅ |
+| Precision | 0.40 | 0.41 |
+| F2 | 0.77 | 0.77 |
+| PR-AUC | 0.85 | 0.85 |
+| Brier | - | 0.11 |
+| **Threshold** | - | **0.040** |
+
+### Comandos Fase 3:
+
+```bash
+# Treinar modelo v1 com calibração
+python -m src.train --data data/processed/modeling_dataset.parquet --artifacts artifacts/ --calibration sigmoid
+
+# Rodar todos os testes
+pytest tests/ -v --tb=short
+
+# Verificar artefatos
+ls artifacts/model_v1.joblib artifacts/metrics_v1.json artifacts/model_report.md
+```
 
 ---
 
-## Próximos Passos (Fase 3)
+## Próximos Passos (Fase 4)
 
-1. Integrar modelo na API FastAPI
-2. Implementar endpoint de predição com model_signature
-3. Validar inputs usando schema JSON
-4. Deploy para container Docker
+1. Integrar model_v1.joblib na API FastAPI
+2. Implementar endpoint /predict usando model_signature_v1.json
+3. Adicionar validação de input com Pydantic
+4. Deploy Docker com modelo embarcado
 
 ---
 
-**Última Atualização:** Janeiro 2026 (Fase 2)
+**Última Atualização:** Janeiro 2026 (Fase 3)

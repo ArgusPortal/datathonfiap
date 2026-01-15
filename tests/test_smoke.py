@@ -36,12 +36,12 @@ def test_feature_engineering_imports():
 
 def test_train_imports():
     """Test that train module can be imported."""
-    from src.train import load_and_prepare_data, create_baselines, train_and_evaluate, save_artifacts
+    from src.train import load_and_prepare_data, create_candidate_models, train_and_evaluate_v1, save_artifacts_v1
     
     assert callable(load_and_prepare_data)
-    assert callable(create_baselines)
-    assert callable(train_and_evaluate)
-    assert callable(save_artifacts)
+    assert callable(create_candidate_models)
+    assert callable(train_and_evaluate_v1)
+    assert callable(save_artifacts_v1)
 
 
 def test_evaluate_imports():

@@ -1,0 +1,61 @@
+{
+  "created_at": "2026-01-15T16:55:05.060865",
+  "best_model": "rf",
+  "threshold": 0.040221165307181304,
+  "validation_metrics": {
+    "recall": 1.0,
+    "precision": 0.3983739837398374,
+    "f1": 0.5697674418604651,
+    "f2": 0.768025078369906,
+    "confusion_matrix": [
+      [
+        0,
+        74
+      ],
+      [
+        0,
+        49
+      ]
+    ],
+    "true_negatives": 0,
+    "false_positives": 74,
+    "false_negatives": 0,
+    "true_positives": 49,
+    "pr_auc": 0.825918232636378,
+    "threshold": 0.040221165307181304,
+    "fpr": 0,
+    "brier_score": 0.11708816524161855,
+    "calibration_error": 0.11307744454665052,
+    "model_name": "rf"
+  },
+  "test_metrics": {
+    "recall": 1.0,
+    "precision": 0.40522875816993464,
+    "f1": 0.5767441860465117,
+    "f2": 0.773067331670823,
+    "confusion_matrix": [
+      [
+        0,
+        91
+      ],
+      [
+        0,
+        62
+      ]
+    ],
+    "true_negatives": 0,
+    "false_positives": 91,
+    "false_negatives": 0,
+    "true_positives": 62,
+    "pr_auc": 0.8479750632744052,
+    "n_samples": 153,
+    "n_positive": 62,
+    "n_negative": 91,
+    "baseline_rate": 0.40522875816993464,
+    "model_name": "rf",
+    "brier_score": 0.1123704342892352,
+    "calibration_error": 0.1296871088761645,
+    "threshold": 0.040221165307181304
+  },
+  "calibration": "sigmoid"
+}

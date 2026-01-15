@@ -30,14 +30,27 @@ def validate_no_blocked_columns(columns: List[str], target_year: int = 2024) -> 
     """Valida que não há colunas bloqueadas. Levanta exceção se encontrar."""
     violations = []
     
+    # Padrões exatos de bloqueio (evita false positives como 'range_indicadores')
+    exact_blocked = ['ra', 'nome', 'nome_anonimizado', 'target']
+    prefix_blocked = ['defasagem', 'em_risco', 'ponto_virada', 'pedra', 'fase_ideal',
+                      'destaque_', 'rec_', 'avaliador']
+    
     for col in columns:
         col_lower = col.lower()
-        for blocked in BLOCKED_COLUMNS:
-            if blocked in col_lower:
-                violations.append(f"{col} (matches '{blocked}')")
+        
+        # Verifica match exato
+        if col_lower in exact_blocked:
+            violations.append(f"{col} (exact match)")
+            continue
+        
+        # Verifica prefixos
+        for prefix in prefix_blocked:
+            if col_lower.startswith(prefix):
+                violations.append(f"{col} (prefix '{prefix}')")
                 break
-        # Colunas do ano do target = leakage temporal
-        if f"_{target_year}" in col and 'em_risco' not in col_lower:
+        
+        # Colunas do ano do target = leakage temporal (exceto target column itself)
+        if f"_{target_year}" in col and not col_lower.startswith('em_risco'):
             violations.append(f"{col} (data from target year {target_year})")
     
     if violations:
