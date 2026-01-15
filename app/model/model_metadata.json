@@ -1,0 +1,21 @@
+{
+  "version": "v0.1.0-placeholder",
+  "model_type": "DummyModel",
+  "training_date": "2026-01-15",
+  "framework": "scikit-learn",
+  "target_definition": "em_risco (binary: moderada + severa)",
+  "horizon": "t -> t+1",
+  "metrics": {
+    "recall_positivo": null,
+    "pr_auc": null,
+    "precision_at_recall_75": null
+  },
+  "features": [
+    "inde_ano_t",
+    "ian_ano_t",
+    "taxa_presenca_ano_t",
+    "fase_programa"
+  ],
+  "threshold": 0.5,
+  "notes": "Placeholder metadata. Will be updated after real model training."
+}
