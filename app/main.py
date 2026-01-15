@@ -1,6 +1,7 @@
 """
 API FastAPI para predição de risco de defasagem escolar.
 Passos Mágicos - Datathon FIAP 2025
+Phase 8: Production Hardening - Security, Metrics, Audit
 """
 
 import time
@@ -11,13 +12,15 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 
 from app.config import (
     APP_NAME,
+    AUDIT_ENABLED,
     EXTRA_FEATURE_POLICY,
     LOG_LEVEL,
     METADATA_PATH,
+    METRICS_ENABLED,
     MODEL_PATH,
     PORT,
     SIGNATURE_PATH,
@@ -35,6 +38,12 @@ from app.schema import (
     PredictResponse,
     validate_batch_features,
 )
+
+# Phase 8: Security, Metrics, Audit, Privacy
+from app.security import SecurityMiddleware, rate_limiter
+from app.metrics import metrics
+from app.audit import audit_trail, init_model_lineage, create_inference_audit_record, hash_dict
+from app.privacy import sanitize_dict_for_logging, aggregate_features
 
 # Base directory
 BASE_DIR = Path(__file__).parent.parent
@@ -83,12 +92,25 @@ async def lifespan(app: FastAPI):
                 "n_features": len(model_manager.expected_features),
             }
         )
+        
+        # Phase 8: Initialize model lineage and metrics
+        init_model_lineage(str(MODEL_PATH), model_manager.version)
+        metrics.set_model_info(model_manager.version)
+        
+        if AUDIT_ENABLED:
+            audit_trail.add_record("startup", details={
+                "model_version": model_manager.version,
+                "model_path": str(MODEL_PATH),
+            })
+        
     except Exception as e:
         logger.error(f"Falha ao carregar modelo: {e}")
         raise
     
     yield
     
+    if AUDIT_ENABLED:
+        audit_trail.add_record("shutdown")
     logger.info("Encerrando aplicação...")
 
 
@@ -99,6 +121,9 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+# Phase 8: Add Security Middleware
+app.add_middleware(SecurityMiddleware)
 
 
 @app.middleware("http")
@@ -120,6 +145,11 @@ async def logging_middleware(request: Request, call_next):
         response = await call_next(request)
         latency_ms = (time.time() - start_time) * 1000
         
+        # Phase 8: Record metrics
+        if METRICS_ENABLED:
+            success = response.status_code < 400
+            metrics.record_request(latency_ms, success)
+        
         # Log fim do request
         request.state.logger.log_request_end(
             status_code=response.status_code,
@@ -133,6 +163,8 @@ async def logging_middleware(request: Request, call_next):
         
     except Exception as e:
         latency_ms = (time.time() - start_time) * 1000
+        if METRICS_ENABLED:
+            metrics.record_request(latency_ms, success=False)
         request.state.logger.log_error(str(e), latency_ms=latency_ms)
         raise
 
@@ -145,12 +177,30 @@ async def health_check():
     """
     uptime = time.time() - _startup_time
     
+    if METRICS_ENABLED:
+        metrics.record_health_check()
+    
     return HealthResponse(
         status="healthy" if model_manager.model is not None else "degraded",
         model_loaded=model_manager.model is not None,
         model_version=model_manager.version,
         uptime_seconds=round(uptime, 2),
     )
+
+
+@app.get("/ready", tags=["Health"])
+async def readiness_check():
+    """
+    Readiness probe para Kubernetes/orchestrators.
+    Returns 200 if model is loaded and ready to serve.
+    """
+    if model_manager.model is None:
+        return JSONResponse(
+            status_code=503,
+            content={"ready": False, "reason": "model_not_loaded"},
+        )
+    
+    return {"ready": True, "model_version": model_manager.version}
 
 
 @app.get("/metadata", response_model=MetadataResponse, tags=["Model"])
@@ -171,6 +221,37 @@ async def get_metadata():
         calibration=safe_metadata.get("calibration"),
         created_at=safe_metadata.get("created_at"),
     )
+
+
+@app.get("/metrics", tags=["Observability"])
+async def get_metrics(format: str = "json"):
+    """
+    Retorna métricas da API.
+    
+    Args:
+        format: 'json' or 'prometheus'
+    """
+    if not METRICS_ENABLED:
+        return {"error": "Metrics disabled"}
+    
+    if format == "prometheus":
+        return PlainTextResponse(
+            content=metrics.to_prometheus_format(),
+            media_type="text/plain",
+        )
+    
+    return metrics.get_summary()
+
+
+@app.get("/slo", tags=["Observability"])
+async def get_slo_status():
+    """
+    Retorna status de compliance com SLOs.
+    """
+    if not METRICS_ENABLED:
+        return {"error": "Metrics disabled"}
+    
+    return metrics.get_slo_status()
 
 
 @app.post("/predict", response_model=PredictResponse, tags=["Prediction"])
@@ -220,6 +301,23 @@ async def predict(request: Request, payload: PredictRequest):
             )
         
         processing_time = (time.time() - start_time) * 1000
+        
+        # Phase 8: Record metrics and audit
+        if METRICS_ENABLED:
+            for p in predictions:
+                metrics.record_prediction(p.risk_score, threshold)
+        
+        if AUDIT_ENABLED:
+            # Create audit record with sanitized data (no PII)
+            audit_record = create_inference_audit_record(
+                request_id=request_id,
+                input_hash=hash_dict({"instances": [dict(i) for i in payload.instances]}),
+                output_probability=float(np.mean(probas)),
+                model_version=model_manager.version,
+                latency_ms=processing_time,
+                success=True,
+            )
+            audit_trail.add_record("inference", request_id, audit_record)
         
         # Log completo de inferência (observability)
         log_inference_request(

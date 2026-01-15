@@ -274,6 +274,115 @@ python -m monitoring.performance_drift --window 30
 
 ---
 
+## 12. Production Hardening (Fase 8)
+
+### Security
+
+#### API Key Authentication
+```bash
+# Configurar API keys (comma-separated)
+export API_KEYS="key1,key2,key3"
+
+# Request autenticado
+curl http://localhost:8000/predict \
+  -H "X-API-Key: key1" \
+  -H "Content-Type: application/json" \
+  -d '{"instances":[...]}'
+```
+
+#### Rate Limiting
+- 60 requests/minuto por API key (configurável via `RATE_LIMIT_RPM`)
+- Headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`
+- Response 429 quando excedido
+
+#### Request Validation
+- Max body size: 256KB (`MAX_BODY_BYTES`)
+- Input validation contra schema do modelo
+
+### Privacy
+
+#### Data Handling
+- **PII Detection**: CPF, email, telefone automaticamente redatados
+- **Logs**: Apenas campos seguros (aggregate_only)
+- **Audit**: Hashes de input, sem dados brutos
+
+#### Retention
+```bash
+# Limpar dados antigos (30 dias default)
+python monitoring/retention.py --days 30
+
+# Dry run
+python monitoring/retention.py --dry-run
+```
+
+### Observability
+
+#### Endpoints
+| Endpoint | Descrição | Auth |
+|----------|-----------|------|
+| `/health` | Liveness probe | Não |
+| `/ready` | Readiness probe | Não |
+| `/metrics` | Métricas JSON | Sim |
+| `/metrics?format=prometheus` | Prometheus format | Sim |
+| `/slo` | Status de SLOs | Sim |
+
+#### SLOs Configurados
+| Métrica | Target |
+|---------|--------|
+| Latência P95 | ≤ 300ms |
+| Error Rate | ≤ 1% |
+
+### Container Security
+
+#### Dockerfile Hardened
+- Multi-stage build (builder → runtime)
+- Non-root user (`appuser:1000`)
+- Python 3.11-slim base
+- HEALTHCHECK nativo
+
+```bash
+# Build produção
+docker build -t datathon-api:v2 .
+
+# Scan de vulnerabilidades
+docker run --rm aquasec/trivy image datathon-api:v2
+```
+
+#### Security Scanning (CI)
+```bash
+# Dependências
+pip install safety pip-audit bandit
+safety check -r requirements.txt
+pip-audit -r requirements.txt
+bandit -r app/ src/
+
+# SBOM
+pip install cyclonedx-bom
+cyclonedx-py environment -o sbom.json
+```
+
+### Load Testing
+```bash
+# Instalar locust
+pip install locust
+
+# Executar load test
+locust -f loadtest/locustfile.py --host http://localhost:8000 \
+  --users 10 --spawn-rate 2 --run-time 60s --headless
+```
+
+### Documentação Fase 8
+- [API Security](docs/security_api.md) — Auth, rate limit, validation
+- [Privacy & Data Handling](docs/privacy_data_handling.md) — LGPD, retenção
+- [Container Security](docs/container_security.md) — Hardening, scanning
+- [SRE Runbook](docs/sre_runbook.md) — Incident response
+- [Load Test Report](docs/load_test_report.md) — Resultados de carga
+- [Model Card](docs/model_card.md) — Documentação completa do modelo
+- [Model Changelog](docs/model_changelog.md) — Histórico de versões
+- [Cost & Scaling](docs/cost_scaling.md) — Sizing e estimativas
+
+---
+
 ## Documentação
 
 - [Product Brief](docs/product_brief.md)

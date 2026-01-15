@@ -1,0 +1,161 @@
+# Security Scan Workflow
+# Phase 8: Supply Chain Security
+
+name: Security Scan
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Run weekly on Sundays at 2 AM UTC
+    - cron: '0 2 * * 0'
+
+jobs:
+  dependency-scan:
+    name: Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install safety
+        run: pip install safety pip-audit
+      
+      - name: Run safety check
+        run: |
+          safety check -r requirements.txt --output json > safety-report.json || true
+          cat safety-report.json
+        continue-on-error: true
+      
+      - name: Run pip-audit
+        run: |
+          pip-audit -r requirements.txt --format json > pip-audit-report.json || true
+          cat pip-audit-report.json
+        continue-on-error: true
+      
+      - name: Check for critical vulnerabilities
+        run: |
+          # Parse safety report for critical issues
+          python -c "
+          import json
+          import sys
+          
+          try:
+              with open('safety-report.json') as f:
+                  report = json.load(f)
+              
+              critical = []
+              for vuln in report.get('vulnerabilities', []):
+                  if vuln.get('severity', '').lower() == 'critical':
+                      critical.append(vuln)
+              
+              if critical:
+                  print(f'Found {len(critical)} critical vulnerabilities!')
+                  for v in critical:
+                      print(f\"  - {v.get('package_name')}: {v.get('vulnerability_id')}\")
+                  sys.exit(1)
+              else:
+                  print('No critical vulnerabilities found.')
+          except Exception as e:
+              print(f'Could not parse report: {e}')
+          "
+      
+      - name: Upload security reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-reports
+          path: |
+            safety-report.json
+            pip-audit-report.json
+
+  container-scan:
+    name: Container Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Build Docker image
+        run: docker build -t datathon-api:scan .
+      
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'datathon-api:scan'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+      
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  sbom-generation:
+    name: Generate SBOM
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          pip install cyclonedx-bom pipdeptree
+      
+      - name: Generate CycloneDX SBOM
+        run: |
+          pip install -r requirements.txt
+          cyclonedx-py environment -o sbom.json --format json
+      
+      - name: Generate dependency tree
+        run: pipdeptree --json > dependency-tree.json
+      
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: |
+            sbom.json
+            dependency-tree.json
+
+  code-scan:
+    name: Static Code Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install analysis tools
+        run: pip install bandit semgrep
+      
+      - name: Run Bandit security linter
+        run: |
+          bandit -r app/ src/ -f json -o bandit-report.json || true
+          bandit -r app/ src/ -f txt
+        continue-on-error: true
+      
+      - name: Upload Bandit report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bandit-report
+          path: bandit-report.json
