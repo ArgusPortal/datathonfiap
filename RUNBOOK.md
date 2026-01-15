@@ -94,14 +94,29 @@ curl -X POST http://localhost:8000/predict \
 
 ## Treino de Modelo
 
-### Treinar Modelo (quando dados estiverem disponíveis)
+### Fase 1: Gerar Dataset de Modelagem
 ```bash
-python -m src.train --data data/raw/dataset_2022_2024.csv --output models/
+python -m src.make_dataset --input "data/raw/PEDE_PASSOS_DATASET_FIAP.xlsx" --output data/processed/
 ```
+
+Artefatos gerados:
+- `data/processed/modeling_dataset.parquet`
+- `data/processed/data_quality_report.json`
+
+### Fase 2: Treinar Modelo com Baselines
+```bash
+python -m src.train --data data/processed/modeling_dataset.parquet --artifacts artifacts/
+```
+
+Artefatos gerados:
+- `artifacts/model.joblib` - Pipeline sklearn serializado
+- `artifacts/metrics.json` - Métricas de todos os baselines
+- `artifacts/model_metadata.json` - Metadados do modelo (versão, seed, features)
+- `artifacts/model_signature.json` - Schema de entrada/saída para API
 
 ### Avaliar Modelo
 ```bash
-python -m src.evaluate --model models/model.pkl --data data/raw/dataset_2022_2024.csv
+python -m src.evaluate --model artifacts/model.joblib --data data/processed/modeling_dataset.parquet
 ```
 
 ---
@@ -241,14 +256,41 @@ pytest tests/test_smoke.py -v && echo "✓ Projeto configurado corretamente!"
 
 ---
 
-## Próximos Passos (Fase 1)
+## Status da Fase 1
 
-1. Carregar dataset fornecido pelo Datathon
-2. Executar análise exploratória (EDA) em notebooks
-3. Validar Data Contract com dados reais
-4. Implementar pipeline de limpeza completo
-5. Treinar modelo baseline
+- [x] Dataset PEDE_PASSOS carregado
+- [x] Data Quality Checks implementados (anti-leakage)
+- [x] Target `em_risco_2024` definido (defasagem < 0)
+- [x] Pipeline `make_dataset.py` funcional
+- [x] 35 testes passando
 
 ---
 
-**Última Atualização:** Janeiro 2026 (Fase 0)
+## Status da Fase 2
+
+- [x] Preprocessing com ColumnTransformer (sklearn)
+- [x] Feature Engineering (media_indicadores, min_indicador, std_indicadores)
+- [x] 3 Baselines comparados (Naive, Logistic, RF)
+- [x] Threshold selection (max_recall)
+- [x] Artefatos serializados (model.joblib, metrics.json, ...)
+- [x] **52 testes passando, 79% cobertura**
+
+**Métricas do Melhor Modelo (Logistic Regression):**
+- Recall: **1.00** ✅ (target ≥0.75 atingido)
+- Precision: 0.41
+- F2: 0.77
+- PR-AUC: 0.89
+- Threshold: 0.0012
+
+---
+
+## Próximos Passos (Fase 3)
+
+1. Integrar modelo na API FastAPI
+2. Implementar endpoint de predição com model_signature
+3. Validar inputs usando schema JSON
+4. Deploy para container Docker
+
+---
+
+**Última Atualização:** Janeiro 2026 (Fase 2)

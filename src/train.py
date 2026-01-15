@@ -1,269 +1,323 @@
-"""Model training module."""
+"""
+Train: pipeline de treinamento MVP com baselines.
+
+Uso:
+    python -m src.train --data data/processed/modeling_dataset.parquet --artifacts artifacts/
+"""
 
 import argparse
 import logging
+import sys
+from datetime import datetime
 from pathlib import Path
-from typing import Optional, Tuple
-import pandas as pd
-import numpy as np
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
+from typing import Dict, Any, Tuple
+
 import joblib
+import numpy as np
+import pandas as pd
+from sklearn.pipeline import Pipeline
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.dummy import DummyClassifier
+from sklearn.model_selection import train_test_split
 
-from .config import Config
-from .preprocessing import load_and_preprocess
-from .feature_engineering import create_features
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+# Imports locais
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from src.preprocessing import (
+    build_preprocessor, 
+    prepare_features, 
+    convert_mixed_types,
 )
-logger = logging.getLogger(__name__)
+from src.feature_engineering import make_features
+from src.evaluate import (
+    calculate_metrics, 
+    select_threshold, 
+    evaluate_predictions,
+    compare_models
+)
+from src.utils import load_dataset, save_json, set_seed, get_logger
 
 
-class ModelTrainer:
-    """Handles model training and persistence."""
-    
-    def __init__(self, config: Optional[Config] = None):
-        self.config = config or Config()
-        self.model = None
-        self.feature_names = []
-        
-    def split_data(
-        self,
-        X: pd.DataFrame,
-        y: pd.Series,
-        test_size: float = 0.2,
-        random_state: int = 42
-    ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
-        """
-        Split data into train and test sets.
-        
-        NOTE: For t->t+1 prediction, should use temporal split.
-        This is a placeholder using random split.
-        
-        Args:
-            X: Features
-            y: Target
-            test_size: Proportion of test set
-            random_state: Random seed
-            
-        Returns:
-            X_train, X_test, y_train, y_test
-        """
-        logger.info(f"Splitting data: test_size={test_size}")
-        
-        # TODO: implement temporal split when year information is available
-        # For now, use stratified random split
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y,
-            test_size=test_size,
-            random_state=random_state,
-            stratify=y
-        )
-        
-        logger.info(f"Train set: {len(X_train)} samples")
-        logger.info(f"Test set: {len(X_test)} samples")
-        logger.info(f"Class distribution (train): {y_train.value_counts().to_dict()}")
-        
-        return X_train, X_test, y_train, y_test
-    
-    def train_model(
-        self,
-        X_train: pd.DataFrame,
-        y_train: pd.Series
-    ) -> RandomForestClassifier:
-        """
-        Train the model.
-        
-        Args:
-            X_train: Training features
-            y_train: Training target
-            
-        Returns:
-            Trained model
-        """
-        logger.info("Training Random Forest model")
-        
-        # Store feature names
-        self.feature_names = X_train.columns.tolist()
-        
-        # Initialize model
-        # NOTE: These hyperparameters are placeholders. Tune in later phases.
-        self.model = RandomForestClassifier(
-            n_estimators=100,
-            max_depth=10,
-            min_samples_split=10,
-            min_samples_leaf=5,
-            class_weight='balanced',  # Handle class imbalance
-            random_state=self.config.RANDOM_STATE,
-            n_jobs=-1
-        )
-        
-        # Train
-        self.model.fit(X_train, y_train)
-        
-        logger.info("Training complete")
-        
-        return self.model
-    
-    def save_model(
-        self,
-        output_path: Optional[Path] = None,
-        metadata: Optional[dict] = None
-    ):
-        """
-        Save trained model to disk.
-        
-        Args:
-            output_path: Path to save model. If None, use default from config.
-            metadata: Optional metadata to save alongside model
-        """
-        if self.model is None:
-            raise ValueError("No model to save. Train a model first.")
-        
-        if output_path is None:
-            output_path = self.config.get_model_path()
-        
-        logger.info(f"Saving model to {output_path}")
-        
-        # Save model
-        joblib.dump(self.model, output_path)
-        
-        # Save metadata
-        if metadata is not None:
-            import json
-            metadata_path = output_path.parent / "model_metadata.json"
-            with open(metadata_path, 'w') as f:
-                json.dump(metadata, f, indent=2)
-            logger.info(f"Saved metadata to {metadata_path}")
-        
-        # Save feature names
-        feature_names_path = output_path.parent / "feature_names.txt"
-        with open(feature_names_path, 'w') as f:
-            f.write('\n'.join(self.feature_names))
-        logger.info(f"Saved feature names to {feature_names_path}")
+# Configuração
+SEED = 42
+TARGET_COL = "em_risco_2024"
+ID_COLS = ["ra"]
+TARGET_YEAR = 2024
+MIN_RECALL_TARGET = 0.75
+
+logger = get_logger("train")
 
 
-def train_pipeline(
+def load_and_prepare_data(
     data_path: str,
-    output_dir: str,
-    config: Optional[Config] = None
-):
-    """
-    Run full training pipeline.
+    target_col: str = TARGET_COL,
+    id_cols: list = None
+) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
+    """Carrega e prepara dados para treino."""
+    if id_cols is None:
+        id_cols = ID_COLS
     
-    Args:
-        data_path: Path to input data
-        output_dir: Directory to save trained model
-        config: Configuration object
-    """
-    config = config or Config()
+    logger.info(f"Carregando dados de {data_path}")
+    df = load_dataset(data_path)
+    logger.info(f"Shape: {df.shape}")
     
-    logger.info("=" * 80)
-    logger.info("STARTING TRAINING PIPELINE")
-    logger.info("=" * 80)
+    # Converte tipos mistos
+    df = convert_mixed_types(df)
     
-    # 1. Load and preprocess data
-    logger.info("Step 1: Loading and preprocessing data")
-    df, preprocessor = load_and_preprocess(data_path, config)
+    # Aplica feature engineering
+    df = make_features(df)
     
-    # 2. Feature engineering
-    logger.info("Step 2: Feature engineering")
-    df_features, engineer = create_features(df, config)
+    # Prepara X e y
+    X, y = prepare_features(df, target_col, id_cols, TARGET_YEAR)
     
-    # 3. Split features and target
-    logger.info("Step 3: Splitting features and target")
-    
-    if config.TARGET_COLUMN not in df_features.columns:
-        raise ValueError(f"Target column '{config.TARGET_COLUMN}' not found in data")
-    
-    y = df_features[config.TARGET_COLUMN]
-    X = df_features.drop(columns=[config.TARGET_COLUMN])
-    
-    logger.info(f"Features shape: {X.shape}")
+    logger.info(f"Features: {X.shape[1]}, Amostras: {len(y)}")
     logger.info(f"Target distribution: {y.value_counts().to_dict()}")
     
-    # 4. Train model
-    logger.info("Step 4: Training model")
-    trainer = ModelTrainer(config)
-    
-    X_train, X_test, y_train, y_test = trainer.split_data(X, y)
-    model = trainer.train_model(X_train, y_train)
-    
-    # 5. Quick evaluation (detailed evaluation in evaluate.py)
-    from sklearn.metrics import classification_report, recall_score
-    
-    y_pred_train = model.predict(X_train)
-    y_pred_test = model.predict(X_test)
-    
-    recall_train = recall_score(y_train, y_pred_train, pos_label=1)
-    recall_test = recall_score(y_test, y_pred_test, pos_label=1)
-    
-    logger.info(f"Recall (train): {recall_train:.3f}")
-    logger.info(f"Recall (test): {recall_test:.3f}")
-    logger.info("\nClassification Report (test):")
-    logger.info("\n" + classification_report(y_test, y_pred_test))
-    
-    # 6. Save model
-    logger.info("Step 5: Saving model")
-    output_path = Path(output_dir) / "model.pkl"
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    
-    metadata = {
-        "version": "v0.1.0",
-        "model_type": "RandomForestClassifier",
-        "n_features": X_train.shape[1],
-        "feature_names": X_train.columns.tolist(),
-        "target": config.TARGET_COLUMN,
-        "recall_train": float(recall_train),
-        "recall_test": float(recall_test),
-        "training_samples": len(X_train),
-        "test_samples": len(X_test)
+    return df, X, y
+
+
+def create_baselines(seed: int = SEED) -> Dict[str, Any]:
+    """Cria modelos baseline."""
+    return {
+        "baseline0_naive": DummyClassifier(strategy="most_frequent", random_state=seed),
+        "baseline1_logistic": LogisticRegression(
+            class_weight="balanced",
+            max_iter=1000,
+            random_state=seed,
+            solver="lbfgs"
+        ),
+        "baseline2_rf": RandomForestClassifier(
+            n_estimators=100,
+            max_depth=10,
+            class_weight="balanced",
+            random_state=seed,
+            n_jobs=-1
+        )
     }
+
+
+def train_and_evaluate(
+    X_train: pd.DataFrame,
+    y_train: pd.Series,
+    X_test: pd.DataFrame,
+    y_test: pd.Series,
+    seed: int = SEED
+) -> Tuple[Dict[str, Dict], Pipeline, float]:
+    """Treina baselines e avalia."""
+    set_seed(seed)
     
-    trainer.save_model(output_path, metadata)
+    # Constrói preprocessor
+    preprocessor, numeric_cols, categorical_cols = build_preprocessor(
+        X_train, target_year=TARGET_YEAR
+    )
     
-    logger.info("=" * 80)
-    logger.info("TRAINING PIPELINE COMPLETE")
-    logger.info("=" * 80)
+    logger.info(f"Numeric cols: {numeric_cols}")
+    logger.info(f"Categorical cols: {categorical_cols}")
+    
+    # Cria baselines
+    models = create_baselines(seed)
+    
+    results = {}
+    best_model_name = None
+    best_recall = -1
+    best_pipeline = None
+    best_threshold = 0.5
+    
+    for name, model in models.items():
+        logger.info(f"\n{'='*50}")
+        logger.info(f"Treinando: {name}")
+        
+        if name == "baseline0_naive":
+            pipeline = model
+            pipeline.fit(X_train, y_train)
+            y_pred_test = pipeline.predict(X_test)
+            y_proba_test = np.full(len(y_test), y_train.mean())
+            threshold = 0.5
+        else:
+            pipeline = Pipeline([
+                ("preprocessor", preprocessor),
+                ("classifier", model)
+            ])
+            
+            pipeline.fit(X_train, y_train)
+            
+            y_proba_train = pipeline.predict_proba(X_train)[:, 1]
+            y_proba_test = pipeline.predict_proba(X_test)[:, 1]
+            
+            threshold, _ = select_threshold(
+                y_train.values, 
+                y_proba_train,
+                objective="max_recall",
+                min_precision=None,
+                min_recall=MIN_RECALL_TARGET
+            )
+            
+            y_pred_test = (y_proba_test >= threshold).astype(int)
+        
+        metrics = evaluate_predictions(
+            y_test.values, 
+            y_pred_test, 
+            y_proba_test,
+            model_name=name
+        )
+        metrics["threshold"] = float(threshold)
+        results[name] = metrics
+        
+        logger.info(f"  Recall: {metrics['recall']:.3f}")
+        logger.info(f"  Precision: {metrics['precision']:.3f}")
+        logger.info(f"  F2: {metrics['f2']:.3f}")
+        logger.info(f"  Threshold: {threshold:.3f}")
+        
+        if metrics["recall"] > best_recall and name != "baseline0_naive":
+            best_recall = metrics["recall"]
+            best_model_name = name
+            best_pipeline = pipeline
+            best_threshold = threshold
+    
+    logger.info(f"\n{'='*50}")
+    logger.info(f"Melhor modelo: {best_model_name} (Recall: {best_recall:.3f})")
+    
+    return results, best_pipeline, best_threshold
+
+
+def save_artifacts(
+    artifacts_dir: Path,
+    pipeline: Pipeline,
+    results: Dict[str, Dict],
+    threshold: float,
+    feature_names: list,
+    seed: int = SEED
+) -> None:
+    """Salva artefatos de treino."""
+    artifacts_dir.mkdir(parents=True, exist_ok=True)
+    
+    # 1. Modelo
+    model_path = artifacts_dir / "model.joblib"
+    joblib.dump(pipeline, model_path)
+    logger.info(f"Modelo salvo: {model_path}")
+    
+    # 2. Métricas
+    best_model = max(
+        [(k, v["recall"]) for k, v in results.items() if k != "baseline0_naive"],
+        key=lambda x: x[1]
+    )[0]
+    
+    metrics = {
+        "created_at": datetime.now().isoformat(),
+        "best_model": best_model,
+        "threshold": threshold,
+        "baselines": results,
+        "notes": [
+            "Recall otimizado como métrica principal",
+            "Threshold selecionado em dados de treino",
+            "Dataset limitado a 2023→2024 (sem backtest multi-ano)"
+        ]
+    }
+    save_json(artifacts_dir / "metrics.json", metrics)
+    
+    # 3. Metadata
+    import sklearn
+    metadata = {
+        "model_version": "v1.0.0",
+        "created_at": datetime.now().isoformat(),
+        "seed": seed,
+        "sklearn_version": sklearn.__version__,
+        "pandas_version": pd.__version__,
+        "numpy_version": np.__version__,
+        "target_definition": "em_risco = 1 se Defasagem < 0 (aluno atrasado)",
+        "training_periods": ["2023->2024"],
+        "population_filter": "all_phases",
+        "expected_features": sorted(feature_names),
+        "blocked_features": [
+            "ra", "em_risco", "defasagem", "ponto_virada", 
+            "pedra", "fase_ideal", "destaque_*", "rec_*"
+        ],
+        "threshold_policy": {
+            "objective": "max_recall",
+            "min_precision": None,
+            "threshold_value": threshold
+        },
+        "assumptions": [
+            "Features de 2023 predizem risco em 2024",
+            "Sem dados de 2022 disponíveis no dataset final",
+            "Split train/test por holdout simples (20%)"
+        ]
+    }
+    save_json(artifacts_dir / "model_metadata.json", metadata)
+    
+    # 4. Signature
+    feature_schema = {f: "float64" for f in feature_names}
+    for f in feature_names:
+        if "instituicao" in f.lower() or "fase" in f.lower():
+            feature_schema[f] = "object"
+    
+    signature = {
+        "input_schema": feature_schema,
+        "output_schema": {
+            "risk_score": "float",
+            "risk_label": "int",
+            "model_version": "str"
+        },
+        "example_request": {
+            f: 5.0 if feature_schema[f] == "float64" else "example"
+            for f in list(feature_names)[:5]
+        },
+        "example_response": {
+            "risk_score": 0.65,
+            "risk_label": 1,
+            "model_version": "v1.0.0"
+        }
+    }
+    save_json(artifacts_dir / "model_signature.json", signature)
+    
+    logger.info(f"Todos artefatos salvos em {artifacts_dir}")
 
 
 def main():
-    """CLI entry point for training."""
-    parser = argparse.ArgumentParser(description="Train dropout risk prediction model")
-    parser.add_argument(
-        "--data",
-        type=str,
-        default="data/raw/dataset_2022_2024.csv",
-        help="Path to input data CSV"
-    )
-    parser.add_argument(
-        "--output",
-        type=str,
-        default="models/",
-        help="Output directory for trained model"
-    )
+    parser = argparse.ArgumentParser(description="Treina modelo de risco")
+    parser.add_argument("--data", type=str, default="data/processed/modeling_dataset.parquet")
+    parser.add_argument("--artifacts", type=str, default="artifacts")
+    parser.add_argument("--seed", type=int, default=SEED)
     
     args = parser.parse_args()
     
-    # Check if data file exists
-    data_path = Path(args.data)
-    if not data_path.exists():
-        logger.error(f"Data file not found: {data_path}")
-        logger.info("This is a placeholder training script.")
-        logger.info("Place your data at: data/raw/dataset_2022_2024.csv")
-        logger.info("Or specify path with --data argument")
-        return
+    logging.basicConfig(level=logging.INFO)
+    set_seed(args.seed)
     
-    # Run training pipeline
-    try:
-        train_pipeline(str(data_path), args.output)
-    except Exception as e:
-        logger.error(f"Training failed: {e}", exc_info=True)
-        raise
+    logger.info("="*60)
+    logger.info("PIPELINE DE TREINO - Passos Mágicos MVP")
+    logger.info("="*60)
+    
+    df, X, y = load_and_prepare_data(args.data)
+    
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=args.seed, stratify=y
+    )
+    
+    logger.info(f"Train: {len(y_train)}, Test: {len(y_test)}")
+    
+    results, best_pipeline, best_threshold = train_and_evaluate(
+        X_train, y_train, X_test, y_test, seed=args.seed
+    )
+    
+    save_artifacts(
+        Path(args.artifacts),
+        best_pipeline,
+        results,
+        best_threshold,
+        X.columns.tolist(),
+        args.seed
+    )
+    
+    logger.info("\n" + "="*60)
+    logger.info("COMPARATIVO DE MODELOS")
+    logger.info("="*60)
+    comparison = compare_models(results)
+    print(comparison.to_string(index=False))
+    
+    logger.info("\n✅ Pipeline concluído com sucesso!")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

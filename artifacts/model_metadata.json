@@ -1,0 +1,48 @@
+{
+  "model_version": "v1.0.0",
+  "created_at": "2026-01-15T16:46:49.474045",
+  "seed": 42,
+  "sklearn_version": "1.8.0",
+  "pandas_version": "2.3.3",
+  "numpy_version": "1.26.4",
+  "target_definition": "em_risco = 1 se Defasagem < 0 (aluno atrasado)",
+  "training_periods": [
+    "2023->2024"
+  ],
+  "population_filter": "all_phases",
+  "expected_features": [
+    "fase_2023",
+    "iaa_2023",
+    "ian_2023",
+    "ida_2023",
+    "idade_2023",
+    "ieg_2023",
+    "instituicao_2023",
+    "ipp_2023",
+    "ips_2023",
+    "ipv_2023",
+    "media_indicadores",
+    "min_indicador",
+    "std_indicadores"
+  ],
+  "blocked_features": [
+    "ra",
+    "em_risco",
+    "defasagem",
+    "ponto_virada",
+    "pedra",
+    "fase_ideal",
+    "destaque_*",
+    "rec_*"
+  ],
+  "threshold_policy": {
+    "objective": "max_recall",
+    "min_precision": null,
+    "threshold_value": 0.0011859301774256575
+  },
+  "assumptions": [
+    "Features de 2023 predizem risco em 2024",
+    "Sem dados de 2022 disponíveis no dataset final",
+    "Split train/test por holdout simples (20%)"
+  ]
+}

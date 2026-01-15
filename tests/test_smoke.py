@@ -18,103 +18,116 @@ def test_config_imports():
 
 def test_preprocessing_imports():
     """Test that preprocessing module can be imported."""
-    from src.preprocessing import DataPreprocessor
+    from src.preprocessing import build_preprocessor, validate_no_blocked_columns, identify_column_types
     
-    preprocessor = DataPreprocessor()
-    assert preprocessor is not None
+    assert callable(build_preprocessor)
+    assert callable(validate_no_blocked_columns)
+    assert callable(identify_column_types)
 
 
 def test_feature_engineering_imports():
     """Test that feature engineering module can be imported."""
-    from src.feature_engineering import FeatureEngineer
+    from src.feature_engineering import make_features, create_delta_features, create_risk_composites
     
-    engineer = FeatureEngineer()
-    assert engineer is not None
+    assert callable(make_features)
+    assert callable(create_delta_features)
+    assert callable(create_risk_composites)
 
 
 def test_train_imports():
     """Test that train module can be imported."""
-    from src.train import ModelTrainer
+    from src.train import load_and_prepare_data, create_baselines, train_and_evaluate, save_artifacts
     
-    trainer = ModelTrainer()
-    assert trainer is not None
+    assert callable(load_and_prepare_data)
+    assert callable(create_baselines)
+    assert callable(train_and_evaluate)
+    assert callable(save_artifacts)
 
 
 def test_evaluate_imports():
     """Test that evaluate module can be imported."""
-    from src.evaluate import ModelEvaluator
+    from src.evaluate import calculate_metrics, select_threshold, evaluate_predictions, compare_models
     
-    evaluator = ModelEvaluator()
-    assert evaluator is not None
+    assert callable(calculate_metrics)
+    assert callable(select_threshold)
+    assert callable(evaluate_predictions)
+    assert callable(compare_models)
 
 
 def test_preprocessing_basic_functionality():
     """Test basic preprocessing functionality with dummy data."""
-    from src.preprocessing import DataPreprocessor
-    from src.config import Config
+    from src.preprocessing import build_preprocessor, identify_column_types
     
     # Create dummy data
     df = pd.DataFrame({
-        'inde_ano_t': [5.0, 6.0, 4.5, 7.0],
-        'ian_ano_t': [4.0, 5.5, 3.5, 6.0],
-        'taxa_presenca_ano_t': [0.8, 0.9, 0.7, 0.95],
-        'fase_programa': [2, 3, 1, 4],
-        'em_risco_t_mais_1': [0, 0, 1, 0]
+        'ian_2023': [5.0, 6.0, 4.5, 7.0],
+        'ida_2023': [4.0, 5.5, 3.5, 6.0],
+        'ieg_2023': [0.8, 0.9, 0.7, 0.95],
+        'fase_2023': ['ALFA', 'F1', 'F2', 'F3'],
+        'instituicao_2023': ['A', 'B', 'A', 'C'],
     })
     
-    config = Config()
-    preprocessor = DataPreprocessor(config)
+    # Test building preprocessor
+    preprocessor, num_cols, cat_cols = build_preprocessor(df, target_year=2024)
+    assert preprocessor is not None
+    assert len(num_cols) == 3  # ian, ida, ieg
+    assert len(cat_cols) == 2  # fase, instituicao
     
-    # Test quality check
-    quality_report = preprocessor.check_data_quality(df)
-    assert quality_report['n_rows'] == 4
-    assert quality_report['n_columns'] == 5
-    assert quality_report['target_missing'] == 0
+    # Test identify_column_types
+    numeric, categorical = identify_column_types(df)
+    assert 'ian_2023' in numeric
+    assert 'fase_2023' in categorical
 
 
 def test_feature_engineering_basic_functionality():
     """Test basic feature engineering functionality with dummy data."""
-    from src.feature_engineering import FeatureEngineer
+    from src.feature_engineering import make_features, create_risk_composites
     
     # Create dummy data
     df = pd.DataFrame({
-        'inde_ano_t': [5.0, 6.0, 4.5, 7.0],
-        'ian_ano_t': [4.0, 5.5, 3.5, 6.0],
-        'taxa_presenca_ano_t': [0.8, 0.9, 0.7, 0.95],
-        'fase_programa': [2, 3, 1, 4],
-        'em_risco_t_mais_1': [0, 0, 1, 0]
+        'ian_2023': [5.0, 6.0, 4.5, 7.0],
+        'ida_2023': [4.0, 5.5, 3.5, 6.0],
+        'ieg_2023': [5.2, 6.3, 4.1, 7.5],
+        'iaa_2023': [5.5, 6.0, 4.0, 7.2],
+        'ips_2023': [5.1, 5.8, 4.2, 7.0],
+        'ipp_2023': [4.8, 5.5, 4.3, 6.8],
+        'ipv_2023': [5.0, 6.2, 4.5, 7.1],
+        'fase_2023': ['ALFA', 'F1', 'F2', 'F3'],
     })
     
-    engineer = FeatureEngineer()
-    df_features = engineer.engineer_features(df)
+    df_features = make_features(df)
     
-    # Check that features were created
-    assert len(df_features.columns) > len(df.columns)
+    # Check that composite features were created
+    assert 'media_indicadores' in df_features.columns
+    assert 'min_indicador' in df_features.columns
+    assert 'std_indicadores' in df_features.columns
     
-    # Check for expected interaction features
-    assert 'inde_x_presenca' in df_features.columns
-    assert 'ian_x_presenca' in df_features.columns
+    # Check that original columns preserved
+    assert 'ian_2023' in df_features.columns
 
 
 def test_model_evaluation_with_dummy_predictions():
     """Test model evaluation with dummy predictions."""
-    from src.evaluate import ModelEvaluator
+    from src.evaluate import calculate_metrics, select_threshold
     
     # Dummy predictions
     y_true = np.array([0, 1, 1, 0, 1, 0, 1, 1, 0, 0])
     y_pred = np.array([0, 1, 0, 0, 1, 0, 1, 1, 1, 0])
     y_proba = np.array([0.2, 0.8, 0.4, 0.3, 0.9, 0.1, 0.85, 0.95, 0.6, 0.15])
     
-    evaluator = ModelEvaluator()
-    metrics = evaluator.evaluate(y_true, y_pred, y_proba)
+    metrics = calculate_metrics(y_true, y_pred, y_proba)
     
     # Check that key metrics are present
     assert 'recall' in metrics
     assert 'precision' in metrics
     assert 'f1' in metrics
-    assert 'roc_auc' in metrics
     assert 'pr_auc' in metrics
     assert 'confusion_matrix' in metrics
+    
+    # Test threshold selection
+    threshold, th_metrics = select_threshold(y_true, y_proba, objective="max_recall")
+    assert 0 <= threshold <= 1
+    assert 'recall' in th_metrics
 
 
 def test_api_health_endpoint():
@@ -216,23 +229,18 @@ def test_directories_exist():
 
 def test_leakage_detection():
     """Test that leakage detection works."""
-    from src.preprocessing import DataPreprocessor
-    from src.config import Config
+    from src.preprocessing import validate_no_blocked_columns, BLOCKED_COLUMNS
+    import pytest
     
     # Create data with leakage column
     df = pd.DataFrame({
-        'inde_ano_t': [5.0, 6.0],
-        'fase_efetiva_t_mais_1': [1, 2],  # This is in leakage watchlist
-        'em_risco_t_mais_1': [0, 1]
+        'ian_2023': [5.0, 6.0],
+        'em_risco_2024': [0, 1],  # This is a blocked column (target)
     })
     
-    config = Config()
-    preprocessor = DataPreprocessor(config)
-    
-    is_valid, errors = preprocessor.validate_schema(df)
-    
-    assert not is_valid
-    assert any('leakage' in str(error).lower() for error in errors)
+    # Should raise error because em_risco is in blocked columns
+    with pytest.raises(ValueError):
+        validate_no_blocked_columns(df.columns.tolist(), target_year=2024)
 
 
 if __name__ == "__main__":

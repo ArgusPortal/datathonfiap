@@ -1,0 +1,93 @@
+{
+  "created_at": "2026-01-15T16:46:49.473441",
+  "best_model": "baseline1_logistic",
+  "threshold": 0.0011859301774256575,
+  "baselines": {
+    "baseline0_naive": {
+      "recall": 0.0,
+      "precision": 0.0,
+      "f1": 0.0,
+      "f2": 0.0,
+      "confusion_matrix": [
+        [
+          91,
+          0
+        ],
+        [
+          62,
+          0
+        ]
+      ],
+      "true_negatives": 91,
+      "false_positives": 0,
+      "false_negatives": 62,
+      "true_positives": 0,
+      "pr_auc": 0.40522875816993464,
+      "n_samples": 153,
+      "n_positive": 62,
+      "n_negative": 91,
+      "baseline_rate": 0.40522875816993464,
+      "model_name": "baseline0_naive",
+      "threshold": 0.5
+    },
+    "baseline1_logistic": {
+      "recall": 1.0,
+      "precision": 0.40522875816993464,
+      "f1": 0.5767441860465117,
+      "f2": 0.773067331670823,
+      "confusion_matrix": [
+        [
+          0,
+          91
+        ],
+        [
+          0,
+          62
+        ]
+      ],
+      "true_negatives": 0,
+      "false_positives": 91,
+      "false_negatives": 0,
+      "true_positives": 62,
+      "pr_auc": 0.8916346634952326,
+      "n_samples": 153,
+      "n_positive": 62,
+      "n_negative": 91,
+      "baseline_rate": 0.40522875816993464,
+      "model_name": "baseline1_logistic",
+      "threshold": 0.0011859301774256575
+    },
+    "baseline2_rf": {
+      "recall": 1.0,
+      "precision": 0.40522875816993464,
+      "f1": 0.5767441860465117,
+      "f2": 0.773067331670823,
+      "confusion_matrix": [
+        [
+          0,
+          91
+        ],
+        [
+          0,
+          62
+        ]
+      ],
+      "true_negatives": 0,
+      "false_positives": 91,
+      "false_negatives": 0,
+      "true_positives": 62,
+      "pr_auc": 0.8472889568689425,
+      "n_samples": 153,
+      "n_positive": 62,
+      "n_negative": 91,
+      "baseline_rate": 0.40522875816993464,
+      "model_name": "baseline2_rf",
+      "threshold": 0.00019268396479022113
+    }
+  },
+  "notes": [
+    "Recall otimizado como métrica principal",
+    "Threshold selecionado em dados de treino",
+    "Dataset limitado a 2023→2024 (sem backtest multi-ano)"
+  ]
+}
