@@ -52,10 +52,10 @@ docker stop datathon-test && docker rm datathon-test
 # Rodar testes com cobertura
 pytest tests/ --cov=src --cov=app --cov=monitoring --cov-report=term-missing
 
-# Esperado: 200 passed, coverage >= 84%
+# Esperado: 368 passed, coverage >= 80%
 ```
 
-**Evidência**: relatório mostra `TOTAL ... 84%` ou superior.
+**Evidência**: relatório mostra `TOTAL ... 81%` ou superior.
 
 ---
 

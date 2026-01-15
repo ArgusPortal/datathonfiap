@@ -67,13 +67,14 @@ curl -X POST http://localhost:8000/predict \
 ## Bloco 5: Confiabilidade e Operação (3:20–4:30)
 
 **Fala (bullets)**:
-- 200 testes automatizados, cobertura 84%
+- 368 testes automatizados, cobertura 81%
 - Logs estruturados JSON (sem PII)
 - Inference Store: armazena estatísticas agregadas
 - Drift Report: HTML com PSI por feature
 - Runbook de operação para time de dados
+- Security: API Key auth, rate limiting, privacy controls
 
-**Tela 1**: terminal com `pytest --cov` → resultado 200 passed, 84%
+**Tela 1**: terminal com `pytest --cov` → resultado 368 passed, 81%
 
 **Tela 2**: drift_report HTML aberto no browser
 

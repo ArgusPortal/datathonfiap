@@ -1,6 +1,6 @@
 # Predição de Risco de Defasagem Escolar — Passos Mágicos
 
-**Datathon FIAP 2026** | Modelo ML + API + Docker + Monitoramento
+**Datathon FIAP 2026** | Modelo ML + API + Docker + Monitoramento + MLOps + Governança
 
 ---
 
@@ -14,14 +14,16 @@ Pipeline de Machine Learning que:
 - Treina modelo com dados históricos (2022–2023) para predizer risco em t+1
 - Expõe API REST para integração com sistemas da ONG
 - Monitora drift em produção para garantir qualidade contínua
+- Suporta operação contínua com governança e mensuração de impacto
 
 ### Stack
 - **Linguagem**: Python 3.11+
 - **ML**: scikit-learn, pandas, numpy, joblib
 - **API**: FastAPI, uvicorn, pydantic
-- **Testes**: pytest, pytest-cov (84% coverage)
-- **Deploy**: Docker
+- **Testes**: pytest, pytest-cov (81% coverage)
+- **Deploy**: Docker (hardened, non-root)
 - **Monitoramento**: logs JSON, inference store, drift report HTML
+- **Segurança**: API Key auth, rate limiting, privacy controls
 
 ---
 
@@ -131,12 +133,12 @@ curl -X POST http://localhost:8000/predict \
 pytest tests/ --cov=src --cov=app --cov=monitoring --cov-report=term-missing
 ```
 
-**Resultado**: 200 testes, 84% cobertura
+**Resultado**: 368 testes, 81% cobertura
 
 | Métrica | Valor |
 |---------|-------|
-| Testes totais | 200 |
-| Cobertura | 84% |
+| Testes totais | 368 |
+| Cobertura | 81% |
 | Meta mínima | 80% |
 
 ---
@@ -380,6 +382,55 @@ locust -f loadtest/locustfile.py --host http://localhost:8000 \
 - [Model Card](docs/model_card.md) — Documentação completa do modelo
 - [Model Changelog](docs/model_changelog.md) — Histórico de versões
 - [Cost & Scaling](docs/cost_scaling.md) — Sizing e estimativas
+
+---
+
+## 13. Governança e Operação Contínua (Fase 9)
+
+### Papéis e Responsabilidades
+| Papel | Responsabilidades |
+|-------|-------------------|
+| **PO Score** | Decisão de uso, validação thresholds, aprovação de versões |
+| **Owner Técnico** | Pipeline, API, monitoramento, retraining |
+| **Data Steward** | Contrato de dados, qualidade, privacidade |
+| **SRE** | Disponibilidade, incidentes, escalação |
+
+### Matriz de Ação (Score → Intervenção)
+| Faixa | risk_score | Ação | SLA |
+|-------|------------|------|-----|
+| **Alto** | ≥ 0.70 | Tutoria reforçada + Plano individualizado | 7 dias |
+| **Médio** | 0.30–0.69 | Monitoramento + Checkin semanal | 14 dias |
+| **Baixo** | < 0.30 | Acompanhamento padrão | — |
+
+### Feedback Loop
+```
+Score → Intervenção → Desfecho → Retraining
+         ↓                ↓
+   intervention_log  outcomes_log → labels para próximo treino
+```
+
+### KPIs de Impacto
+- **Principal**: Redução de taxa de defasagem (por fase, por pedra)
+- **Processo**: Cobertura de scoring, taxa de intervenção, tempo até ação
+
+### Ritos
+- **Mensal**: Revisão operacional (saúde, drift, KPIs processo)
+- **Trimestral**: Análise de impacto, decisão de retraining, revisão de thresholds
+
+### Templates Disponíveis
+```
+docs/templates/
+├── intervention_log_template.csv   # Registro de intervenções
+├── outcomes_log_template.csv       # Registro de desfechos
+└── monthly_review_agenda.md        # Pauta da reunião mensal
+```
+
+### Documentação Fase 9
+- [Model Governance](docs/model_governance.md) — Papéis, ritos, políticas
+- [KPIs & Baseline](docs/kpis_and_baseline.md) — Métricas de impacto
+- [Action Matrix](docs/action_matrix_and_feedback_loop.md) — Score → ação → feedback
+- [Ops Playbook](docs/ops_playbook.md) — Checklist de saúde e incidentes
+- [Dashboards Spec](docs/dashboards_spec.md) — Especificação de dashboards
 
 ---
 

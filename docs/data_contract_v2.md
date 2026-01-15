@@ -2,6 +2,8 @@
 
 ## Schema de Features (Inferência e Treino)
 
+### Features do Modelo (13 obrigatórias)
+
 | Feature | Tipo | Range | Obrigatório |
 |---------|------|-------|-------------|
 | `fase_2023` | float/int | [0, 8] | Sim |
@@ -14,11 +16,16 @@
 | `ipp_2023` | float | [0, 10] | Sim |
 | `ips_2023` | float | [0, 10] | Sim |
 | `ipv_2023` | float | [0, 10] | Sim |
-| `max_indicador` | float | [0, 10] | Sim |
 | `media_indicadores` | float | [0, 10] | Sim |
 | `min_indicador` | float | [0, 10] | Sim |
-| `range_indicadores` | float | [0, 10] | Sim |
 | `std_indicadores` | float | [0, 5] | Sim |
+
+### Features Opcionais (aceitas mas não usadas pelo modelo)
+
+| Feature | Tipo | Range | Nota |
+|---------|------|-------|------|
+| `max_indicador` | float | [0, 10] | Calculado mas não usado |
+| `range_indicadores` | float | [0, 10] | Calculado mas não usado |
 
 ## Target (apenas treino)
 
@@ -29,13 +36,13 @@
 ## Regras de Validação
 
 ### Inferência
-- Todas as 15 features obrigatórias
-- Features extras: rejeitadas ou ignoradas (config `EXTRA_FEATURE_POLICY`)
+- 13 features obrigatórias
+- Features extras: aceitas (policy configurável via `EXTRA_FEATURE_POLICY`)
 - Missing values: preenchidos com mediana do treino
 - Tipos: convertidos automaticamente para numérico
 
 ### Treino
-- Mesmas 15 features + target
+- Mesmas 13 features + target
 - Bloqueio temporal: dados do ano t não podem usar target do ano t (vazamento)
 - Split: treino em 2023, validação em 2024
 
@@ -46,5 +53,5 @@ Nunca usar em features ou logs:
 
 ## Compatibilidade
 
-- **v1.x**: 15 features conforme lista acima
+- **v1.x**: 13 features conforme lista acima
 - Mudança de schema = nova versão major do modelo

@@ -49,19 +49,19 @@ Predição de risco de defasagem escolar para alunos do programa Passos Mágicos
 
 | Feature | Type | Description |
 |---------|------|-------------|
-| turnover | float | Taxa de rotatividade da turma |
-| headcount | int | Tamanho da turma |
-| nota_exame | float | Nota em avaliações |
-| idade_empresa | int | Anos no programa |
-| idade | int | Idade do aluno |
-| horas_treinamento | float | Horas de atividades |
-| participou_projeto | int | Participação em projetos (0/1) |
-| numero_avaliacoes | int | Quantidade de avaliações |
-| promocoes_ultimos_3_anos | int | Avanços recentes |
-| nivel_senioridade | int | Nível no programa |
-| nivel_escolaridade | int | Série escolar |
-| area_atuacao | int | Área de foco |
-| percentual_meta_batida | float | % de metas atingidas |
+| fase_2023 | int | Fase escolar do aluno (1-9) |
+| iaa_2023 | float | Índice de Autoavaliação |
+| ian_2023 | float | Índice de Adequação ao Nível |
+| ida_2023 | float | Índice de Desenvolvimento Acadêmico |
+| idade_2023 | int | Idade do aluno |
+| ieg_2023 | float | Índice de Engajamento |
+| instituicao_2023 | int | Instituição de ensino (código) |
+| ipp_2023 | float | Índice de Performance Pedagógica |
+| ips_2023 | float | Índice de Performance Social |
+| ipv_2023 | float | Índice de Ponto de Virada |
+| media_indicadores | float | Média dos indicadores educacionais |
+| min_indicador | float | Valor mínimo entre indicadores |
+| std_indicadores | float | Desvio padrão dos indicadores |
 
 ### Data Quality
 
