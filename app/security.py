@@ -24,7 +24,7 @@ MAX_BODY_BYTES = int(os.getenv("MAX_BODY_BYTES", "262144"))  # 256KB
 REQUEST_TIMEOUT_MS = int(os.getenv("REQUEST_TIMEOUT_MS", "3000"))
 
 # Public endpoints (no auth required)
-PUBLIC_ENDPOINTS: Set[str] = {"/health", "/docs", "/openapi.json", "/redoc"}
+PUBLIC_ENDPOINTS: Set[str] = {"/health", "/ready", "/metadata", "/docs", "/openapi.json", "/redoc"}
 
 
 def _parse_api_keys() -> Set[str]:
