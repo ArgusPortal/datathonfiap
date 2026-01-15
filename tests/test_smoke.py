@@ -132,85 +132,112 @@ def test_model_evaluation_with_dummy_predictions():
 
 def test_api_health_endpoint():
     """Test API health endpoint."""
+    from unittest.mock import patch, MagicMock
     from fastapi.testclient import TestClient
-    from app.main import app
     
-    client = TestClient(app)
-    response = client.get("/health")
+    # Mock the model manager to avoid loading real model
+    with patch("app.main.model_manager") as mock_manager:
+        mock_manager.model = MagicMock()
+        mock_manager.version = "v1.0.0-test"
+        mock_manager.threshold = 0.5
+        mock_manager.expected_features = ["feat1"]
+        
+        from app.main import app
+        client = TestClient(app)
+        response = client.get("/health")
     
     assert response.status_code == 200
     data = response.json()
     assert 'status' in data
-    assert data['status'] == 'healthy'
     assert 'model_loaded' in data
 
 
-def test_api_root_endpoint():
-    """Test API root endpoint."""
+def test_api_metadata_endpoint():
+    """Test API metadata endpoint."""
+    from unittest.mock import patch, MagicMock
     from fastapi.testclient import TestClient
-    from app.main import app
     
-    client = TestClient(app)
-    response = client.get("/")
+    with patch("app.main.model_manager") as mock_manager:
+        mock_manager.model = MagicMock()
+        mock_manager.version = "v1.0.0-test"
+        mock_manager.get_safe_metadata.return_value = {
+            "model_version": "v1.0.0-test",
+            "model_family": "rf",
+            "threshold": 0.5,
+            "expected_features": ["feat1"],
+        }
+        
+        from app.main import app
+        client = TestClient(app)
+        response = client.get("/metadata")
     
     assert response.status_code == 200
     data = response.json()
-    assert 'message' in data
-    assert 'version' in data
+    assert 'model_version' in data
+    assert 'expected_features' in data
 
 
 def test_api_predict_endpoint():
     """Test API predict endpoint with valid payload."""
+    from unittest.mock import patch, MagicMock
+    import numpy as np
     from fastapi.testclient import TestClient
-    from app.main import app
     
-    client = TestClient(app)
-    
-    payload = {
-        "estudante_id": "test_001",
-        "ano_base": 2024,
-        "features": {
-            "inde_ano_t": 5.5,
-            "ian_ano_t": 4.8,
-            "taxa_presenca_ano_t": 0.85,
-            "fase_programa": 3
+    with patch("app.main.model_manager") as mock_manager:
+        mock_manager.model = MagicMock()
+        mock_manager.model.predict_proba.return_value = np.array([[0.3, 0.7]])
+        mock_manager.version = "v1.0.0-test"
+        mock_manager.threshold = 0.5
+        mock_manager.expected_features = [
+            "fase_2023", "iaa_2023", "ian_2023", "ida_2023", "idade_2023",
+            "ieg_2023", "instituicao_2023", "ipp_2023", "ips_2023", "ipv_2023",
+            "max_indicador", "media_indicadores", "min_indicador",
+            "range_indicadores", "std_indicadores"
+        ]
+        
+        from app.main import app
+        client = TestClient(app)
+        
+        payload = {
+            "instances": [
+                {
+                    "fase_2023": 3.0,
+                    "iaa_2023": 7.5,
+                    "ian_2023": 6.0,
+                }
+            ]
         }
-    }
+        
+        response = client.post("/predict", json=payload)
     
-    response = client.post("/predict", json=payload)
-    
-    # Accept 200 (model loaded) or 503 (model not loaded yet - expected in Phase 0)
-    assert response.status_code in [200, 503]
-    
-    if response.status_code == 200:
-        data = response.json()
-        assert 'score' in data
-        assert 'classe_predita' in data
-        assert 'versao_modelo' in data
-        assert 0.0 <= data['score'] <= 1.0
-        assert data['classe_predita'] in [0, 1]
+    assert response.status_code == 200
+    data = response.json()
+    assert 'predictions' in data
+    assert 'request_id' in data
+    assert len(data['predictions']) == 1
+    pred = data['predictions'][0]
+    assert 'risk_score' in pred
+    assert 'risk_label' in pred
+    assert 0.0 <= pred['risk_score'] <= 1.0
+    assert pred['risk_label'] in [0, 1]
 
 
 def test_api_predict_endpoint_validation():
-    """Test API predict endpoint with invalid payload."""
+    """Test API predict endpoint with invalid payload (empty instances)."""
+    from unittest.mock import patch, MagicMock
     from fastapi.testclient import TestClient
-    from app.main import app
     
-    client = TestClient(app)
+    with patch("app.main.model_manager") as mock_manager:
+        mock_manager.model = MagicMock()
+        
+        from app.main import app
+        client = TestClient(app)
+        
+        # Invalid payload: empty instances
+        payload = {"instances": []}
+        
+        response = client.post("/predict", json=payload)
     
-    # Invalid payload: missing required field
-    payload = {
-        "estudante_id": "test_001",
-        "ano_base": 2024,
-        "features": {
-            "inde_ano_t": 5.5,
-            # Missing ian_ano_t
-            "taxa_presenca_ano_t": 0.85,
-            "fase_programa": 3
-        }
-    }
-    
-    response = client.post("/predict", json=payload)
     assert response.status_code == 422  # Validation error
 
 

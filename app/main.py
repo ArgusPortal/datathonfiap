@@ -1,229 +1,255 @@
 """
-FastAPI application for school dropout risk prediction.
-
-Endpoints:
-    - POST /predict: predict dropout risk for a student
-    - GET /health: health check
+API FastAPI para predição de risco de defasagem escolar.
+Passos Mágicos - Datathon FIAP 2025
 """
 
-import logging
-from datetime import datetime
-from pathlib import Path
-from typing import Dict, Any
+import time
+from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field, field_validator
-import joblib
+import numpy as np
+import pandas as pd
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+from app.config import (
+    APP_NAME,
+    EXTRA_FEATURE_POLICY,
+    LOG_LEVEL,
+    METADATA_PATH,
+    MODEL_PATH,
+    PORT,
+    SIGNATURE_PATH,
 )
-logger = logging.getLogger(__name__)
-
-# Initialize FastAPI app
-app = FastAPI(
-    title="Datathon FIAP - Dropout Risk Prediction API",
-    description="API for predicting school dropout risk for Passos Mágicos students",
-    version="0.1.0",
+from app.drift_store import drift_store
+from app.logging_config import RequestLogger, generate_request_id, setup_logging
+from app.model_loader import ModelManager
+from app.schema import (
+    ErrorResponse,
+    HealthResponse,
+    MetadataResponse,
+    PredictionResult,
+    PredictRequest,
+    PredictResponse,
+    validate_batch_features,
 )
 
-# Model loading (placeholder - will load real model in later phases)
-MODEL_PATH = Path(__file__).parent / "model" / "model.pkl"
-MODEL_METADATA_PATH = Path(__file__).parent / "model" / "model_metadata.json"
+# Setup logging
+logger = setup_logging(LOG_LEVEL)
 
-# Global model holder
-_model = None
-_model_version = "v0.1.0-placeholder"
+# Model manager global
+model_manager = ModelManager()
+
+# Track startup time
+_startup_time: float = 0.0
 
 
-def load_model():
-    """Load trained model. Falls back to dummy model if not found."""
-    global _model, _model_version
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifecycle manager para carregar modelo no startup."""
+    global _startup_time
+    _startup_time = time.time()
     
+    logger.info("Iniciando aplicação...")
+    
+    # Carrega modelo
     try:
-        if MODEL_PATH.exists():
-            _model = joblib.load(MODEL_PATH)
-            logger.info(f"Model loaded from {MODEL_PATH}")
-        else:
-            logger.warning(f"Model file not found at {MODEL_PATH}. Using dummy predictor.")
-            _model = DummyModel()
-            
-        # Load metadata if exists
-        if MODEL_METADATA_PATH.exists():
-            import json
-            with open(MODEL_METADATA_PATH, 'r') as f:
-                metadata = json.load(f)
-                _model_version = metadata.get('version', _model_version)
-                
+        model_manager.load(MODEL_PATH, METADATA_PATH, SIGNATURE_PATH)
+        logger.info(
+            f"Modelo carregado com sucesso",
+            extra={
+                "model_version": model_manager.version,
+                "threshold": model_manager.threshold,
+                "n_features": len(model_manager.expected_features),
+            }
+        )
     except Exception as e:
-        logger.error(f"Error loading model: {e}")
-        _model = DummyModel()
-
-
-class DummyModel:
-    """Placeholder model for development phase."""
+        logger.error(f"Falha ao carregar modelo: {e}")
+        raise
     
-    def predict_proba(self, X):
-        """Returns dummy probabilities."""
-        import numpy as np
-        n = len(X) if isinstance(X, list) else 1
-        # Return dummy probabilities [P(class=0), P(class=1)]
-        return np.array([[0.4, 0.6]] * n)
-
-
-# Load model on startup
-@app.on_event("startup")
-async def startup_event():
-    load_model()
-    logger.info("API startup complete")
-
-
-# Request/Response models
-class StudentFeatures(BaseModel):
-    """Features for a single student at year t."""
+    yield
     
-    inde_ano_t: float = Field(..., description="INDE score for year t")
-    ian_ano_t: float = Field(..., description="IAN score for year t")
-    taxa_presenca_ano_t: float = Field(..., ge=0.0, le=1.0, description="Attendance rate [0-1]")
-    fase_programa: int = Field(..., ge=0, le=7, description="Program phase [0-7]")
-    # Add more features as defined in data contract
+    logger.info("Encerrando aplicação...")
+
+
+# Cria app FastAPI
+app = FastAPI(
+    title=APP_NAME,
+    description="API para predição de risco de defasagem escolar - Passos Mágicos",
+    version="1.0.0",
+    lifespan=lifespan,
+)
+
+
+@app.middleware("http")
+async def logging_middleware(request: Request, call_next):
+    """Middleware para logging estruturado de requests."""
+    request_id = generate_request_id()
+    request.state.request_id = request_id
+    request.state.logger = RequestLogger(request_id)
     
-    @field_validator('inde_ano_t', 'ian_ano_t')
-    @classmethod
-    def validate_scores(cls, v):
-        if v < 0:
-            raise ValueError('Score must be non-negative')
-        return v
-
-
-class PredictRequest(BaseModel):
-    """Request schema for /predict endpoint."""
+    # Log início do request
+    request.state.logger.log_request_start(
+        method=request.method,
+        path=request.url.path,
+    )
     
-    estudante_id: str = Field(..., description="Student identifier (not used for prediction)")
-    ano_base: int = Field(..., description="Base year (t)")
-    features: StudentFeatures
-    
-    @field_validator('ano_base')
-    @classmethod
-    def validate_year(cls, v):
-        if v < 2022 or v > 2030:
-            raise ValueError('Year must be between 2022 and 2030')
-        return v
+    # Processa request
+    start_time = time.time()
+    try:
+        response = await call_next(request)
+        latency_ms = (time.time() - start_time) * 1000
+        
+        # Log fim do request
+        request.state.logger.log_request_end(
+            status_code=response.status_code,
+            latency_ms=latency_ms,
+        )
+        
+        # Adiciona request_id no header
+        response.headers["X-Request-ID"] = request_id
+        
+        return response
+        
+    except Exception as e:
+        latency_ms = (time.time() - start_time) * 1000
+        request.state.logger.log_error(str(e), latency_ms=latency_ms)
+        raise
 
 
-class PredictResponse(BaseModel):
-    """Response schema for /predict endpoint."""
-    
-    score: float = Field(..., ge=0.0, le=1.0, description="Risk score [0-1]")
-    classe_predita: int = Field(..., description="Predicted class (0=not at risk, 1=at risk)")
-    threshold: float = Field(default=0.5, description="Classification threshold")
-    versao_modelo: str = Field(..., description="Model version")
-    timestamp: str = Field(..., description="Prediction timestamp (ISO format)")
-
-
-class HealthResponse(BaseModel):
-    """Response schema for /health endpoint."""
-    
-    status: str
-    model_loaded: bool
-    version: str
-
-
-# Endpoints
-@app.get("/", tags=["root"])
-async def root():
-    """Root endpoint."""
-    return {
-        "message": "Datathon FIAP - Dropout Risk Prediction API",
-        "version": "0.1.0",
-        "docs": "/docs",
-        "health": "/health"
-    }
-
-
-@app.get("/health", response_model=HealthResponse, tags=["health"])
+@app.get("/health", response_model=HealthResponse, tags=["Health"])
 async def health_check():
-    """Health check endpoint."""
+    """
+    Health check do serviço.
+    Retorna status do modelo e uptime.
+    """
+    uptime = time.time() - _startup_time
+    
     return HealthResponse(
-        status="healthy",
-        model_loaded=_model is not None,
-        version=_model_version
+        status="healthy" if model_manager.model is not None else "degraded",
+        model_loaded=model_manager.model is not None,
+        model_version=model_manager.version,
+        uptime_seconds=round(uptime, 2),
     )
 
 
-@app.post("/predict", response_model=PredictResponse, tags=["prediction"])
-async def predict_dropout_risk(request: PredictRequest):
+@app.get("/metadata", response_model=MetadataResponse, tags=["Model"])
+async def get_metadata():
     """
-    Predict dropout risk for a student.
+    Retorna metadata do modelo carregado.
+    """
+    if model_manager.model is None:
+        raise HTTPException(status_code=503, detail="Modelo não carregado")
     
-    Args:
-        request: Student features and metadata
-        
-    Returns:
-        PredictResponse with risk score and predicted class
-        
-    Raises:
-        HTTPException: If model is not loaded or prediction fails
+    safe_metadata = model_manager.get_safe_metadata()
+    
+    return MetadataResponse(
+        model_version=safe_metadata.get("model_version", "unknown"),
+        model_family=safe_metadata.get("model_family", "unknown"),
+        threshold=safe_metadata.get("threshold", 0.5),
+        expected_features=safe_metadata.get("expected_features", []),
+        calibration=safe_metadata.get("calibration"),
+        created_at=safe_metadata.get("created_at"),
+    )
+
+
+@app.post("/predict", response_model=PredictResponse, tags=["Prediction"])
+async def predict(request: Request, payload: PredictRequest):
     """
-    if _model is None:
-        raise HTTPException(status_code=503, detail="Model not loaded")
+    Realiza predição de risco de defasagem.
+    
+    Aceita batch de instâncias (até 1000).
+    Retorna score de risco (0-1) e label binário (0/1).
+    """
+    request_id = getattr(request.state, "request_id", generate_request_id())
+    start_time = time.time()
+    
+    if model_manager.model is None:
+        raise HTTPException(status_code=503, detail="Modelo não carregado")
     
     try:
-        # Extract features (in production, this would match training feature order)
-        features_dict = request.features.model_dump()
-        
-        # For dummy model, convert to list format (in production, use proper feature vector)
-        # This is a placeholder - real implementation would use feature engineering pipeline
-        X = [[
-            features_dict['inde_ano_t'],
-            features_dict['ian_ano_t'],
-            features_dict['taxa_presenca_ano_t'],
-            features_dict['fase_programa']
-        ]]
-        
-        # Get prediction
-        proba = _model.predict_proba(X)
-        score = float(proba[0][1])  # Probability of class 1 (at risk)
-        
-        # Apply threshold
-        threshold = 0.5
-        classe_predita = 1 if score >= threshold else 0
-        
-        # Log prediction (in production, log to structured logging system)
-        logger.info(
-            f"Prediction: student={request.estudante_id}, "
-            f"year={request.ano_base}, score={score:.3f}, class={classe_predita}"
+        # Valida features
+        validated_instances = validate_batch_features(
+            payload.instances,
+            model_manager.expected_features,
+            EXTRA_FEATURE_POLICY,
         )
+        
+        # Converte para DataFrame
+        df = pd.DataFrame(validated_instances)
+        
+        # Predição de probabilidades
+        probas = model_manager.model.predict_proba(df)[:, 1]
+        
+        # Aplica threshold
+        threshold = model_manager.threshold
+        labels = (probas >= threshold).astype(int)
+        
+        # Monta resultados
+        predictions = []
+        for score, label in zip(probas, labels):
+            predictions.append(
+                PredictionResult(
+                    risk_score=round(float(score), 6),
+                    risk_label=int(label),
+                    model_version=model_manager.version,
+                )
+            )
+        
+        processing_time = (time.time() - start_time) * 1000
+        
+        # Log drift stats (assíncrono, não bloqueia)
+        try:
+            drift_store.log_event(
+                request_id=request_id,
+                model_version=model_manager.version,
+                instances=payload.instances,
+                predictions=[p.model_dump() for p in predictions],
+            )
+        except Exception as e:
+            logger.warning(f"Falha ao logar drift: {e}")
         
         return PredictResponse(
-            score=score,
-            classe_predita=classe_predita,
-            threshold=threshold,
-            versao_modelo=_model_version,
-            timestamp=datetime.utcnow().isoformat() + "Z"
+            predictions=predictions,
+            request_id=request_id,
+            processing_time_ms=round(processing_time, 2),
         )
         
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
     except Exception as e:
-        logger.error(f"Prediction error: {e}")
-        raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
+        logger.error(f"Erro na predição: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Erro interno na predição")
 
 
-@app.get("/model/info", tags=["model"])
-async def get_model_info():
-    """Get information about the loaded model."""
-    if _model is None:
-        raise HTTPException(status_code=503, detail="Model not loaded")
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    """Handler customizado para HTTPException."""
+    request_id = getattr(request.state, "request_id", None)
     
-    return {
-        "version": _model_version,
-        "type": type(_model).__name__,
-        "is_dummy": isinstance(_model, DummyModel),
-        "metadata_path": str(MODEL_METADATA_PATH) if MODEL_METADATA_PATH.exists() else None
-    }
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=ErrorResponse(
+            detail=exc.detail,
+            request_id=request_id,
+        ).model_dump(),
+    )
+
+
+@app.exception_handler(Exception)
+async def general_exception_handler(request: Request, exc: Exception):
+    """Handler para exceções não tratadas."""
+    request_id = getattr(request.state, "request_id", None)
+    logger.error(f"Exceção não tratada: {exc}", exc_info=True)
+    
+    return JSONResponse(
+        status_code=500,
+        content=ErrorResponse(
+            detail="Erro interno do servidor",
+            request_id=request_id,
+        ).model_dump(),
+    )
 
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=PORT)
