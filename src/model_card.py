@@ -46,7 +46,9 @@ def build_model_card(
     ranking = comparison.get("ranking", [])
     ranking_str = "\n".join(
         [
-            f"| {r.get('rank',i+1)} | {r.get('model','')} | {r.get('recall',0):.3f} | {r.get('precision',0):.3f} | {r.get('pr_auc',0):.3f} |"
+            f"| {r.get('rank', i+1)} | {r.get('model', '')} "
+            f"| {r.get('recall', 0):.3f} | {r.get('precision', 0):.3f} "
+            f"| {r.get('pr_auc', 0):.3f} |"
             for i, r in enumerate(ranking[:5])
         ]
     )

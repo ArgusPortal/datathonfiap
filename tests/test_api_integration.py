@@ -2,9 +2,6 @@
 Testes de integração para a API FastAPI.
 """
 
-import json
-import tempfile
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import numpy as np
@@ -298,7 +295,7 @@ class TestErrorHandling:
     def test_error_response_includes_request_id(self, test_client):
         """Erro deve incluir request_id."""
         response = test_client.post("/predict", json={"instances": []})
-        data = response.json()
+        response.json()
 
         # Erro de validação pode não ter request_id no body
         # mas deve ter no header

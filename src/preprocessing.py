@@ -3,7 +3,7 @@ Preprocessing: construção de ColumnTransformer para pipeline sklearn.
 """
 
 import logging
-from typing import Tuple, Optional, List
+from typing import Tuple, List
 import pandas as pd
 import numpy as np
 from sklearn.compose import ColumnTransformer
@@ -80,7 +80,7 @@ def validate_no_blocked_columns(columns: List[str], target_year: int = 2024) -> 
 
     if violations:
         raise ValueError(
-            f"LEAKAGE DETECTADO! Colunas bloqueadas:\n"
+            "LEAKAGE DETECTADO! Colunas bloqueadas:\n"
             + "\n".join(f"  - {v}" for v in violations)
         )
 

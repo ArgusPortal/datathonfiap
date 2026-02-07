@@ -10,13 +10,12 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from preprocessing import (
+from preprocessing import (  # noqa: E402
     build_preprocessor,
     identify_column_types,
     validate_no_blocked_columns,
     prepare_features,
     convert_mixed_types,
-    BLOCKED_COLUMNS,
 )
 
 

@@ -2,7 +2,6 @@
 Testes para make_dataset.py - Pipeline de criação do dataset de modelagem.
 """
 
-import pytest
 import pandas as pd
 import numpy as np
 from pathlib import Path
@@ -10,7 +9,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from make_dataset import (
+from make_dataset import (  # noqa: E402
     normalize_column_name,
     remove_accents,
     fix_excel_date_as_number,

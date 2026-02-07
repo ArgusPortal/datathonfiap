@@ -4,9 +4,8 @@ Testes para src/retrain.py - Pipeline de Retraining.
 
 import json
 import pytest
-import tempfile
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 import sys
 
 sys.path.insert(0, str(Path(__file__).parent.parent))

@@ -7,11 +7,11 @@ import json
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import numpy as np
 
-from app.config import DRIFT_LOG_PATH, DRIFT_STORE
+from app.config import DRIFT_LOG_PATH
 
 logger = logging.getLogger("api")
 
@@ -30,7 +30,7 @@ def compute_feature_stats(features: Dict[str, Any]) -> Dict[str, Any]:
         "n_features": len(features),
         "missing_features": [],
         "numeric_summary": {},
-    }
+    }  # type: Dict[str, Any]
 
     for key, value in features.items():
         # Identifica missing
@@ -77,7 +77,7 @@ def aggregate_batch_stats(instances: List[Dict[str, Any]]) -> Dict[str, Any]:
             feature_bins[feat][bin_label] += 1
 
     # Conta missing por feature
-    missing_counts = {}
+    missing_counts: Dict[str, int] = {}
     for feat in all_missing:
         missing_counts[feat] = missing_counts.get(feat, 0) + 1
 
@@ -155,7 +155,7 @@ class DriftStore:
 
     def read_events(self, limit: int = 100) -> List[Dict[str, Any]]:
         """Lê últimos eventos do log."""
-        events = []
+        events: List[Dict[str, Any]] = []
         if not self.log_path.exists():
             return events
 

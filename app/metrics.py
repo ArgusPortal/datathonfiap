@@ -217,16 +217,16 @@ class MetricsStore:
         summary = self.get_summary()
 
         # Requests
-        lines.append(f"# HELP api_requests_total Total number of requests")
-        lines.append(f"# TYPE api_requests_total counter")
+        lines.append("# HELP api_requests_total Total number of requests")
+        lines.append("# TYPE api_requests_total counter")
         lines.append(f'api_requests_total {summary["requests"]["total"]}')
 
-        lines.append(f"# HELP api_requests_success_total Successful requests")
-        lines.append(f"# TYPE api_requests_success_total counter")
+        lines.append("# HELP api_requests_success_total Successful requests")
+        lines.append("# TYPE api_requests_success_total counter")
         lines.append(f'api_requests_success_total {summary["requests"]["success"]}')
 
-        lines.append(f"# HELP api_requests_error_total Failed requests")
-        lines.append(f"# TYPE api_requests_error_total counter")
+        lines.append("# HELP api_requests_error_total Failed requests")
+        lines.append("# TYPE api_requests_error_total counter")
         lines.append(f'api_requests_error_total {summary["requests"]["error"]}')
 
         # Latency
@@ -238,23 +238,23 @@ class MetricsStore:
                 lines.append(f"api_latency_ms_{pct} {val:.2f}")
 
         # Predictions
-        lines.append(f"# HELP api_predictions_total Total predictions")
-        lines.append(f"# TYPE api_predictions_total counter")
+        lines.append("# HELP api_predictions_total Total predictions")
+        lines.append("# TYPE api_predictions_total counter")
         lines.append(f'api_predictions_total {summary["predictions"]["total"]}')
 
         # Model info
-        lines.append(f"# HELP api_model_info Model information")
-        lines.append(f"# TYPE api_model_info gauge")
+        lines.append("# HELP api_model_info Model information")
+        lines.append("# TYPE api_model_info gauge")
         lines.append(f'api_model_info{{version="{summary["model"]["version"]}"}} 1')
 
         # Uptime
-        lines.append(f"# HELP api_uptime_seconds API uptime")
-        lines.append(f"# TYPE api_uptime_seconds gauge")
+        lines.append("# HELP api_uptime_seconds API uptime")
+        lines.append("# TYPE api_uptime_seconds gauge")
         lines.append(f'api_uptime_seconds {summary["uptime_seconds"]}')
 
         # SLO
-        lines.append(f"# HELP api_slo_healthy SLO compliance (1=healthy, 0=unhealthy)")
-        lines.append(f"# TYPE api_slo_healthy gauge")
+        lines.append("# HELP api_slo_healthy SLO compliance (1=healthy, 0=unhealthy)")
+        lines.append("# TYPE api_slo_healthy gauge")
         lines.append(f'api_slo_healthy {1 if summary["slo"]["overall_healthy"] else 0}')
 
         return "\n".join(lines)

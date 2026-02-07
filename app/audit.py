@@ -6,7 +6,6 @@ Fase 8: Hardening de Produção.
 import hashlib
 import json
 import logging
-import os
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
@@ -180,7 +179,7 @@ class AuditTrail:
 
     def get_summary(self) -> Dict:
         """Get audit summary."""
-        actions = {}
+        actions: Dict[str, int] = {}
         for r in self._records:
             action = r["action"]
             actions[action] = actions.get(action, 0) + 1
@@ -246,7 +245,7 @@ class ModelLineage:
             },
         }
 
-    def verify_integrity(self) -> Dict[str, bool]:
+    def verify_integrity(self) -> Dict[str, Any]:
         """Verify model artifact integrity against stored hashes."""
         if not self.model_path or not self.artifact_hashes:
             return {"verified": False, "reason": "no_hashes"}

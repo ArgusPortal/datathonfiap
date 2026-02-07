@@ -3,8 +3,6 @@ Tests for Phase 8 Retention Script.
 """
 
 import json
-import os
-import pytest
 import tempfile
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -13,7 +11,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from monitoring.retention import (
+from monitoring.retention import (  # noqa: E402
     get_cutoff_date,
     filter_jsonl_file,
     cleanup_old_logs,

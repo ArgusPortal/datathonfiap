@@ -121,7 +121,7 @@ def sanitize_dict_for_logging(
     Returns:
         Sanitized dictionary safe for logging
     """
-    result = {}
+    result: Dict[str, Any] = {}
 
     for key, value in data.items():
         key_lower = key.lower()
@@ -161,7 +161,7 @@ def aggregate_features(features: Dict[str, Any]) -> Dict[str, Any]:
     Extract only aggregate-safe features for metrics/logging.
     No individual-identifying information retained.
     """
-    safe_data = {}
+    safe_data: Dict[str, Any] = {}
 
     for key, value in features.items():
         key_lower = key.lower()
@@ -189,7 +189,7 @@ class PrivacyContext:
 
     def __init__(self, context_name: str = "default"):
         self.context_name = context_name
-        self._original_data = None
+        self._original_data: Optional[Dict[str, Any]] = None
 
     def sanitize_request(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Sanitize incoming request data."""

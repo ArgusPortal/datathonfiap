@@ -3,8 +3,6 @@ Testes unitários para módulo drift_store.
 """
 
 import json
-import tempfile
-from pathlib import Path
 
 import numpy as np
 import pytest

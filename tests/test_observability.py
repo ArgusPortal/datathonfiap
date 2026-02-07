@@ -1,8 +1,5 @@
 """Tests for observability module."""
 
-import pytest
-from datetime import datetime, timezone
-
 
 class TestSafeSummarizeInputs:
     """Tests for input summarization."""

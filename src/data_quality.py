@@ -345,7 +345,7 @@ class DataQualityChecker:
         if not self.results:
             return "Nenhuma verificação executada."
 
-        lines = [f"=== Data Quality Report ==="]
+        lines = ["=== Data Quality Report ==="]
         if self.year:
             lines.append(f"Ano: {self.year}")
         lines.append(f"Registros: {len(self.df)}")
@@ -434,7 +434,7 @@ def validate_modeling_dataset(
 
 if __name__ == "__main__":
     # Exemplo de uso
-    import sys
+    pass
 
     print("Data Quality Checker - Passos Mágicos")
     print("=" * 40)

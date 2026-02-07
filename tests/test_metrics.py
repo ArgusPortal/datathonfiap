@@ -2,8 +2,6 @@
 Tests for Phase 8 Metrics Module.
 """
 
-import pytest
-import time
 
 from app.metrics import (
     MetricBucket,

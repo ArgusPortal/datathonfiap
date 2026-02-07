@@ -13,7 +13,7 @@ import sys
 # Adiciona src ao path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from data_quality import DataQualityChecker, QualityCheckResult
+from data_quality import DataQualityChecker  # noqa: E402
 
 
 class TestDataQualityChecker:

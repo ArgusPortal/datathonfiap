@@ -3,7 +3,7 @@ Feature Engineering: seleção e criação de features para modelagem.
 """
 
 import logging
-from typing import List, Optional, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple
 import pandas as pd
 import numpy as np
 
@@ -321,7 +321,7 @@ def create_interaction_features(df: pd.DataFrame) -> pd.DataFrame:
             if "fase" in c.lower() and pd.api.types.is_numeric_dtype(df[c])
         ]
         for fase_col in fase_cols:
-            df[f"fase_x_media"] = df[fase_col] * df["media_indicadores"]
+            df["fase_x_media"] = df[fase_col] * df["media_indicadores"]
 
     return df
 

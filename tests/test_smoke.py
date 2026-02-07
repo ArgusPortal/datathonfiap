@@ -3,7 +3,6 @@
 import pytest
 import numpy as np
 import pandas as pd
-from pathlib import Path
 
 
 def test_config_imports():
@@ -101,7 +100,7 @@ def test_preprocessing_basic_functionality():
 
 def test_feature_engineering_basic_functionality():
     """Test basic feature engineering functionality with dummy data."""
-    from src.feature_engineering import make_features, create_risk_composites
+    from src.feature_engineering import make_features
 
     # Create dummy data
     df = pd.DataFrame(
@@ -293,7 +292,7 @@ def test_directories_exist():
 
 def test_leakage_detection():
     """Test that leakage detection works."""
-    from src.preprocessing import validate_no_blocked_columns, BLOCKED_COLUMNS
+    from src.preprocessing import validate_no_blocked_columns
     import pytest
 
     # Create data with leakage column

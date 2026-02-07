@@ -7,8 +7,7 @@ Uso:
 """
 
 import logging
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -61,8 +60,6 @@ TARGET_COL = "em_risco_2024"
 
 class SchemaValidationError(ValueError):
     """Erro de validação de schema."""
-
-    pass
 
 
 def get_expected_features(signature: Optional[Dict[str, Any]] = None) -> List[str]:

@@ -5,9 +5,8 @@ Testes para src/registry.py - Model Registry.
 import json
 import pytest
 import tempfile
-import shutil
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 # Importar após setup para evitar side effects
 import sys

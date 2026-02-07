@@ -6,7 +6,6 @@ import pytest
 
 from app.schema import (
     PredictRequest,
-    PredictResponse,
     PredictionResult,
     StudentFeatures,
     validate_batch_features,

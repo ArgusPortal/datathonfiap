@@ -9,19 +9,18 @@ import argparse
 import json
 import logging
 import sys
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Any, Optional, Tuple
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.registry import (
+from src.registry import (  # noqa: E402
     register_model,
     promote_champion,
     get_champion_version,
     resolve_champion_path,
 )
-from src.schema_validation import validate_training_data
+from src.schema_validation import validate_training_data  # noqa: E402
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"

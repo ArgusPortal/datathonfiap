@@ -2,9 +2,9 @@
 Schemas Pydantic para validação de requests e responses da API.
 """
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, ConfigDict, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 
 from app.config import EXTRA_FEATURE_POLICY
 

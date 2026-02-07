@@ -2,7 +2,6 @@
 Tests for Phase 8 Privacy Module.
 """
 
-import pytest
 
 from app.privacy import (
     hash_identifier,

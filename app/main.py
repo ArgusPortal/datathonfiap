@@ -40,7 +40,7 @@ from app.schema import (
 )
 
 # Phase 8: Security, Metrics, Audit, Privacy
-from app.security import SecurityMiddleware, rate_limiter
+from app.security import SecurityMiddleware
 from app.metrics import metrics
 from app.audit import (
     audit_trail,
@@ -48,7 +48,6 @@ from app.audit import (
     create_inference_audit_record,
     hash_dict,
 )
-from app.privacy import sanitize_dict_for_logging, aggregate_features
 
 # Base directory
 BASE_DIR = Path(__file__).parent.parent
@@ -93,7 +92,7 @@ async def lifespan(app: FastAPI):
     try:
         model_manager.load(MODEL_PATH, METADATA_PATH, SIGNATURE_PATH)
         logger.info(
-            f"Modelo carregado com sucesso",
+            "Modelo carregado com sucesso",
             extra={
                 "model_version": model_manager.version,
                 "threshold": model_manager.threshold,
@@ -277,7 +276,7 @@ async def predict(request: Request, payload: PredictRequest):
 
     request_id = getattr(request.state, "request_id", generate_request_id())
     start_time = time.time()
-    warnings_list = []
+    warnings_list: list[str] = []
 
     if model_manager.model is None:
         raise HTTPException(status_code=503, detail="Modelo não carregado")

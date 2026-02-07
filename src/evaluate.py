@@ -3,7 +3,7 @@ Evaluate: métricas, calibração e seleção de threshold.
 """
 
 import logging
-from typing import Dict, Any, Optional, Tuple, List
+from typing import Dict, Any, Optional, Tuple
 import numpy as np
 import pandas as pd
 from sklearn.metrics import (

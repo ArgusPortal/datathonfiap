@@ -20,29 +20,26 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import (
     RandomForestClassifier,
     HistGradientBoostingClassifier,
-    GradientBoostingClassifier,
 )
 from sklearn.dummy import DummyClassifier
-from sklearn.model_selection import train_test_split, GroupKFold, StratifiedKFold
+from sklearn.model_selection import train_test_split
 from sklearn.calibration import CalibratedClassifierCV
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from src.preprocessing import (
+from src.preprocessing import (  # noqa: E402
     build_preprocessor,
     prepare_features,
     convert_mixed_types,
 )
-from src.feature_engineering import make_features, get_feature_list
-from src.evaluate import (
-    calculate_metrics,
-    select_threshold,
+from src.feature_engineering import make_features  # noqa: E402
+from src.evaluate import (  # noqa: E402
     select_threshold_with_constraints,
     evaluate_predictions,
     compare_models,
     generate_model_comparison_report,
     calculate_calibration_metrics,
 )
-from src.utils import load_dataset, save_json, set_seed, get_logger
+from src.utils import load_dataset, save_json, set_seed, get_logger  # noqa: E402
 
 # Configuração
 SEED = 42
@@ -243,7 +240,7 @@ def train_and_evaluate_v1(
             y_pred_test,
             y_proba_test,
             model_name=name,
-            include_calibration=(calibration and calibration != "none"),
+            include_calibration=bool(calibration and calibration != "none"),
         )
         test_metrics["threshold"] = threshold
         results_test[name] = test_metrics

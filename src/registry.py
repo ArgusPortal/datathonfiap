@@ -13,7 +13,6 @@ import hashlib
 import json
 import logging
 import shutil
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Any
@@ -308,7 +307,7 @@ def rollback_to(version: str, registry_dir: Path, reason: str = "") -> None:
 def list_versions(registry_dir: Path) -> List[Dict[str, Any]]:
     """Lista todas as versões no registry."""
     registry_dir = Path(registry_dir)
-    versions = []
+    versions: List[Dict[str, Any]] = []
 
     if not registry_dir.exists():
         return versions

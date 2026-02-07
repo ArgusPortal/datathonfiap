@@ -3,12 +3,11 @@ Observability module for structured request logging.
 Provides helpers for logging inference requests with full context.
 """
 
-import json
 import logging
 import time
 from datetime import datetime, timezone
 from functools import wraps
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List
 
 import numpy as np
 

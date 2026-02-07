@@ -2,12 +2,11 @@
 Testes para monitoring/performance_drift.py.
 """
 
-import json
 import pytest
 import pandas as pd
 import numpy as np
 from pathlib import Path
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 import sys
 
 sys.path.insert(0, str(Path(__file__).parent.parent))

@@ -9,10 +9,9 @@ import os
 import time
 import asyncio
 from collections import defaultdict
-from functools import wraps
 from typing import Callable, Dict, Optional, Set
 
-from fastapi import HTTPException, Request
+from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 

@@ -11,13 +11,11 @@ Outputs:
 - data/processed/data_card.json
 """
 
-import os
 import json
 import unicodedata
 import pandas as pd
-import numpy as np
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional
+from typing import Any, Dict, Tuple, Optional
 from datetime import datetime
 
 # Adiciona src ao path
@@ -25,7 +23,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from data_quality import DataQualityChecker, validate_modeling_dataset
+from data_quality import DataQualityChecker  # noqa: E402
 
 
 # Configuração de paths
@@ -414,13 +412,13 @@ def create_modeling_dataset(
 
     print(f"  Features disponíveis: {len(available_features)}")
     print(f"  RAs com match: {len(modeling_df)}")
-    print(f"  Target distribution:")
+    print("  Target distribution:")
     target_col = f"em_risco_{label_year}"
     print(
         f"    em_risco=1: {modeling_df[target_col].sum()} ({modeling_df[target_col].mean():.1%})"
     )
     print(
-        f"    em_risco=0: {(modeling_df[target_col]==0).sum()} ({(modeling_df[target_col]==0).mean():.1%})"
+        f"    em_risco=0: {(modeling_df[target_col] == 0).sum()} ({(modeling_df[target_col] == 0).mean():.1%})"
     )
 
     return modeling_df
@@ -440,7 +438,7 @@ def generate_data_card(
     Returns:
         Dict com data card
     """
-    data_card = {
+    data_card: Dict[str, Any] = {
         "pipeline_version": "1.0.0",
         "created_at": datetime.now().isoformat(),
         "source_file": str(SOURCE_FILE),
@@ -691,7 +689,7 @@ def run_pipeline(
 
     # Gera e salva data card
     data_card_path = output_processed / "data_card.json"
-    data_card = generate_data_card(datasets, modeling_df, data_card_path)
+    generate_data_card(datasets, modeling_df, data_card_path)
     print(f"  ✅ Salvo: {data_card_path}")
 
     # Resumo final

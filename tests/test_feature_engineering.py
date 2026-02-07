@@ -10,7 +10,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from feature_engineering import (
+from feature_engineering import (  # noqa: E402
     make_features,
     create_delta_features,
     create_risk_composites,

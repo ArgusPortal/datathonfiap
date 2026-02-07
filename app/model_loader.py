@@ -25,8 +25,6 @@ logger = logging.getLogger("api")
 class ModelLoadError(Exception):
     """Erro ao carregar modelo."""
 
-    pass
-
 
 def resolve_model_paths() -> Tuple[Path, Path, Path]:
     """
@@ -187,13 +185,13 @@ class ModelManager:
         return self._model
 
     @property
-    def metadata(self) -> Dict[str, Any]:
+    def metadata(self) -> Optional[Dict[str, Any]]:
         if not self._loaded:
             raise ModelLoadError("Metadados não carregados.")
         return self._metadata
 
     @property
-    def signature(self) -> Dict[str, Any]:
+    def signature(self) -> Optional[Dict[str, Any]]:
         if not self._loaded:
             raise ModelLoadError("Signature não carregada.")
         return self._signature

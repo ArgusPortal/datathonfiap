@@ -7,8 +7,7 @@ import logging
 import time
 import uuid
 from datetime import datetime, timezone
-from functools import wraps
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from app.config import LOG_LEVEL
 
@@ -96,7 +95,7 @@ class RequestLogger:
 
     def log_error(self, error: str, latency_ms: float = None) -> None:
         """Loga erro."""
-        extra = {"request_id": self.request_id}
+        extra: Dict[str, Any] = {"request_id": self.request_id}
         if latency_ms is not None:
             extra["latency_ms"] = round(latency_ms, 2)
 

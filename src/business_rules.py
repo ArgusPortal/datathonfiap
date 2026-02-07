@@ -19,7 +19,7 @@ Referência: Documento de Mensuração PEDE 2024
 
 import pandas as pd
 import numpy as np
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Optional
 from dataclasses import dataclass
 import logging
 

@@ -3,15 +3,10 @@ Tests for Phase 8 Security Module.
 """
 
 import os
-import pytest
-import time
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
-from fastapi import Request
-from starlette.responses import JSONResponse
 
 from app.security import (
-    SecurityMiddleware,
     RateLimiter,
     rate_limiter,
     _parse_api_keys,
