@@ -86,7 +86,7 @@ artifacts/
 ### 📁 Produção (`models/registry/vX.Y.Z/`)
 
 ```
-models/registry/v1.1.0/
+models/registry/v1.2.0/
 ├── model.joblib                 ← registry.py copia e renomeia
 ├── model_metadata.json          ← registry.py copia e renomeia
 ├── model_signature.json         ← registry.py copia e renomeia
@@ -153,7 +153,7 @@ SIGNATURE_PATH = artifacts/model_signature_v1.json  # ✅
 |:----------|:------:|:----------|
 | [README.md](../README.md) | ✅ | Estrutura de diretórios + comandos |
 | [plano_acao_melhorias.md](plano_acao_melhorias.md) | ✅ | Status de conclusão |
-| [model_changelog.md](model_changelog.md) | ✅ | v1.1.0 com artifacts v1 |
+| [model_changelog.md](model_changelog.md) | ✅ | v1.2.0 com artifacts v1 |
 | [monitoring_runbook.md](monitoring_runbook.md) | ✅ | Paths atualizados |
 | [artifacts_architecture.md](artifacts_architecture.md) | ✅ | **NOVO** - Arquitetura completa |
 

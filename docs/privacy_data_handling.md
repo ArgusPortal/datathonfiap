@@ -112,7 +112,7 @@ SAFE_FIELDS = {
   "output": {
     "probability": 0.045,   // Valor agregado
   },
-  "model_version": "v1.1.0",
+  "model_version": "v1.2.0",
   "latency_ms": 45.2
 }
 ```
@@ -159,7 +159,7 @@ log_safe(logger, logging.INFO, "Processing", data=request_data)
   "details": {
     "input_hash": "a1b2c3d4e5f6g7h8",
     "output": {"probability": 0.045},
-    "model": {"version": "v1.1.0"},
+    "model": {"version": "v1.2.0"},
     "performance": {"latency_ms": 45.2, "success": true}
   },
   "git_sha": "abc123def456"

@@ -41,7 +41,7 @@ curl -w "@curl-format.txt" -X POST http://localhost:8000/predict ...
 
 **Diagnóstico**:
 ```bash
-python -m monitoring.drift_report --model_version v1.1.0 --last_n_days 7
+python -m monitoring.drift_report --model_version v1.2.0 --last_n_days 7
 ```
 
 **Ação**:
@@ -54,7 +54,7 @@ python -m monitoring.drift_report --model_version v1.1.0 --last_n_days 7
 
 ### 4. Queda de Performance (quando labels disponíveis)
 
-**Sintoma**: Performance report com recall < 0.70
+**Sintoma**: Performance report com recall < 0.75
 
 **Diagnóstico**:
 ```bash
@@ -116,7 +116,7 @@ curl http://localhost:8000/health
 
 ```bash
 # Drift report
-python -m monitoring.drift_report --model_version v1.1.0 --last_n_days 7
+python -m monitoring.drift_report --model_version v1.2.0 --last_n_days 7
 
 # Performance (quando labels disponíveis)
 python -m monitoring.performance_drift --window 30

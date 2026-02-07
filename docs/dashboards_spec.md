@@ -27,7 +27,7 @@
 │  Distribuição de Scores    │  Top Features Drift        │
 │  [Histograma]              │  [Barras horizontais]      │
 ├────────────────────────────┴────────────────────────────┤
-│  Versão: v1.1.0 | Último deploy: 2025-01-10            │
+│  Versão: v1.2.0 | Último deploy: 2026-02-07            │
 └─────────────────────────────────────────────────────────┘
 ```
 

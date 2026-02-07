@@ -1,23 +1,25 @@
 # 📋 Plano de Ação - Melhorias no Pipeline de ML
 
 **Projeto:** Predição de Risco de Defasagem Escolar - Passos Mágicos  
-**Data:** 15/01/2026  
+**Data:** 07/02/2026  
 **Autor:** Argus Portal  
-**Status:** ✅ **CONCLUÍDO** (v1.1.0)
+**Status:** ✅ **CONCLUÍDO** (v1.2.0)
 
 ---
 
 ## 📊 Resumo Executivo
 
-Este plano endereçou **8 problemas identificados** no pipeline, organizados em **4 fases** de implementação. Todas as correções críticas foram implementadas e validadas com 46 testes unitários.
+Este plano endereçou **8 problemas identificados** no pipeline, organizados em **4 fases** de implementação. Todas as correções críticas foram implementadas e validadas com 382 testes.
 
 ### Métricas de Sucesso
 - ✅ **Zero features corrompidas** no dataset final
 - ✅ **Recuperadas features:** `gênero`, `idade` (numérica corrigida), `anos_pm` (tenure)
 - ✅ **6 missing indicators** adicionados como features
-- ✅ **Recall mantido:** 100% | **PR-AUC:** 0.86 (+0.01)
-- ✅ **46 testes unitários** implementados (100% passing)
-- ✅ **24 features** após engenharia (vs 13 original)
+- ✅ **6 delta features temporais** (variações 2022→2023)
+- ✅ **Recall:** 93.5% (test) | **PR-AUC:** 0.83 | **Precision:** 69.9%
+- ✅ **382 testes** implementados (100% passing)
+- ✅ **34 features** após engenharia (vs 13 original)
+- ✅ **Módulo de regras de negócio** (validação INDE/PEDE)
 
 ---
 

@@ -1,8 +1,8 @@
 # Evaluation Protocol: Validação Temporal
 
 **Projeto**: Datathon FIAP - Passos Mágicos  
-**Fase**: 1 - Data Product v1  
-**Data**: Janeiro 2026
+**Fase**: 2 - Data Product v1.2  
+**Data**: Fevereiro 2026
 
 ---
 
@@ -10,8 +10,8 @@
 
 | Dataset | Features | Label | Uso |
 |---------|----------|-------|-----|
-| Treino | 2022 + 2023 | Defasagem 2024 | Treino do modelo |
-| Teste (Holdout) | 2023 | Defasagem 2024 | Avaliação final única |
+| Treino | 2022 + 2023 | Defasagem 2024 | Treino do modelo (612 amostras) |
+| Teste (Holdout) | 2023 | Defasagem 2024 | Avaliação final única (153 amostras) |
 
 **Nota**: Não usar random split. A natureza temporal do problema exige validação que respeite a ordem cronológica.
 
@@ -20,6 +20,7 @@
 ### Métrica Principal
 **Recall (classe positiva, em_risco=1)**
 - Target MVP: Recall ≥ 0.75
+- Atual v1.2.0: Recall = 0.935 (test set) ✅
 - Justificativa: custo de não identificar aluno em risco > custo de falso alarme
 
 ### Métricas Secundárias
@@ -33,11 +34,13 @@
 ## Seleção de Threshold
 
 1. **Default**: threshold = 0.5
-2. **Operacional**: ajustar para maximizar Recall respeitando Precision mínima
-3. **Método**:
+2. **Operacional**: ajustar para maximizar F2 com constraints (min_recall≥0.75, min_precision≥0.50)
+3. **Threshold atual (v1.2.0)**: 0.34990
+4. **Método**:
    - Gerar curva Precision-Recall no conjunto de validação
-   - Escolher threshold que maximize F2 ou atinja Recall ≥ 0.75
+   - Escolher threshold que maximize F2 respeitando constraints
    - Aplicar threshold escolhido no teste final
+   - Validar com análise de calibração (Brier Score)
 
 ## Regras de Validação
 

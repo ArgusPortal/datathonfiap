@@ -199,7 +199,7 @@ kubectl rollout restart deployment/datathon-api
 python src/registry.py list
 
 # Rollback para versão anterior
-python src/registry.py rollback --to v1.0.0
+python src/registry.py rollback --to v1.1.0
 
 # Reiniciar API para carregar novo modelo
 docker restart datathon-api

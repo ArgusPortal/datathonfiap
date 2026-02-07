@@ -54,7 +54,7 @@ models/registry/
 │   ├── model_signature.json
 │   ├── metrics.json
 │   └── manifest.json            # Metadata do registro
-└── v1.1.0/
+└── v1.2.0/
     ├── model.joblib
     ├── model_metadata.json
     ├── model_signature.json
@@ -158,7 +158,7 @@ METADATA_PATH = Path(os.getenv("METADATA_PATH", "artifacts/model_metadata_v1.jso
 SIGNATURE_PATH = Path(os.getenv("SIGNATURE_PATH", "artifacts/model_signature_v1.json"))
 
 # Produção (via registry)
-MODEL_VERSION = os.getenv("MODEL_VERSION", "")  # "champion" ou "v1.1.0"
+MODEL_VERSION = os.getenv("MODEL_VERSION", "")  # "champion" ou "v1.2.0"
 REGISTRY_DIR = Path(os.getenv("REGISTRY_DIR", "models/registry"))
 ```
 
@@ -231,8 +231,8 @@ PATCH: Bug fixes, ajustes menores
 
 **Exemplos:**
 - `v1.0.0` → `v1.1.0`: Feature engineering aprimorado (+9 features)
-- `v1.1.0` → `v1.1.1`: Correção de bug no preprocessing
-- `v1.1.1` → `v2.0.0`: Mudança de algoritmo (RF → XGBoost)
+- `v1.1.0` → `v1.2.0`: HistGradientBoosting, 34 features, business rules, deltas temporais
+- `v1.2.0` → `v2.0.0`: Mudança de algoritmo (possível CatBoost em produção)
 
 ---
 

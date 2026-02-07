@@ -40,11 +40,12 @@
 ## Versionamento e Rastreabilidade
 
 ### Versões Rastreadas
-- `model_version`: versão do modelo (ex: v1.1.0)
+- `model_version`: versão do modelo (ex: v1.2.0)
 - `data_version`: hash do dataset de treino
-- `features_version`: versão do feature engineering
+- `features_version`: versão do feature engineering (34 features)
 - `code_version`: git SHA do código
 - `config_version`: hash do arquivo de configuração
+- `business_rules_version`: versão da validação INDE/PEDE
 
 ### Registro por Previsão (Audit Log)
 Campos obrigatórios (sem PII):
@@ -59,9 +60,10 @@ Armazenamento: `monitoring/inference_store.jsonl`
 
 ### Quando fazer Retraining
 - Drift vermelho persistente (>7 dias)
-- Performance degradada (recall < 0.65 com labels)
+- Performance degradada (recall < 0.75 com labels)
 - Mudança estrutural nos dados fonte
 - Cadência regular: trimestral (mínimo)
+- Novas regras de negócio validadas em `src/business_rules.py`
 
 ### Quando Congelar
 - Período de avaliações oficiais
@@ -78,10 +80,13 @@ Armazenamento: `monitoring/inference_store.jsonl`
 ## Critérios de Promoção (Champion)
 
 Nova versão só vira champion se:
-- [ ] Recall (classe positiva) ≥ 0.70
+- [ ] Recall (classe positiva) ≥ 0.75
+- [ ] Precision ≥ 0.50
+- [ ] F2-Score ≥ 0.70
 - [ ] Cobertura de testes ≥ 80%
 - [ ] Security scan sem vulnerabilidades críticas
 - [ ] Drift status: sem vermelho
+- [ ] Validação de regras de negócio (IAN, IDA, INDE)
 - [ ] Validação em shadow mode (≥7 dias)
 - [ ] Aprovação do PO Score
 

@@ -16,11 +16,12 @@
 
 2. Avaliar com protocolo temporal
    - Split treino/validação respeitando tempo
-   - Métricas: recall, precision, ROC-AUC, Brier
+   - Métricas: recall, precision, F2, PR-AUC, Brier
 
 3. Comparar com champion
    - Recall challenger >= recall champion - 0.02 (guardrail)
-   - AUC challenger >= AUC champion
+   - F2 challenger >= F2 champion
+   - PR-AUC challenger >= PR-AUC champion
 
 4. Decisão
    - Aprovado: registrar + promover
@@ -32,20 +33,22 @@
 ```bash
 # Retrain completo
 python -m src.retrain \
-  --new_version v1.2.0 \
+  --new_version v1.3.0 \
   --data data/processed/dataset_train_2023.parquet \
   --registry models/registry
 
 # Apenas comparar (dry-run)
 python -m src.retrain \
-  --new_version v1.2.0 \
+  --new_version v1.3.0 \
   --data data/processed/dataset_train_2023.parquet \
   --dry_run
 ```
 
 ## Guardrails
 
-- Recall não pode cair mais que 2% (absoluto)
-- Precision não pode cair mais que 5% (absoluto)
+- Recall não pode cair mais que 2% (absoluto) — mínimo: 0.75
+- Precision não pode cair mais que 5% (absoluto) — mínimo: 0.50
 - Brier Score não pode aumentar mais que 0.02
-- Mínimo 500 amostras de validação
+- F2-Score não pode cair mais que 3% (absoluto)
+- Mínimo 100 amostras de validação
+- Validação de regras de negócio via `src/business_rules.py`

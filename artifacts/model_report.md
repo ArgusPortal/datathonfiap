@@ -1,4 +1,4 @@
-# Model Report - v1.1.0
+# Model Report - v1.2.0
 
 **Gerado em:** 2026-02-07 18:56
 

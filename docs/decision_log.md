@@ -125,8 +125,22 @@ em_risco = (defasagem < 0).astype(int)
 
 - Input: JSON com features do estudante no ano t (schema definido no data contract)
 - Output: `{"score": float, "classe_predita": 0/1, "versao_modelo": string}`
-- Threshold padrão: 0.5 (ajustável por configuração)
+- Threshold padrão: 0.35 (otimizado via max F2 com min_recall≥0.75, min_precision≥0.50)
 - Latência target: <500ms (modelo deve ser suficientemente leve)
+
+---
+
+## D6: Algoritmo do Modelo
+
+**Decisão:** HistGradientBoosting com calibração sigmoid
+
+**Alternativas avaliadas (end-to-end analysis com 11 modelos):**
+- CatBoost: melhor ROC-AUC (0.928) e PR-AUC (0.895)
+- XGBoost: ROC-AUC 0.930 mas threshold instável
+- LightGBM: competitivo mas menos calibrado
+- Random Forest: baseline, performance inferior
+
+**Justificativa:** HistGradientBoosting oferece melhor equilíbrio entre recall elevado (93.5%) e precision aceitável (69.9%), com boa calibração via sigmoid. CatBoost será testado em produção na v1.3.0.
 
 ---
 

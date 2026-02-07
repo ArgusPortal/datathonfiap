@@ -22,7 +22,9 @@
 
 **Fala (bullets)**:
 - Pipeline ML completo: dados → features → modelo → API → monitoramento
-- Modelo Random Forest calibrado, threshold otimizado
+- Modelo HistGradientBoosting calibrado, threshold otimizado (0.35)
+- 34 features incluindo deltas temporais e flags de missing
+- Validação de regras de negócio INDE/PEDE
 - API REST (FastAPI) pronta para integração
 - Docker para deploy em qualquer ambiente
 - Monitoramento de drift para garantir qualidade contínua
@@ -34,11 +36,12 @@
 ## Bloco 3: Resultado/Métricas (1:20–2:10)
 
 **Fala (bullets)**:
-- Recall ≥ 75%: capturamos 3 de cada 4 alunos em risco
-- Trade-off consciente: threshold baixo (0.04) prioriza recall
-- Precision ~40%: alguns falsos positivos, mas melhor pecar por excesso
-- ROC-AUC ~0.80: boa discriminação geral
-- Brier Score ~0.15: probabilidades bem calibradas
+- Recall 93.5%: capturamos quase todos os alunos em risco
+- Trade-off consciente: threshold 0.35 equilibra recall e precision
+- Precision ~70%: redução significativa de falsos positivos
+- PR-AUC 0.83: excelente discriminação precision-recall
+- Brier Score 0.13: probabilidades bem calibradas
+- 11 modelos comparados em end-to-end analysis
 
 **Tela**: tabela de métricas + gráfico ROC ou confusion matrix
 
@@ -67,14 +70,14 @@ curl -X POST http://localhost:8000/predict \
 ## Bloco 5: Confiabilidade e Operação (3:20–4:30)
 
 **Fala (bullets)**:
-- 368 testes automatizados, cobertura 81%
+- 382 testes automatizados, cobertura 81%
 - Logs estruturados JSON (sem PII)
 - Inference Store: armazena estatísticas agregadas
 - Drift Report: HTML com PSI por feature
 - Runbook de operação para time de dados
 - Security: API Key auth, rate limiting, privacy controls
 
-**Tela 1**: terminal com `pytest --cov` → resultado 368 passed, 81%
+**Tela 1**: terminal com `pytest --cov` → resultado 382 passed, 81%
 
 **Tela 2**: drift_report HTML aberto no browser
 

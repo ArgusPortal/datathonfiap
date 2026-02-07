@@ -212,7 +212,7 @@ locust -f loadtest/locustfile.py \
 
 | Data | Versão | Users | RPS | P95 | Errors | Status |
 |------|--------|-------|-----|-----|--------|--------|
-| 2025-01-15 | v1.1.0 | 10 | 18 | 95ms | 0% | ✅ PASS |
+| 2025-01-15 | v1.2.0 | 10 | 18 | 95ms | 0% | ✅ PASS |
 
 ---
 

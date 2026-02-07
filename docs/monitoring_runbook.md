@@ -36,11 +36,11 @@ Este runbook documenta os procedimentos operacionais para monitorar a API de pre
 
 ```bash
 # Gerar relatório de drift dos últimos 7 dias
-python -m monitoring.drift_report --model_version v1.1.0 --last_n_days 7
+python -m monitoring.drift_report --model_version v1.2.0 --last_n_days 7
 
 # Relatório gerado em:
-# monitoring/reports/v1.1.0/drift_report_YYYYMMDD.html
-# monitoring/reports/v1.1.0/drift_metrics_YYYYMMDD.json
+# monitoring/reports/v1.2.0/drift_report_YYYYMMDD.html
+# monitoring/reports/v1.2.0/drift_metrics_YYYYMMDD.json
 ```
 
 ### 2.2 Inspecionar Logs
@@ -64,8 +64,8 @@ curl http://localhost:8000/metadata | jq
 
 # Deve retornar:
 # {
-#   "model_version": "v1.1.0",
-#   "threshold": 0.040221,
+#   "model_version": "v1.2.0",
+#   "threshold": 0.34990,
 #   ...
 # }
 ```
@@ -76,7 +76,7 @@ curl http://localhost:8000/metadata | jq
 curl http://localhost:8000/health
 
 # Esperado:
-# {"status": "healthy", "model_loaded": true, "model_version": "v1.1.0", ...}
+# {"status": "healthy", "model_loaded": true, "model_version": "v1.2.0", ...}
 ```
 
 ### 2.5 Inspecionar Inference Store
@@ -153,7 +153,7 @@ export METADATA_PATH=artifacts/model_metadata_v1.json
 export SIGNATURE_PATH=artifacts/model_signature_v1.json
 
 # OU usar versão do registry (produção)
-export MODEL_VERSION=champion  # ou v1.1.0
+export MODEL_VERSION=champion  # ou v1.2.0
 export REGISTRY_DIR=models/registry
 
 # 3. Reiniciar container
@@ -195,7 +195,7 @@ python -m monitoring.build_baseline --model_version v1.x.0
 python -m monitoring.drift_report --last_n_days 1
 
 # Verificar status
-open monitoring/reports/v1.1.0/drift_report_$(date +%Y%m%d).html
+open monitoring/reports/v1.2.0/drift_report_$(date +%Y%m%d).html
 ```
 
 ### 4.2 Monitoramento Semanal
@@ -208,7 +208,7 @@ python -m monitoring.drift_report --last_n_days 7
 python -c "
 import json
 from pathlib import Path
-reports = sorted(Path('monitoring/reports/v1.1.0').glob('drift_metrics_*.json'))
+reports = sorted(Path('monitoring/reports/v1.2.0').glob('drift_metrics_*.json'))
 for r in reports[-7:]:
     data = json.load(open(r))
     print(f\"{r.stem}: {data.get('global_status', 'unknown')}\")
@@ -219,7 +219,7 @@ for r in reports[-7:]:
 
 ```bash
 python -m monitoring.build_baseline \
-    --model_version v1.1.0 \
+    --model_version v1.2.0 \
     --source data/processed/modeling_dataset.parquet
 ```
 
@@ -276,7 +276,7 @@ docker logs -f datathon-api
 python -m monitoring.drift_report --last_n_days 7
 
 # Build baseline
-python -m monitoring.build_baseline --model_version v1.1.0
+python -m monitoring.build_baseline --model_version v1.2.0
 
 # Restart API
 docker restart datathon-api

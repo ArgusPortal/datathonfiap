@@ -1,8 +1,9 @@
 # 📋 Análise de Conformidade: Regras de Negócio vs Implementação
 
 **Projeto**: Datathon FIAP - Passos Mágicos  
-**Data da Análise**: Janeiro 2026  
-**Documento de Referência**: Modelo de Mensuração INDE (Índice de Desenvolvimento Educacional)
+**Data da Análise**: Fevereiro 2026  
+**Documento de Referência**: Modelo de Mensuração INDE (Índice de Desenvolvimento Educacional)  
+**Implementação**: `src/business_rules.py` (módulo de validação completo)
 
 ---
 
@@ -10,12 +11,12 @@
 
 | Aspecto | Status | Observação |
 |---------|--------|------------|
-| **Estrutura de Indicadores** | ✅ Parcialmente Implementado | Indicadores presentes mas sem validação de cálculo |
-| **Cálculo do IAN** | ⚠️ Divergente | Simplificado para binário ao invés de escala 10/5/2.5 |
-| **Cálculo do IDA** | ❓ Não Verificável | Usado como feature, mas fórmula não implementada |
-| **Cálculo do INDE** | ❌ Não Implementado | Ponderação por fase não existe no código |
-| **Classificação Pedras** | 🔒 Bloqueado | Corretamente tratado como leakage |
-| **Diferenciação Fase 8** | ❌ Não Implementado | Mesma lógica para todas as fases |
+| **Estrutura de Indicadores** | ✅ Implementado | Indicadores presentes com validação de cálculo em `src/business_rules.py` |
+| **Cálculo do IAN** | ✅ Implementado | Escala 10/5/2.5 conforme regra oficial (classe `INDECalculator`) |
+| **Cálculo do IDA** | ✅ Implementado | Média de Matemática, Português e Inglês |
+| **Cálculo do INDE** | ✅ Implementado | Ponderação por fase (pesos diferenciados para Fase 8) |
+| **Classificação Pedras** | ✅ Implementado | Quartzo/Ágata/Ametista/Topázio + bloqueio de leakage |
+| **Diferenciação Fase 8** | ✅ Implementado | Pesos específicos (IPP e IPV excluídos na Fase 8) |
 | **Target (Defasagem)** | ✅ Implementado | Conforme regra D < 0 → em_risco |
 
 ---

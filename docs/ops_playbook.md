@@ -22,7 +22,7 @@
 {
   "request_id": "uuid",
   "timestamp": "ISO8601",
-  "model_version": "v1.1.0",
+  "model_version": "v1.2.0",
   "latency_ms": 45.2,
   "status_code": 200,
   "risk_score": 0.73,
@@ -141,7 +141,7 @@ Problema detectado?
 |----------|------|
 | Erro rate > 5% por 10min | Rollback imediato |
 | Drift vermelho > 7 dias | Retraining obrigatório |
-| Recall < 0.60 (com labels) | Congelar + investigar |
+| Recall < 0.75 (com labels) | Congelar + investigar |
 | Mudança de schema dados | Congelar + alinhar Data Steward |
 | Vulnerabilidade crítica | Patch em 24h ou desativar |
 

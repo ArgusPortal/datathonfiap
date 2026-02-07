@@ -52,7 +52,7 @@ docker stop datathon-test && docker rm datathon-test
 # Rodar testes com cobertura
 pytest tests/ --cov=src --cov=app --cov=monitoring --cov-report=term-missing
 
-# Esperado: 368 passed, coverage >= 80%
+# Esperado: 382 passed, coverage >= 80%
 ```
 
 **Evidência**: relatório mostra `TOTAL ... 81%` ou superior.
@@ -67,10 +67,10 @@ curl -X POST http://localhost:8000/predict -H "Content-Type: application/json" ^
   -d "{\"instances\":[{\"fase_2023\":2,\"iaa_2023\":5,\"ian_2023\":5,\"ida_2023\":5,\"idade_2023\":12,\"ieg_2023\":5,\"instituicao_2023\":1,\"ipp_2023\":5,\"ips_2023\":5,\"ipv_2023\":5,\"max_indicador\":6,\"media_indicadores\":5,\"min_indicador\":4,\"range_indicadores\":2,\"std_indicadores\":0.5}]}"
 
 # 2. Gerar baseline (se não existir)
-python -m monitoring.build_baseline --model_version v1.1.0 --signature artifacts/model_signature_v1.json --source data/processed/dataset_train_2023.parquet
+python -m monitoring.build_baseline --model_version v1.2.0 --signature artifacts/model_signature_v1.json --source data/processed/dataset_train_2023.parquet
 
 # 3. Gerar drift report
-python -m monitoring.drift_report --model_version v1.1.0 --last_n_days 7
+python -m monitoring.drift_report --model_version v1.2.0 --last_n_days 7
 
 # 4. Abrir HTML
 start monitoring\reports\drift_report_*.html

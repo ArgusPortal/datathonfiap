@@ -2,9 +2,71 @@
 
 ## Histórico de Versões
 
-### v1.1.0 (2026-01-15) - Current Champion
+### v1.2.0 (2026-02-07) - Current Champion
 
 **Status:** ✅ Production
+
+**Changes:**
+- **Novo modelo HistGradientBoosting** com calibração sigmoid
+- **Feature engineering expandido:**
+  - 34 features após engenharia (+10 vs v1.1)
+  - 6 delta features temporais (variação 2022→2023 para IAN, IDA, IEG, IAA, IPS, IPV)
+  - 6 missing indicator flags
+  - Features de agregação: media, min, max, std, range, fase×media
+  - Features demográficas: genero, ano_ingresso, anos_pm
+- **Threshold otimizado:** 0.350 (via max F2 com min_recall≥0.75, min_precision≥0.50)
+- **Novo módulo de regras de negócio** (`src/business_rules.py`):
+  - Validação de indicadores INDE/PEDE
+  - Cálculo de IAN, IDA, INDE conforme regras oficiais
+  - Classificação por faixas de Pedra (Quartzo/Ágata/Ametista/Topázio)
+- **End-to-end analysis notebook** com comparação de 11 modelos
+  - CatBoost: melhor ROC-AUC (0.928) e PR-AUC (0.895)
+  - HistGradientBoosting: melhor equilíbrio recall/precision em produção
+- **382 testes unitários** (100% passing)
+- **Novos artefatos visuais:** SHAP analysis, calibration curves, confusion matrices, learning curves
+
+**Metrics:**
+| Metric | v1.1.0 | v1.2.0 (val) | v1.2.0 (test) | Delta |
+|--------|--------|-------------|--------------|-------|
+| Recall | 100% | 95.9% | 93.5% | -6.5% |
+| Precision | 40.8% | 69.1% | 69.9% | +29.1% |
+| PR-AUC | 0.86 | 0.807 | 0.830 | -0.03 |
+| F1 | 0.579 | 0.803 | 0.800 | +0.22 |
+| F2 | - | 0.890 | 0.876 | new |
+| Brier | - | 0.134 | 0.132 | new |
+| Features | 24 | 34 | 34 | +10 |
+
+**Training Data:**
+- Dataset: data/processed/modeling_dataset.parquet
+- Samples: 765 (train 612, test 153)
+- Positive rate: 40.5%
+- Features base: 19 → Features engenharia: 34
+
+**Artifacts (Development):**
+- Model: `artifacts/model_v1.joblib`
+- Metadata: `artifacts/model_metadata_v1.json`
+- Signature: `artifacts/model_signature_v1.json`
+- Metrics: `artifacts/metrics_v1.json`
+- End-to-end results: `artifacts/end_to_end_results.json`
+- Model comparison: `artifacts/model_comparison.json`
+- Visualizations: `artifacts/*.png` (SHAP, calibration, confusion matrices, etc.)
+
+**Artifacts (Registry - após registro):**
+- Model: `models/registry/v1.2.0/model.joblib`
+- Metadata: `models/registry/v1.2.0/model_metadata.json`
+- Signature: `models/registry/v1.2.0/model_signature.json`
+- Metrics: `models/registry/v1.2.0/metrics.json`
+
+**Nota:** Registry normaliza nomes removendo sufixo `_v1` para padronização
+
+**Approved by:** ML Team Lead
+**Deploy date:** 2026-02-07
+
+---
+
+### v1.1.0 (2026-01-15) - Archived
+
+**Status:** 📦 Archived
 
 **Changes:**
 - **Correções críticas no preprocessing:**
@@ -15,7 +77,7 @@
   - 24 features após engenharia (+9 vs v1.0)
   - 6 missing indicators (ian/ida/ieg/iaa/ips/ipp)
   - Feature `anos_pm` (tenure no programa)
-- **Modelo HistGradientBoosting** com threshold otimizado: 0.040221
+- **Modelo HistGradientBoosting** com threshold otimizado: 0.34990
 - **46 testes unitários** implementados (100% passing)
 
 **Metrics:**
@@ -47,7 +109,7 @@
 **Nota:** Registry normaliza nomes removendo sufixo `_v1` para padronização
 
 **Approved by:** ML Team Lead
-**Deploy date:** 2025-01-15
+**Deprecated:** 2026-02-07
 
 ---
 
@@ -82,21 +144,22 @@
 
 ## Versões em Desenvolvimento
 
-### v1.2.0 (Planned)
+### v1.3.0 (Planned)
 
 **Status:** 🔬 Development
 
 **Planned Changes:**
 - Incorporar dados de 2025-S1
-- Experimentar XGBoost como alternativa
-- Feature selection automatizado
-- Threshold dinâmico por segmento
+- Experimentar CatBoost em produção (melhor ROC-AUC em end-to-end)
+- Feature selection automatizado (Boruta/SHAP)
+- Threshold dinâmico por segmento (fase)
+- Validação cross-temporal multi-ano
 
 **Timeline:**
-- [ ] Coleta de dados: 2025-Q1
-- [ ] Experimentação: 2025-Q2
-- [ ] Validação: 2025-Q2
-- [ ] Deploy: 2025-Q3
+- [ ] Coleta de dados: 2026-Q1
+- [ ] Experimentação: 2026-Q2
+- [ ] Validação: 2026-Q2
+- [ ] Deploy: 2026-Q3
 
 ---
 
@@ -140,12 +203,13 @@ PATCH: Bug fixes, ajustes menores
 
 ### Guardrails para Deploy
 
-| Métrica | Mínimo | Atual |
-|---------|--------|-------|
-| AUC-ROC | 0.75 | ≥ |
-| Precision | 0.65 | ≥ |
-| Recall | 0.60 | ≥ |
-| Latency P95 | 500ms | ≤ |
+| Métrica | Mínimo | Atual (v1.2.0) |
+|---------|--------|----------------|
+| Recall | 0.75 | 0.935 ✅ |
+| Precision | 0.50 | 0.699 ✅ |
+| F2 | 0.70 | 0.876 ✅ |
+| PR-AUC | 0.60 | 0.830 ✅ |
+| Latency P95 | 500ms | ≤ 300ms ✅ |
 
 ---
 

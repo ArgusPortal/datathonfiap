@@ -1,8 +1,8 @@
 # Feature Availability: Anti-Vazamento
 
 **Projeto**: Datathon FIAP - Passos Mágicos  
-**Fase**: 1 - Data Product v1  
-**Data**: Janeiro 2026
+**Fase**: 2 - Data Product v1.2  
+**Data**: Fevereiro 2026
 
 ---
 
@@ -56,10 +56,26 @@ Features disponíveis no momento do score (final do ano t):
 - `turma_{ano}` - Turma atual
 
 ### Features Derivadas Permitidas (calcular a partir de anos anteriores)
-- `delta_inde` - Variação INDE entre anos
-- `delta_ian` - Variação IAN entre anos
-- `tempo_no_programa` - Anos desde ingresso
-- `historico_pedras` - Evolução de classificação
+- `delta_ian_2022_2023` - Variação IAN entre 2022→2023
+- `delta_ida_2022_2023` - Variação IDA entre 2022→2023
+- `delta_ieg_2022_2023` - Variação IEG entre 2022→2023
+- `delta_iaa_2022_2023` - Variação IAA entre 2022→2023
+- `delta_ips_2022_2023` - Variação IPS entre 2022→2023
+- `delta_ipv_2022_2023` - Variação IPV entre 2022→2023
+- `has_prev_year_data` - Flag: aluno tem dados do ano anterior
+- `anos_pm_{ano}` - Anos no programa desde ingresso
+- `media_indicadores` - Média dos indicadores
+- `min_indicador` / `max_indicador` - Extremos
+- `std_indicadores` / `range_indicadores` - Dispersão
+- `fase_x_media` - Interação fase × média
+
+### Flags de Missing (geradas pelo pipeline)
+- `ida_2023_missing` - Flag missing para IDA
+- `ieg_2023_missing` - Flag missing para IEG
+- `iaa_2023_missing` - Flag missing para IAA
+- `ips_2023_missing` - Flag missing para IPS
+- `ipp_2023_missing` - Flag missing para IPP
+- `ipv_2023_missing` - Flag missing para IPV
 
 ---
 

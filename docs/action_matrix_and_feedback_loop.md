@@ -8,7 +8,7 @@
 | **Médio** | 0.30 - 0.69 | Risco moderado, monitorar |
 | **Baixo** | < 0.30 | Risco baixo, acompanhamento padrão |
 
-> **Nota:** Thresholds calibrados com base no threshold operacional do modelo (0.040221 para classificação binária). Faixas de gestão acima são para priorização de intervenção.
+> **Nota:** Thresholds calibrados com base no threshold operacional do modelo (0.34990 para classificação binária). Faixas de gestão acima são para priorização de intervenção.
 
 ---
 

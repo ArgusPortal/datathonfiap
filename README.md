@@ -9,7 +9,7 @@
 [![scikit-learn](https://img.shields.io/badge/scikit--learn-F7931E?style=for-the-badge&logo=scikit-learn&logoColor=white)](https://scikit-learn.org)
 [![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://docker.com)
 
-[![Tests](https://img.shields.io/badge/Tests-368%20passed-success?style=flat-square)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-382%20passed-success?style=flat-square)](tests/)
 [![Coverage](https://img.shields.io/badge/Coverage-81%25-brightgreen?style=flat-square)](htmlcov/)
 [![License](https://img.shields.io/badge/License-Academic-blue?style=flat-square)](#-licença)
 
@@ -72,16 +72,17 @@ Um sistema completo de **Machine Learning** que:
 
 | Métrica | Valor |
 |:--------|:-----:|
-| **Recall** | ≥ 75% |
-| **ROC-AUC** | ~0.80 |
-| **Precision** | ~40% |
-| **Threshold** | 0.040 |
+| **Recall** | 95.9% |
+| **ROC-AUC** | ~0.93 |
+| **Precision** | 69.1% |
+| **PR-AUC** | 0.83 |
+| **Threshold** | 0.350 |
 
 ### 🏗️ Stack
 
 | Camada | Tecnologia |
 |:-------|:-----------|
-| ML | scikit-learn |
+| ML | scikit-learn, HistGB |
 | API | FastAPI |
 | Deploy | Docker |
 | CI/CD | GitHub Actions |
@@ -151,7 +152,7 @@ curl http://localhost:8000/health
 │                                                                              │
 │   ┌──────────┐     ┌──────────┐     ┌──────────┐     ┌──────────┐          │
 │   │  Dados   │────▶│ Pipeline │────▶│  Modelo  │────▶│   API    │          │
-│   │  PEDE    │     │    ML    │     │  v1.1.0  │     │ FastAPI  │          │
+│   │  PEDE    │     │    ML    │     │  v1.2.0  │     │ FastAPI  │          │
 │   └──────────┘     └──────────┘     └──────────┘     └────┬─────┘          │
 │                                                           │                 │
 │                    ┌──────────────────────────────────────┼────────────┐   │
@@ -186,13 +187,15 @@ datathonfiap/
 │   ├── make_dataset.py       # Ingestão de dados
 │   ├── train.py              # Treinamento
 │   ├── evaluate.py           # Avaliação
+│   ├── business_rules.py     # Validação regras INDE/PEDE
+│   ├── feature_engineering.py# Feature engineering
 │   ├── registry.py           # Model Registry
 │   └── retrain.py            # Retraining pipeline
 ├── 📁 monitoring/             # Monitoramento
 │   ├── drift_report.py       # Relatório de drift
 │   ├── inference_store.py    # Armazenamento
 │   └── retention.py          # Política de retenção
-├── 📁 tests/                  # 368 testes automatizados
+├── 📁 tests/                  # 382 testes automatizados
 ├── 📁 docs/                   # Documentação completa
 ├── 📁 artifacts/              # Modelo serializado (dev)
 │   ├── model_v1.joblib
@@ -201,7 +204,7 @@ datathonfiap/
 │   └── metrics_v1.json
 ├── 📁 models/registry/        # Versões registradas
 │   ├── champion.json
-│   └── v1.1.0/
+│   └── v1.2.0/
 │       ├── model.joblib       # Normalizado (sem _v1)
 │       ├── model_metadata.json
 │       ├── model_signature.json
@@ -243,9 +246,22 @@ curl -X POST http://localhost:8000/predict \
       "ipp_2023": 7.5,
       "ips_2023": 8,
       "ipv_2023": 6.2,
+      "genero_2023": 1,
+      "ano_ingresso_2023": 2020,
+      "anos_pm_2023": 3,
+      "delta_ian_2022_2023": 0.5,
+      "delta_ida_2022_2023": 0.3,
+      "delta_ieg_2022_2023": -0.2,
+      "delta_iaa_2022_2023": 0.1,
+      "delta_ips_2022_2023": 0.4,
+      "delta_ipv_2022_2023": 0.0,
+      "has_prev_year_data": 1,
       "media_indicadores": 6.8,
       "min_indicador": 5,
-      "std_indicadores": 0.9
+      "max_indicador": 8,
+      "std_indicadores": 0.9,
+      "range_indicadores": 3,
+      "fase_x_media": 20.4
     }]
   }'
 ```
@@ -256,7 +272,7 @@ curl -X POST http://localhost:8000/predict \
   "predictions": [{
     "risk_score": 0.757,
     "risk_label": 1,
-    "model_version": "v1.1.0"
+    "model_version": "v1.2.0"
   }],
   "request_id": "abc123",
   "processing_time_ms": 12.5
@@ -272,7 +288,7 @@ curl -X POST http://localhost:8000/predict \
 ```
 ┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐
 │ INGEST  │───▶│ TARGET  │───▶│FEATURES │───▶│  TRAIN  │───▶│ DEPLOY  │
-│  PEDE   │    │ t + 1   │    │  13 ind │    │   RF    │    │  API    │
+│  PEDE   │    │ t + 1   │    │  34 feat │    │ HistGB  │    │  API    │
 └─────────┘    └─────────┘    └─────────┘    └─────────┘    └─────────┘
 ```
 
@@ -284,10 +300,10 @@ curl -X POST http://localhost:8000/predict \
 |:------|:----------|
 | **1. Ingest** | Leitura do dataset PEDE + normalização |
 | **2. Target** | Construção do target binário (defasagem t+1) |
-| **3. Features** | 13 indicadores educacionais + agregações |
+| **3. Features** | 34 features: indicadores educacionais + deltas temporais + flags de missing + agregações |
 | **4. Split** | Validação temporal (treino 2023 → validação 2024) |
-| **5. Train** | Random Forest + calibração sigmoid |
-| **6. Threshold** | Otimizado para recall ≥ 0.75 |
+| **5. Train** | HistGradientBoosting + calibração sigmoid |
+| **6. Threshold** | Otimizado para max F2 com recall ≥ 0.75 (threshold=0.35) |
 | **7. Deploy** | Serialização joblib + API FastAPI |
 
 ### 📊 Features do Modelo
@@ -303,9 +319,24 @@ curl -X POST http://localhost:8000/predict \
 | `ipp_2023` | Índice de Performance Pedagógica |
 | `ips_2023` | Índice de Performance Social |
 | `ipv_2023` | Índice de Ponto de Virada |
+| `instituicao_2023` | Instituição de ensino (código) |
+| `genero_2023` | Gênero do aluno |
+| `ano_ingresso_2023` | Ano de ingresso no programa |
+| `anos_pm_2023` | Tempo no programa Passos Mágicos |
+| `delta_ian_2022_2023` | Variação IAN entre 2022→2023 |
+| `delta_ida_2022_2023` | Variação IDA entre 2022→2023 |
+| `delta_ieg_2022_2023` | Variação IEG entre 2022→2023 |
+| `delta_iaa_2022_2023` | Variação IAA entre 2022→2023 |
+| `delta_ips_2022_2023` | Variação IPS entre 2022→2023 |
+| `delta_ipv_2022_2023` | Variação IPV entre 2022→2023 |
+| `has_prev_year_data` | Flag: aluno tem dados do ano anterior |
+| `*_missing` | Flags de missing para cada indicador |
 | `media_indicadores` | Média dos indicadores |
-| `min_indicador` | Valor mínimo |
-| `std_indicadores` | Desvio padrão |
+| `min_indicador` | Valor mínimo entre indicadores |
+| `max_indicador` | Valor máximo entre indicadores |
+| `std_indicadores` | Desvio padrão dos indicadores |
+| `range_indicadores` | Range (max - min) dos indicadores |
+| `fase_x_media` | Interação fase × média |
 
 ---
 
@@ -315,7 +346,7 @@ curl -X POST http://localhost:8000/predict \
 
 ```bash
 # Gerar relatório de drift
-python -m monitoring.drift_report --model_version v1.1.0 --last_n_days 7
+python -m monitoring.drift_report --model_version v1.2.0 --last_n_days 7
 ```
 
 | Status | PSI | Ação Recomendada |
@@ -340,7 +371,7 @@ python -m monitoring.drift_report --model_version v1.1.0 --last_n_days 7
 
 | Métrica | Valor | Status |
 |:--------|:-----:|:------:|
-| **Testes** | 368 | ✅ |
+| **Testes** | 382 | ✅ |
 | **Cobertura** | 81% | ✅ |
 | **Meta** | 80% | ✅ |
 
@@ -399,6 +430,7 @@ Score → Intervenção → Desfecho → Retraining
 
 | Documento | Descrição |
 |:----------|:----------|
+| [Análise Regras Negócio](docs/analise_regras_negocio.md) | Validação INDE/PEDE |
 | [Data Contract v2](docs/data_contract_v2.md) | Schema com validações |
 | [Model Card](docs/model_card.md) | Documentação completa do modelo |
 | [Model Changelog](docs/model_changelog.md) | Histórico de versões |
@@ -478,7 +510,7 @@ pytest tests/test_api_integration.py -v
 
 ```bash
 # Registrar nova versão (copia artifacts dev → registry)
-python -m src.registry register --version v1.2.0 --artifacts artifacts/
+python -m src.registry register --version v1.3.0 --artifacts artifacts/
 
 # Artifacts em dev usam sufixo _v1:
 # - model_v1.joblib → copiado como model.joblib
@@ -487,13 +519,13 @@ python -m src.registry register --version v1.2.0 --artifacts artifacts/
 # - metrics_v1.json → copiado como metrics.json
 
 # Promover para champion
-python -m src.registry promote --version v1.2.0
+python -m src.registry promote --version v1.3.0
 
 # Rollback
-python -m src.registry rollback --version v1.1.0
+python -m src.registry rollback --version v1.2.0
 
 # Retraining
-python -m src.retrain --new_version v1.2.0 --data data/processed/dataset_2024.parquet
+python -m src.retrain --new_version v1.3.0 --data data/processed/dataset_2024.parquet
 ```
 
 </details>
@@ -503,10 +535,10 @@ python -m src.retrain --new_version v1.2.0 --data data/processed/dataset_2024.pa
 
 ```bash
 # Drift report
-python -m monitoring.drift_report --model_version v1.1.0 --last_n_days 7
+python -m monitoring.drift_report --model_version v1.2.0 --last_n_days 7
 
 # Build baseline
-python -m monitoring.build_baseline --model_version v1.1.0
+python -m monitoring.build_baseline --model_version v1.2.0
 
 # Retenção de dados
 python monitoring/retention.py --days 30 --dry-run
