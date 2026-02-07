@@ -90,42 +90,42 @@ class DefasagemAPIUser(HttpUser):
     """
     Simulated user for load testing the Defasagem Risk API.
     """
-    
+
     # Wait time between requests (1-3 seconds)
     wait_time = between(1, 3)
-    
+
     def on_start(self):
         """Set up headers for authenticated requests."""
         self.headers = {"Content-Type": "application/json"}
         if API_KEY:
             self.headers["X-API-Key"] = API_KEY
-    
+
     @task(1)
     def health_check(self):
         """Test health endpoint (lightweight, no auth)."""
         self.client.get("/health", name="/health")
-    
+
     @task(1)
     def readiness_check(self):
         """Test readiness endpoint."""
         self.client.get("/ready", name="/ready")
-    
+
     @task(1)
     def get_metadata(self):
         """Test metadata endpoint."""
         self.client.get("/metadata", headers=self.headers, name="/metadata")
-    
+
     @task(1)
     def get_metrics(self):
         """Test metrics endpoint."""
         self.client.get("/metrics", headers=self.headers, name="/metrics")
-    
+
     @task(10)
     def predict_single(self):
         """Test single instance prediction (most common use case)."""
         instance = random.choice(SAMPLE_INSTANCES)
         payload = {"instances": [instance]}
-        
+
         with self.client.post(
             "/predict",
             json=payload,
@@ -143,13 +143,13 @@ class DefasagemAPIUser(HttpUser):
                 response.failure("Rate limited")
             else:
                 response.failure(f"Status {response.status_code}")
-    
+
     @task(3)
     def predict_batch_small(self):
         """Test small batch prediction (5 instances)."""
         instances = random.choices(SAMPLE_INSTANCES, k=5)
         payload = {"instances": instances}
-        
+
         with self.client.post(
             "/predict",
             json=payload,
@@ -165,13 +165,13 @@ class DefasagemAPIUser(HttpUser):
                     response.failure("Wrong prediction count")
             else:
                 response.failure(f"Status {response.status_code}")
-    
+
     @task(1)
     def predict_batch_medium(self):
         """Test medium batch prediction (20 instances)."""
         instances = random.choices(SAMPLE_INSTANCES, k=20)
         payload = {"instances": instances}
-        
+
         with self.client.post(
             "/predict",
             json=payload,
@@ -190,21 +190,21 @@ class HighLoadUser(HttpUser):
     User for stress testing - rapid fire predictions.
     Use with caution - may trigger rate limits.
     """
-    
+
     wait_time = between(0.1, 0.5)
     weight = 1  # Lower weight than main user
-    
+
     def on_start(self):
         self.headers = {"Content-Type": "application/json"}
         if API_KEY:
             self.headers["X-API-Key"] = API_KEY
-    
+
     @task
     def rapid_predict(self):
         """Rapid single predictions for stress testing."""
         instance = random.choice(SAMPLE_INSTANCES)
         payload = {"instances": [instance]}
-        
+
         self.client.post(
             "/predict",
             json=payload,

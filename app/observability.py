@@ -15,37 +15,44 @@ import numpy as np
 logger = logging.getLogger("api")
 
 # Fields to exclude from logs (PII)
-PII_FIELDS = {"ra", "nome", "id", "estudante_id", "student_id", "telefone", "endereco", "email"}
+PII_FIELDS = {
+    "ra",
+    "nome",
+    "id",
+    "estudante_id",
+    "student_id",
+    "telefone",
+    "endereco",
+    "email",
+}
 
 
 class Timer:
     """Context manager for timing operations."""
-    
+
     def __init__(self):
         self.start_time: float = 0
         self.end_time: float = 0
         self.elapsed_ms: float = 0
-    
+
     def __enter__(self):
         self.start_time = time.perf_counter()
         return self
-    
+
     def __exit__(self, *args):
         self.end_time = time.perf_counter()
         self.elapsed_ms = (self.end_time - self.start_time) * 1000
 
 
 def safe_summarize_inputs(
-    instances: List[Dict[str, Any]],
-    expected_features: List[str],
-    top_n: int = 10
+    instances: List[Dict[str, Any]], expected_features: List[str], top_n: int = 10
 ) -> Dict[str, Any]:
     """
     Summarize input features without exposing raw values or PII.
     Returns aggregated statistics only.
     """
     n_instances = len(instances)
-    
+
     if n_instances == 0:
         return {
             "n_instances": 0,
@@ -54,17 +61,17 @@ def safe_summarize_inputs(
             "missing_features_count": 0,
             "extra_features_count": 0,
         }
-    
+
     # Count features across instances
     all_received_features = set()
     missing_counts: Dict[str, int] = {f: 0 for f in expected_features}
     extra_features = set()
     numeric_values: Dict[str, List[float]] = {}
-    
+
     for inst in instances:
         received = set(k for k in inst.keys() if k.lower() not in PII_FIELDS)
         all_received_features.update(received)
-        
+
         # Count missing
         for feat in expected_features:
             value = inst.get(feat)
@@ -74,20 +81,22 @@ def safe_summarize_inputs(
                 if feat not in numeric_values:
                     numeric_values[feat] = []
                 numeric_values[feat].append(float(value))
-        
+
         # Track extra features
         extra_features.update(received - set(expected_features))
-    
+
     # Compute numeric summary (top N features by variance)
     numeric_summary = {}
     feature_variances = []
-    
+
     for feat, values in numeric_values.items():
         if len(values) > 0:
             mean_val = float(np.mean(values))
             var_val = float(np.var(values)) if len(values) > 1 else 0
-            feature_variances.append((feat, var_val, mean_val, min(values), max(values)))
-    
+            feature_variances.append(
+                (feat, var_val, mean_val, min(values), max(values))
+            )
+
     # Sort by variance (descending) and take top N
     feature_variances.sort(key=lambda x: -x[1])
     for feat, var_val, mean_val, min_val, max_val in feature_variances[:top_n]:
@@ -96,7 +105,7 @@ def safe_summarize_inputs(
             "min": round(min_val, 4),
             "max": round(max_val, 4),
         }
-    
+
     return {
         "n_instances": n_instances,
         "n_features_expected": len(expected_features),
@@ -114,10 +123,10 @@ def safe_summarize_outputs(predictions: List[Dict[str, Any]]) -> Dict[str, Any]:
     """
     if not predictions:
         return {"n_predictions": 0}
-    
+
     scores = [p.get("risk_score", 0) for p in predictions]
     labels = [p.get("risk_label", 0) for p in predictions]
-    
+
     return {
         "n_predictions": len(predictions),
         "score_min": round(float(np.min(scores)), 4),
@@ -137,17 +146,17 @@ def log_inference_request(
     expected_features: List[str],
     latency_ms: float,
     status_code: int = 200,
-    warnings: List[str] = None
+    warnings: List[str] = None,
 ) -> Dict[str, Any]:
     """
     Log complete inference request with all required fields.
     Returns the log entry dict.
     """
     warnings = warnings or []
-    
+
     input_summary = safe_summarize_inputs(instances, expected_features)
     output_summary = safe_summarize_outputs(predictions)
-    
+
     log_entry = {
         "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "request_id": request_id,
@@ -164,7 +173,7 @@ def log_inference_request(
         "output_summary": output_summary,
         "warnings": warnings,
     }
-    
+
     # Log as structured JSON
     logger.info(
         "Inference request completed",
@@ -174,17 +183,19 @@ def log_inference_request(
             "latency_ms": log_entry["latency_ms"],
             "n_instances": log_entry["n_instances"],
             "status_code": status_code,
-        }
+        },
     )
-    
+
     return log_entry
 
 
 def timed_inference(func: Callable) -> Callable:
     """Decorator to time inference functions."""
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         with Timer() as timer:
             result = func(*args, **kwargs)
         return result, timer.elapsed_ms
+
     return wrapper

@@ -25,7 +25,14 @@ MAX_BODY_BYTES = int(os.getenv("MAX_BODY_BYTES", "262144"))  # 256KB
 REQUEST_TIMEOUT_MS = int(os.getenv("REQUEST_TIMEOUT_MS", "3000"))
 
 # Public endpoints (no auth required)
-PUBLIC_ENDPOINTS: Set[str] = {"/health", "/ready", "/metadata", "/docs", "/openapi.json", "/redoc"}
+PUBLIC_ENDPOINTS: Set[str] = {
+    "/health",
+    "/ready",
+    "/metadata",
+    "/docs",
+    "/openapi.json",
+    "/redoc",
+}
 
 
 def _parse_api_keys() -> Set[str]:
@@ -48,37 +55,39 @@ class RateLimiter:
     In-memory token bucket rate limiter.
     NOTE: In multi-replica deployments, use Redis for shared state.
     """
-    
+
     def __init__(self, rpm: int = RATE_LIMIT_RPM):
         self.rpm = rpm
         self.tokens_per_second = rpm / 60.0
         self._buckets: Dict[str, Dict] = defaultdict(
             lambda: {"tokens": rpm, "last_update": time.time()}
         )
-    
+
     def _refill(self, bucket: Dict) -> None:
         """Refill tokens based on elapsed time."""
         now = time.time()
         elapsed = now - bucket["last_update"]
-        bucket["tokens"] = min(self.rpm, bucket["tokens"] + elapsed * self.tokens_per_second)
+        bucket["tokens"] = min(
+            self.rpm, bucket["tokens"] + elapsed * self.tokens_per_second
+        )
         bucket["last_update"] = now
-    
+
     def allow(self, key: str) -> bool:
         """Check if request is allowed for given key."""
         bucket = self._buckets[key]
         self._refill(bucket)
-        
+
         if bucket["tokens"] >= 1:
             bucket["tokens"] -= 1
             return True
         return False
-    
+
     def get_remaining(self, key: str) -> int:
         """Get remaining tokens for key."""
         bucket = self._buckets[key]
         self._refill(bucket)
         return int(bucket["tokens"])
-    
+
     def reset(self, key: str = None) -> None:
         """Reset bucket(s) - useful for testing."""
         if key:
@@ -92,7 +101,9 @@ class RateLimiter:
 rate_limiter = RateLimiter()
 
 
-def _error_response(code: str, message: str, request_id: Optional[str] = None, status: int = 400) -> JSONResponse:
+def _error_response(
+    code: str, message: str, request_id: Optional[str] = None, status: int = 400
+) -> JSONResponse:
     """Standard error response format."""
     return JSONResponse(
         status_code=status,
@@ -113,53 +124,61 @@ class SecurityMiddleware(BaseHTTPMiddleware):
     - Rate limiting
     - Request size limiting
     """
-    
+
     def __init__(self, app, api_keys: Set[str] = None):
         super().__init__(app)
         self.api_keys = api_keys if api_keys is not None else _parse_api_keys()
         self.auth_enabled = len(self.api_keys) > 0
-    
+
     async def dispatch(self, request: Request, call_next: Callable):
         request_id = getattr(request.state, "request_id", None)
         path = request.url.path
-        
+
         # Skip auth for public endpoints
         if path in PUBLIC_ENDPOINTS:
             return await call_next(request)
-        
+
         # --- Body size check ---
         content_length = request.headers.get("content-length")
         if content_length and int(content_length) > MAX_BODY_BYTES:
-            logger.warning(f"Request too large: {content_length} bytes", extra={"request_id": request_id})
+            logger.warning(
+                f"Request too large: {content_length} bytes",
+                extra={"request_id": request_id},
+            )
             return _error_response(
                 "PAYLOAD_TOO_LARGE",
                 f"Request body exceeds {MAX_BODY_BYTES} bytes limit",
                 request_id,
                 status=413,
             )
-        
+
         # --- API Key Auth ---
         if self.auth_enabled:
             api_key = request.headers.get("X-API-Key")
-            
+
             if not api_key:
-                logger.warning("Missing API key", extra={"request_id": request_id, "path": path})
+                logger.warning(
+                    "Missing API key", extra={"request_id": request_id, "path": path}
+                )
                 return _error_response(
                     "UNAUTHORIZED",
                     "Missing X-API-Key header",
                     request_id,
                     status=401,
                 )
-            
+
             if api_key not in self.api_keys:
-                logger.warning(f"Invalid API key: {_hash_key(api_key)}", extra={"request_id": request_id})
+                logger.warning(
+                    f"Invalid API key: {_hash_key(api_key)}",
+                    extra={"request_id": request_id},
+                )
                 return _error_response(
                     "UNAUTHORIZED",
                     "Invalid API key",
                     request_id,
                     status=401,
                 )
-            
+
             # --- Rate Limiting (per API key) ---
             if path == "/predict":
                 if not rate_limiter.allow(api_key):
@@ -178,7 +197,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
                     response.headers["X-RateLimit-Remaining"] = str(remaining)
                     response.headers["Retry-After"] = "60"
                     return response
-        
+
         # Process request with timeout enforcement
         timeout_seconds = REQUEST_TIMEOUT_MS / 1000.0
         try:

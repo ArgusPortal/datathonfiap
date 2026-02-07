@@ -42,7 +42,12 @@ from app.schema import (
 # Phase 8: Security, Metrics, Audit, Privacy
 from app.security import SecurityMiddleware, rate_limiter
 from app.metrics import metrics
-from app.audit import audit_trail, init_model_lineage, create_inference_audit_record, hash_dict
+from app.audit import (
+    audit_trail,
+    init_model_lineage,
+    create_inference_audit_record,
+    hash_dict,
+)
 from app.privacy import sanitize_dict_for_logging, aggregate_features
 
 # Base directory
@@ -52,13 +57,16 @@ BASE_DIR = Path(__file__).parent.parent
 INFERENCE_STORE_ENABLED = False
 try:
     from monitoring.inference_store import InferenceStore
+
     INFERENCE_STORE_ENABLED = True
 except ImportError:
     pass
 
+
 def get_inference_store(store_dir: Path) -> "InferenceStore":
     """Lazy factory for inference store."""
     return InferenceStore(store_dir=store_dir)
+
 
 # Setup logging
 logger = setup_logging(LOG_LEVEL)
@@ -78,9 +86,9 @@ async def lifespan(app: FastAPI):
     """Lifecycle manager para carregar modelo no startup."""
     global _startup_time
     _startup_time = time.time()
-    
+
     logger.info("Iniciando aplicação...")
-    
+
     # Carrega modelo
     try:
         model_manager.load(MODEL_PATH, METADATA_PATH, SIGNATURE_PATH)
@@ -90,25 +98,28 @@ async def lifespan(app: FastAPI):
                 "model_version": model_manager.version,
                 "threshold": model_manager.threshold,
                 "n_features": len(model_manager.expected_features),
-            }
+            },
         )
-        
+
         # Phase 8: Initialize model lineage and metrics
         init_model_lineage(str(MODEL_PATH), model_manager.version)
         metrics.set_model_info(model_manager.version)
-        
+
         if AUDIT_ENABLED:
-            audit_trail.add_record("startup", details={
-                "model_version": model_manager.version,
-                "model_path": str(MODEL_PATH),
-            })
-        
+            audit_trail.add_record(
+                "startup",
+                details={
+                    "model_version": model_manager.version,
+                    "model_path": str(MODEL_PATH),
+                },
+            )
+
     except Exception as e:
         logger.error(f"Falha ao carregar modelo: {e}")
         raise
-    
+
     yield
-    
+
     if AUDIT_ENABLED:
         audit_trail.add_record("shutdown")
     logger.info("Encerrando aplicação...")
@@ -132,35 +143,35 @@ async def logging_middleware(request: Request, call_next):
     request_id = generate_request_id()
     request.state.request_id = request_id
     request.state.logger = RequestLogger(request_id)
-    
+
     # Log início do request
     request.state.logger.log_request_start(
         method=request.method,
         path=request.url.path,
     )
-    
+
     # Processa request
     start_time = time.time()
     try:
         response = await call_next(request)
         latency_ms = (time.time() - start_time) * 1000
-        
+
         # Phase 8: Record metrics
         if METRICS_ENABLED:
             success = response.status_code < 400
             metrics.record_request(latency_ms, success)
-        
+
         # Log fim do request
         request.state.logger.log_request_end(
             status_code=response.status_code,
             latency_ms=latency_ms,
         )
-        
+
         # Adiciona request_id no header
         response.headers["X-Request-ID"] = request_id
-        
+
         return response
-        
+
     except Exception as e:
         latency_ms = (time.time() - start_time) * 1000
         if METRICS_ENABLED:
@@ -176,10 +187,10 @@ async def health_check():
     Retorna status do modelo e uptime.
     """
     uptime = time.time() - _startup_time
-    
+
     if METRICS_ENABLED:
         metrics.record_health_check()
-    
+
     return HealthResponse(
         status="healthy" if model_manager.model is not None else "degraded",
         model_loaded=model_manager.model is not None,
@@ -199,7 +210,7 @@ async def readiness_check():
             status_code=503,
             content={"ready": False, "reason": "model_not_loaded"},
         )
-    
+
     return {"ready": True, "model_version": model_manager.version}
 
 
@@ -210,9 +221,9 @@ async def get_metadata():
     """
     if model_manager.model is None:
         raise HTTPException(status_code=503, detail="Modelo não carregado")
-    
+
     safe_metadata = model_manager.get_safe_metadata()
-    
+
     return MetadataResponse(
         model_version=safe_metadata.get("model_version", "unknown"),
         model_family=safe_metadata.get("model_family", "unknown"),
@@ -227,19 +238,19 @@ async def get_metadata():
 async def get_metrics(format: str = "json"):
     """
     Retorna métricas da API.
-    
+
     Args:
         format: 'json' or 'prometheus'
     """
     if not METRICS_ENABLED:
         return {"error": "Metrics disabled"}
-    
+
     if format == "prometheus":
         return PlainTextResponse(
             content=metrics.to_prometheus_format(),
             media_type="text/plain",
         )
-    
+
     return metrics.get_summary()
 
 
@@ -250,7 +261,7 @@ async def get_slo_status():
     """
     if not METRICS_ENABLED:
         return {"error": "Metrics disabled"}
-    
+
     return metrics.get_slo_status()
 
 
@@ -258,19 +269,19 @@ async def get_slo_status():
 async def predict(request: Request, payload: PredictRequest):
     """
     Realiza predição de risco de defasagem.
-    
+
     Aceita batch de instâncias (até 1000).
     Retorna score de risco (0-1) e label binário (0/1).
     """
     global _inference_store
-    
+
     request_id = getattr(request.state, "request_id", generate_request_id())
     start_time = time.time()
     warnings_list = []
-    
+
     if model_manager.model is None:
         raise HTTPException(status_code=503, detail="Modelo não carregado")
-    
+
     try:
         # Valida features
         validated_instances = validate_batch_features(
@@ -278,17 +289,17 @@ async def predict(request: Request, payload: PredictRequest):
             model_manager.expected_features,
             EXTRA_FEATURE_POLICY,
         )
-        
+
         # Converte para DataFrame
         df = pd.DataFrame(validated_instances)
-        
+
         # Predição de probabilidades
         probas = model_manager.model.predict_proba(df)[:, 1]
-        
+
         # Aplica threshold
         threshold = model_manager.threshold
         labels = (probas >= threshold).astype(int)
-        
+
         # Monta resultados
         predictions = []
         for score, label in zip(probas, labels):
@@ -299,26 +310,28 @@ async def predict(request: Request, payload: PredictRequest):
                     model_version=model_manager.version,
                 )
             )
-        
+
         processing_time = (time.time() - start_time) * 1000
-        
+
         # Phase 8: Record metrics and audit
         if METRICS_ENABLED:
             for p in predictions:
                 metrics.record_prediction(p.risk_score, threshold)
-        
+
         if AUDIT_ENABLED:
             # Create audit record with sanitized data (no PII)
             audit_record = create_inference_audit_record(
                 request_id=request_id,
-                input_hash=hash_dict({"instances": [dict(i) for i in payload.instances]}),
+                input_hash=hash_dict(
+                    {"instances": [dict(i) for i in payload.instances]}
+                ),
                 output_probability=float(np.mean(probas)),
                 model_version=model_manager.version,
                 latency_ms=processing_time,
                 success=True,
             )
             audit_trail.add_record("inference", request_id, audit_record)
-        
+
         # Log completo de inferência (observability)
         log_inference_request(
             request_id=request_id,
@@ -330,7 +343,7 @@ async def predict(request: Request, payload: PredictRequest):
             status_code=200,
             warnings=warnings_list,
         )
-        
+
         # Log drift stats (legacy)
         try:
             drift_store.log_event(
@@ -341,7 +354,7 @@ async def predict(request: Request, payload: PredictRequest):
             )
         except Exception as e:
             logger.warning(f"Falha ao logar drift: {e}")
-        
+
         # Log to inference store (if enabled)
         if INFERENCE_STORE_ENABLED:
             try:
@@ -361,13 +374,13 @@ async def predict(request: Request, payload: PredictRequest):
                 )
             except Exception as e:
                 logger.warning(f"Falha ao logar inference store: {e}")
-        
+
         return PredictResponse(
             predictions=predictions,
             request_id=request_id,
             processing_time_ms=round(processing_time, 2),
         )
-        
+
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
     except Exception as e:
@@ -379,7 +392,7 @@ async def predict(request: Request, payload: PredictRequest):
 async def http_exception_handler(request: Request, exc: HTTPException):
     """Handler customizado para HTTPException."""
     request_id = getattr(request.state, "request_id", None)
-    
+
     return JSONResponse(
         status_code=exc.status_code,
         content=ErrorResponse(
@@ -394,7 +407,7 @@ async def general_exception_handler(request: Request, exc: Exception):
     """Handler para exceções não tratadas."""
     request_id = getattr(request.state, "request_id", None)
     logger.error(f"Exceção não tratada: {exc}", exc_info=True)
-    
+
     return JSONResponse(
         status_code=500,
         content=ErrorResponse(
@@ -406,4 +419,5 @@ async def general_exception_handler(request: Request, exc: Exception):
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=PORT)

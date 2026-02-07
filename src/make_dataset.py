@@ -22,6 +22,7 @@ from datetime import datetime
 
 # Adiciona src ao path
 import sys
+
 sys.path.insert(0, str(Path(__file__).parent))
 
 from data_quality import DataQualityChecker, validate_modeling_dataset
@@ -39,140 +40,153 @@ SOURCE_FILE = PROJECT_ROOT / "PEDE2024.xlsx"
 # Mapeamento de colunas para normalização (lowercase, sem espaços)
 COLUMN_MAPPING = {
     # Identificadores
-    'ra': 'ra',
-    'nome': 'nome',
-    'instituicao_ensino_aluno': 'instituicao',
-    'instituição de ensino': 'instituicao',
-    
+    "ra": "ra",
+    "nome": "nome",
+    "instituicao_ensino_aluno": "instituicao",
+    "instituição de ensino": "instituicao",
     # Indicadores principais
-    'inde': 'inde',
-    'ian': 'ian',
-    'ida': 'ida',
-    'ieg': 'ieg',
-    'iaa': 'iaa',
-    'ips': 'ips',
-    'ipp': 'ipp',
-    'ipv': 'ipv',
-    'ipm': 'ipm',
-    
+    "inde": "inde",
+    "ian": "ian",
+    "ida": "ida",
+    "ieg": "ieg",
+    "iaa": "iaa",
+    "ips": "ips",
+    "ipp": "ipp",
+    "ipv": "ipv",
+    "ipm": "ipm",
     # Fase e defasagem
-    'fase': 'fase',
-    'fase_ideal': 'fase_ideal',
-    'fase ideal': 'fase_ideal',
-    'defasagem': 'defasagem',
-    'defas': 'defasagem',
-    
+    "fase": "fase",
+    "fase_ideal": "fase_ideal",
+    "fase ideal": "fase_ideal",
+    "defasagem": "defasagem",
+    "defas": "defasagem",
     # Outros
-    'idade_aluno': 'idade',
-    'anos_pm': 'anos_pm',
-    'anos pm': 'anos_pm',
-    'bolsista': 'bolsista',
-    'ponto_virada': 'ponto_virada',
-    'ponto de virada': 'ponto_virada',
-    'pedra': 'pedra',
-    
+    "idade_aluno": "idade",
+    "anos_pm": "anos_pm",
+    "anos pm": "anos_pm",
+    "bolsista": "bolsista",
+    "ponto_virada": "ponto_virada",
+    "ponto de virada": "ponto_virada",
+    "pedra": "pedra",
     # Indicadores de destaque (2024)
-    'destaque_inde': 'destaque_inde',
-    'destaque inde': 'destaque_inde',
-    'destaque_ida': 'destaque_ida',
-    'destaque ida': 'destaque_ida',
-    'destaque_ieg': 'destaque_ieg',
-    'destaque ieg': 'destaque_ieg',
-    
+    "destaque_inde": "destaque_inde",
+    "destaque inde": "destaque_inde",
+    "destaque_ida": "destaque_ida",
+    "destaque ida": "destaque_ida",
+    "destaque_ieg": "destaque_ieg",
+    "destaque ieg": "destaque_ieg",
     # Recomendações
-    'rec_ava': 'rec_ava',
-    'rec ava': 'rec_ava',
-    'rec_inde': 'rec_inde',
-    'rec inde': 'rec_inde',
-    
+    "rec_ava": "rec_ava",
+    "rec ava": "rec_ava",
+    "rec_inde": "rec_inde",
+    "rec inde": "rec_inde",
     # Indicador nutricional
-    'indicador_nutricional': 'indicador_nutricional',
-    'indicador nutricional': 'indicador_nutricional',
-    
+    "indicador_nutricional": "indicador_nutricional",
+    "indicador nutricional": "indicador_nutricional",
     # Gênero (com e sem acento)
-    'genero': 'genero',
-    'gênero': 'genero',
-    'sexo': 'genero',
-    
+    "genero": "genero",
+    "gênero": "genero",
+    "sexo": "genero",
     # Ano de ingresso
-    'ano_ingresso': 'ano_ingresso',
-    'ano ingresso': 'ano_ingresso',
+    "ano_ingresso": "ano_ingresso",
+    "ano ingresso": "ano_ingresso",
 }
 
 # Colunas que são permitidas como features (sem risco de leakage)
 ALLOWED_FEATURE_COLUMNS = [
-    'ra', 'nome', 'instituicao', 'idade', 'genero',
-    'fase', 'anos_pm', 'ano_ingresso', 'bolsista',
-    'inde', 'ian', 'ida', 'ieg', 'iaa', 'ips', 'ipp', 'ipv', 'ipm',
-    'indicador_nutricional',
+    "ra",
+    "nome",
+    "instituicao",
+    "idade",
+    "genero",
+    "fase",
+    "anos_pm",
+    "ano_ingresso",
+    "bolsista",
+    "inde",
+    "ian",
+    "ida",
+    "ieg",
+    "iaa",
+    "ips",
+    "ipp",
+    "ipv",
+    "ipm",
+    "indicador_nutricional",
 ]
 
 # Colunas bloqueadas (causam leakage)
 BLOCKED_COLUMNS = [
-    'defasagem', 'fase_ideal', 'ponto_virada', 'pedra',
-    'destaque_inde', 'destaque_ida', 'destaque_ieg',
-    'rec_ava', 'rec_inde',
+    "defasagem",
+    "fase_ideal",
+    "ponto_virada",
+    "pedra",
+    "destaque_inde",
+    "destaque_ida",
+    "destaque_ieg",
+    "rec_ava",
+    "rec_inde",
 ]
 
 
 def remove_accents(text: str) -> str:
     """Remove acentos de uma string."""
-    nfkd = unicodedata.normalize('NFKD', text)
-    return ''.join(c for c in nfkd if not unicodedata.combining(c))
+    nfkd = unicodedata.normalize("NFKD", text)
+    return "".join(c for c in nfkd if not unicodedata.combining(c))
 
 
 def normalize_column_name(col: str) -> str:
     """
     Normaliza nome de coluna.
-    
+
     Args:
         col: Nome original da coluna
-        
+
     Returns:
         Nome normalizado
     """
     # Lowercase e strip
     col_clean = col.lower().strip()
-    
+
     # Remove caracteres especiais
-    col_clean = col_clean.replace('_', ' ')
-    
+    col_clean = col_clean.replace("_", " ")
+
     # Busca no mapeamento (com acento original)
     if col_clean in COLUMN_MAPPING:
         return COLUMN_MAPPING[col_clean]
-    
+
     # Tenta sem acento
     col_no_accent = remove_accents(col_clean)
     if col_no_accent in COLUMN_MAPPING:
         return COLUMN_MAPPING[col_no_accent]
-    
+
     # Se não encontrou, retorna versão limpa sem acentos
-    return col_no_accent.replace(' ', '_')
+    return col_no_accent.replace(" ", "_")
 
 
 def fix_excel_date_as_number(value) -> Optional[int]:
     """
     Corrige valores de idade que foram interpretados como datas pelo Excel.
-    
+
     Excel serializa datas como dias desde 1900-01-01.
     Então '1900-01-07' = dia 7 = idade 7.
-    
+
     Args:
         value: Valor a corrigir (pode ser int, float, str, datetime)
-        
+
     Returns:
         Idade como inteiro ou None
     """
     if pd.isna(value):
         return None
-    
+
     # Se já é número válido
     if isinstance(value, (int, float)) and not pd.isna(value):
         val = int(value)
         if 5 <= val <= 30:  # Range válido de idade
             return val
         return None
-    
+
     # Se é string numérica
     if isinstance(value, str):
         try:
@@ -181,102 +195,104 @@ def fix_excel_date_as_number(value) -> Optional[int]:
                 return val
         except (ValueError, TypeError):
             pass
-        
+
         # Se é data serializada do Excel (1900-01-XX)
-        if value.startswith('1900-01-'):
+        if value.startswith("1900-01-"):
             try:
-                day = int(value.split('-')[-1])
+                day = int(value.split("-")[-1])
                 if 5 <= day <= 30:  # Range válido de idade
                     return day
             except (ValueError, IndexError):
                 pass
-        
+
         # Tenta parse de data genérica
         try:
             from datetime import datetime as dt
-            parsed = dt.strptime(value, '%Y-%m-%d')
+
+            parsed = dt.strptime(value, "%Y-%m-%d")
             if parsed.year == 1900:
                 return parsed.day if 5 <= parsed.day <= 30 else None
         except (ValueError, TypeError):
             pass
-    
+
     return None
 
 
 def normalize_instituicao(value: str) -> str:
     """
     Normaliza valores da coluna instituição para categorias padronizadas.
-    
+
     Args:
         value: Valor original
-        
+
     Returns:
         Categoria normalizada
     """
     if pd.isna(value):
-        return 'Desconhecido'
-    
+        return "Desconhecido"
+
     value_lower = str(value).strip().lower()
     value_no_accent = remove_accents(value_lower)
-    
+
     # Mapeamento para categorias padronizadas
-    if 'publica' in value_no_accent:
-        return 'Publica'
-    elif 'apadrinhamento' in value_no_accent:
-        return 'Privada_Apadrinhamento'
-    elif 'bolsa' in value_no_accent or 'parceira' in value_no_accent:
-        return 'Privada_Bolsa'
-    elif 'privada' in value_no_accent:
-        return 'Privada'
-    elif 'concluiu' in value_no_accent or ('3' in value_no_accent and 'em' in value_no_accent):
-        return 'Concluiu_EM'
-    elif 'nenhuma' in value_no_accent:
-        return 'Outro'
+    if "publica" in value_no_accent:
+        return "Publica"
+    elif "apadrinhamento" in value_no_accent:
+        return "Privada_Apadrinhamento"
+    elif "bolsa" in value_no_accent or "parceira" in value_no_accent:
+        return "Privada_Bolsa"
+    elif "privada" in value_no_accent:
+        return "Privada"
+    elif "concluiu" in value_no_accent or (
+        "3" in value_no_accent and "em" in value_no_accent
+    ):
+        return "Concluiu_EM"
+    elif "nenhuma" in value_no_accent:
+        return "Outro"
     else:
-        return 'Outro'
+        return "Outro"
 
 
 def load_and_normalize_sheet(
-    filepath: Path, 
-    sheet_name: str,
-    year: int
+    filepath: Path, sheet_name: str, year: int
 ) -> Tuple[pd.DataFrame, Dict]:
     """
     Carrega e normaliza uma aba do Excel.
-    
+
     Args:
         filepath: Caminho do arquivo Excel
         sheet_name: Nome da aba
         year: Ano dos dados
-        
+
     Returns:
         Tuple[DataFrame normalizado, schema dict]
     """
     print(f"  Carregando {sheet_name}...")
     df = pd.read_excel(filepath, sheet_name=sheet_name)
-    
+
     original_columns = df.columns.tolist()
-    
+
     # Normaliza nomes de colunas
     new_columns = {}
     for col in df.columns:
         new_name = normalize_column_name(col)
         new_columns[col] = new_name
-    
+
     df = df.rename(columns=new_columns)
-    
+
     # Remove colunas duplicadas (mantém primeira)
     df = df.loc[:, ~df.columns.duplicated()]
-    
+
     # Trata colunas com tipos mistos para evitar erros no parquet
     from datetime import datetime as dt
+
     for col in df.columns:
-        if df[col].dtype == 'object':
+        if df[col].dtype == "object":
             # Tenta converter para numérico primeiro
-            numeric_converted = pd.to_numeric(df[col], errors='coerce')
+            numeric_converted = pd.to_numeric(df[col], errors="coerce")
             non_null_original = df[col].notna().sum()
             non_null_numeric = numeric_converted.notna().sum()
-            
+
             # Se maioria converteu para numérico, usa versão numérica
             if non_null_numeric >= non_null_original * 0.8:
                 df[col] = numeric_converted
@@ -286,62 +302,67 @@ def load_and_normalize_sheet(
                     if pd.isna(x):
                         return None
                     if isinstance(x, dt):
-                        return x.strftime('%Y-%m-%d')
+                        return x.strftime("%Y-%m-%d")
                     return str(x)
+
                 df[col] = df[col].apply(safe_str)
-    
+
     # === NORMALIZAÇÃO DE COLUNAS ANO-ESPECÍFICAS ===
     # Renomeia colunas com sufixo do ano para nome genérico
     # Ex: idade_22 → idade, inde_22 → inde (para a aba de 2022)
     short_year = str(year)[-2:]
     year_renames = {}
     for col in list(df.columns):
-        if col == f'idade_{short_year}' and 'idade' not in df.columns:
-            year_renames[col] = 'idade'
+        if col == f"idade_{short_year}" and "idade" not in df.columns:
+            year_renames[col] = "idade"
     if year_renames:
         df = df.rename(columns=year_renames)
         print(f"    📎 Colunas renomeadas ({year}): {year_renames}")
-    
+
     # === CORREÇÕES ESPECÍFICAS DE COLUNAS ===
-    
+
     # Fix idade corrompida pelo Excel (datas serializadas como 1900-01-XX)
-    if 'idade' in df.columns:
-        df['idade'] = df['idade'].apply(fix_excel_date_as_number)
-        print(f"    ✅ Coluna 'idade' corrigida: {df['idade'].notna().sum()} valores válidos")
-    
+    if "idade" in df.columns:
+        df["idade"] = df["idade"].apply(fix_excel_date_as_number)
+        print(
+            f"    ✅ Coluna 'idade' corrigida: {df['idade'].notna().sum()} valores válidos"
+        )
+
     # Normaliza instituição para categorias padronizadas
-    if 'instituicao' in df.columns:
-        df['instituicao'] = df['instituicao'].apply(normalize_instituicao)
-        print(f"    ✅ Coluna 'instituicao' normalizada: {df['instituicao'].nunique()} categorias")
-    
+    if "instituicao" in df.columns:
+        df["instituicao"] = df["instituicao"].apply(normalize_instituicao)
+        print(
+            f"    ✅ Coluna 'instituicao' normalizada: {df['instituicao'].nunique()} categorias"
+        )
+
     # Adiciona coluna de ano
-    df['ano'] = year
-    
+    df["ano"] = year
+
     # Gera schema
     schema = {
-        'year': year,
-        'original_columns': original_columns,
-        'normalized_columns': df.columns.tolist(),
-        'n_rows': len(df),
-        'n_columns': len(df.columns),
-        'column_types': {col: str(df[col].dtype) for col in df.columns},
-        'created_at': datetime.now().isoformat()
+        "year": year,
+        "original_columns": original_columns,
+        "normalized_columns": df.columns.tolist(),
+        "n_rows": len(df),
+        "n_columns": len(df.columns),
+        "column_types": {col: str(df[col].dtype) for col in df.columns},
+        "created_at": datetime.now().isoformat(),
     }
-    
+
     print(f"    {len(df)} registros, {len(df.columns)} colunas")
-    
+
     return df, schema
 
 
 def compute_target(defasagem: pd.Series) -> pd.Series:
     """
     Computa target binário baseado na defasagem.
-    
+
     Regra: em_risco = 1 se Defasagem < 0, senão 0
-    
+
     Args:
         defasagem: Série com valores de defasagem
-        
+
     Returns:
         Série com target binário
     """
@@ -352,177 +373,182 @@ def create_modeling_dataset(
     features_df: pd.DataFrame,
     labels_df: pd.DataFrame,
     feature_year: int,
-    label_year: int
+    label_year: int,
 ) -> pd.DataFrame:
     """
     Cria dataset de modelagem juntando features e labels.
-    
+
     Args:
         features_df: DataFrame com features (ano t)
         labels_df: DataFrame com labels (ano t+1)
         feature_year: Ano das features
         label_year: Ano dos labels
-        
+
     Returns:
         DataFrame de modelagem
     """
-    print(f"\nCriando dataset de modelagem: features {feature_year} → labels {label_year}")
-    
+    print(
+        f"\nCriando dataset de modelagem: features {feature_year} → labels {label_year}"
+    )
+
     # Seleciona apenas colunas permitidas para features
-    available_features = [col for col in ALLOWED_FEATURE_COLUMNS if col in features_df.columns]
+    available_features = [
+        col for col in ALLOWED_FEATURE_COLUMNS if col in features_df.columns
+    ]
     features_clean = features_df[available_features].copy()
-    
+
     # Renomeia colunas com sufixo do ano
-    rename_map = {col: f"{col}_{feature_year}" for col in features_clean.columns if col != 'ra'}
+    rename_map = {
+        col: f"{col}_{feature_year}" for col in features_clean.columns if col != "ra"
+    }
     features_clean = features_clean.rename(columns=rename_map)
-    
+
     # Prepara labels
-    labels_clean = labels_df[['ra', 'defasagem']].copy()
-    labels_clean['em_risco'] = compute_target(labels_clean['defasagem'])
-    labels_clean = labels_clean.drop(columns=['defasagem'])
-    labels_clean = labels_clean.rename(columns={'em_risco': f'em_risco_{label_year}'})
-    
+    labels_clean = labels_df[["ra", "defasagem"]].copy()
+    labels_clean["em_risco"] = compute_target(labels_clean["defasagem"])
+    labels_clean = labels_clean.drop(columns=["defasagem"])
+    labels_clean = labels_clean.rename(columns={"em_risco": f"em_risco_{label_year}"})
+
     # Join por RA
-    modeling_df = features_clean.merge(labels_clean, on='ra', how='inner')
-    
+    modeling_df = features_clean.merge(labels_clean, on="ra", how="inner")
+
     print(f"  Features disponíveis: {len(available_features)}")
     print(f"  RAs com match: {len(modeling_df)}")
     print(f"  Target distribution:")
-    target_col = f'em_risco_{label_year}'
-    print(f"    em_risco=1: {modeling_df[target_col].sum()} ({modeling_df[target_col].mean():.1%})")
-    print(f"    em_risco=0: {(modeling_df[target_col]==0).sum()} ({(modeling_df[target_col]==0).mean():.1%})")
-    
+    target_col = f"em_risco_{label_year}"
+    print(
+        f"    em_risco=1: {modeling_df[target_col].sum()} ({modeling_df[target_col].mean():.1%})"
+    )
+    print(
+        f"    em_risco=0: {(modeling_df[target_col]==0).sum()} ({(modeling_df[target_col]==0).mean():.1%})"
+    )
+
     return modeling_df
 
 
 def generate_data_card(
-    datasets: Dict[int, pd.DataFrame],
-    modeling_df: pd.DataFrame,
-    output_path: Path
+    datasets: Dict[int, pd.DataFrame], modeling_df: pd.DataFrame, output_path: Path
 ) -> Dict:
     """
     Gera data card com metadados do pipeline.
-    
+
     Args:
         datasets: Dict de ano -> DataFrame normalizado
         modeling_df: DataFrame de modelagem
         output_path: Caminho para salvar
-        
+
     Returns:
         Dict com data card
     """
     data_card = {
-        'pipeline_version': '1.0.0',
-        'created_at': datetime.now().isoformat(),
-        'source_file': str(SOURCE_FILE),
-        
-        'interim_datasets': {},
-        'modeling_dataset': {},
-        
-        'quality_checks': {},
+        "pipeline_version": "1.0.0",
+        "created_at": datetime.now().isoformat(),
+        "source_file": str(SOURCE_FILE),
+        "interim_datasets": {},
+        "modeling_dataset": {},
+        "quality_checks": {},
     }
-    
+
     # Info dos datasets intermediários
     for year, df in datasets.items():
-        data_card['interim_datasets'][year] = {
-            'n_rows': len(df),
-            'n_columns': len(df.columns),
-            'columns': df.columns.tolist(),
-            'missing_by_column': df.isnull().sum().to_dict(),
+        data_card["interim_datasets"][year] = {
+            "n_rows": len(df),
+            "n_columns": len(df.columns),
+            "columns": df.columns.tolist(),
+            "missing_by_column": df.isnull().sum().to_dict(),
         }
-    
+
     # Info do dataset de modelagem
-    target_col = [c for c in modeling_df.columns if c.startswith('em_risco')][0]
-    feature_cols = [c for c in modeling_df.columns if c not in ['ra', target_col]]
-    
-    data_card['modeling_dataset'] = {
-        'n_rows': len(modeling_df),
-        'n_features': len(feature_cols),
-        'features': feature_cols,
-        'target_column': target_col,
-        'target_distribution': {
-            'em_risco_1': int(modeling_df[target_col].sum()),
-            'em_risco_0': int((modeling_df[target_col] == 0).sum()),
-            'ratio_em_risco': float(modeling_df[target_col].mean()),
+    target_col = [c for c in modeling_df.columns if c.startswith("em_risco")][0]
+    feature_cols = [c for c in modeling_df.columns if c not in ["ra", target_col]]
+
+    data_card["modeling_dataset"] = {
+        "n_rows": len(modeling_df),
+        "n_features": len(feature_cols),
+        "features": feature_cols,
+        "target_column": target_col,
+        "target_distribution": {
+            "em_risco_1": int(modeling_df[target_col].sum()),
+            "em_risco_0": int((modeling_df[target_col] == 0).sum()),
+            "ratio_em_risco": float(modeling_df[target_col].mean()),
         },
-        'missing_features': modeling_df[feature_cols].isnull().sum().to_dict(),
+        "missing_features": modeling_df[feature_cols].isnull().sum().to_dict(),
     }
-    
+
     # Salva
-    with open(output_path, 'w', encoding='utf-8') as f:
+    with open(output_path, "w", encoding="utf-8") as f:
         json.dump(data_card, f, indent=2, ensure_ascii=False, default=str)
-    
+
     return data_card
 
 
 def add_delta_features(
-    modeling_df: pd.DataFrame,
-    prev_df: pd.DataFrame,
-    prev_year: int,
-    curr_year: int
+    modeling_df: pd.DataFrame, prev_df: pd.DataFrame, prev_year: int, curr_year: int
 ) -> pd.DataFrame:
     """
     Enriquece dataset de modelagem com features delta do ano anterior.
-    
+
     Calcula a variação (delta) dos indicadores entre prev_year e curr_year
     para capturar evolução temporal dos alunos.
-    
+
     Args:
         modeling_df: Dataset de modelagem (features com sufixo _curr_year)
         prev_df: DataFrame do ano anterior (indicadores sem sufixo)
         prev_year: Ano anterior (ex: 2022)
         curr_year: Ano das features (ex: 2023)
-        
+
     Returns:
         DataFrame enriquecido com delta features
     """
-    DELTA_INDICATORS = ['ian', 'ida', 'ieg', 'iaa', 'ips', 'ipv']
-    
+    DELTA_INDICATORS = ["ian", "ida", "ieg", "iaa", "ips", "ipv"]
+
     # Seleciona indicadores do ano anterior
-    prev_cols = ['ra'] + [i for i in DELTA_INDICATORS if i in prev_df.columns]
-    prev_data = prev_df[prev_cols].drop_duplicates(subset=['ra'], keep='first').copy()
-    
+    prev_cols = ["ra"] + [i for i in DELTA_INDICATORS if i in prev_df.columns]
+    prev_data = prev_df[prev_cols].drop_duplicates(subset=["ra"], keep="first").copy()
+
     # Renomeia para evitar conflito
-    prev_rename = {col: f"_prev_{col}" for col in prev_data.columns if col != 'ra'}
+    prev_rename = {col: f"_prev_{col}" for col in prev_data.columns if col != "ra"}
     prev_data = prev_data.rename(columns=prev_rename)
-    
+
     # Converte para numérico
     for col in prev_data.columns:
-        if col != 'ra':
-            prev_data[col] = pd.to_numeric(prev_data[col], errors='coerce')
-    
+        if col != "ra":
+            prev_data[col] = pd.to_numeric(prev_data[col], errors="coerce")
+
     # Merge (left join para manter todos os alunos do dataset atual)
     n_before = len(modeling_df)
-    modeling_df = modeling_df.merge(prev_data, on='ra', how='left')
+    modeling_df = modeling_df.merge(prev_data, on="ra", how="left")
     assert len(modeling_df) == n_before, "Delta join não deve alterar número de linhas"
-    
+
     # Computa deltas
     deltas_created = []
     for ind in DELTA_INDICATORS:
         curr_col = f"{ind}_{curr_year}"
         prev_col = f"_prev_{ind}"
         delta_col = f"delta_{ind}_{prev_year}_{curr_year}"
-        
+
         if curr_col in modeling_df.columns and prev_col in modeling_df.columns:
             modeling_df[delta_col] = (
-                pd.to_numeric(modeling_df[curr_col], errors='coerce') -
-                modeling_df[prev_col]
+                pd.to_numeric(modeling_df[curr_col], errors="coerce")
+                - modeling_df[prev_col]
             )
             deltas_created.append(delta_col)
-    
+
     # Flag: aluno tinha dados no ano anterior?
-    first_prev = [c for c in modeling_df.columns if c.startswith('_prev_')]
+    first_prev = [c for c in modeling_df.columns if c.startswith("_prev_")]
     if first_prev:
-        modeling_df['has_prev_year_data'] = modeling_df[first_prev[0]].notna().astype(int)
-    
+        modeling_df["has_prev_year_data"] = (
+            modeling_df[first_prev[0]].notna().astype(int)
+        )
+
     # Remove colunas temporárias
-    prev_temp_cols = [c for c in modeling_df.columns if c.startswith('_prev_')]
+    prev_temp_cols = [c for c in modeling_df.columns if c.startswith("_prev_")]
     modeling_df = modeling_df.drop(columns=prev_temp_cols)
-    
-    n_with_prev = int(modeling_df.get('has_prev_year_data', pd.Series([0])).sum())
+
+    n_with_prev = int(modeling_df.get("has_prev_year_data", pd.Series([0])).sum())
     print(f"  ✅ Delta features criadas: {deltas_created}")
     print(f"  📊 Alunos com dados do ano anterior: {n_with_prev}/{len(modeling_df)}")
-    
+
     return modeling_df
 
 
@@ -532,11 +558,11 @@ def run_pipeline(
     output_processed: Path = DATA_PROCESSED,
     feature_year: int = 2023,
     label_year: int = 2024,
-    validate: bool = True
+    validate: bool = True,
 ) -> Tuple[bool, pd.DataFrame]:
     """
     Executa pipeline completo de criação do dataset.
-    
+
     Args:
         source_file: Arquivo Excel fonte
         output_interim: Pasta para arquivos intermediários
@@ -544,156 +570,168 @@ def run_pipeline(
         feature_year: Ano para extrair features
         label_year: Ano para extrair labels (target)
         validate: Se True, executa validações de qualidade
-        
+
     Returns:
         Tuple[success, modeling_dataframe]
     """
     print("=" * 60)
     print("PIPELINE: Make Dataset - Passos Mágicos")
     print("=" * 60)
-    
+
     # Cria diretórios
     output_interim.mkdir(parents=True, exist_ok=True)
     output_processed.mkdir(parents=True, exist_ok=True)
-    
+
     # Verifica arquivo fonte
     if not source_file.exists():
         print(f"❌ ERRO: Arquivo fonte não encontrado: {source_file}")
         return False, None
-    
+
     print(f"\nFonte: {source_file}")
     print(f"Feature year: {feature_year}")
     print(f"Label year: {label_year}")
-    
+
     # Step 1: Carrega e normaliza cada aba
     print("\n[Step 1] Carregando e normalizando abas...")
     datasets = {}
     schemas = {}
-    
+
     for year in [2022, 2023, 2024]:
         sheet_name = f"PEDE{year}"
         try:
             df, schema = load_and_normalize_sheet(source_file, sheet_name, year)
             datasets[year] = df
             schemas[year] = schema
-            
+
             # Salva parquet
             parquet_path = output_interim / f"{year}_normalized.parquet"
             df.to_parquet(parquet_path, index=False)
             print(f"    Salvo: {parquet_path.name}")
-            
+
             # Salva schema
             schema_path = output_interim / f"{year}_schema.json"
-            with open(schema_path, 'w', encoding='utf-8') as f:
+            with open(schema_path, "w", encoding="utf-8") as f:
                 json.dump(schema, f, indent=2, ensure_ascii=False)
-            
+
         except Exception as e:
             print(f"  ❌ Erro ao processar {sheet_name}: {e}")
             return False, None
-    
+
     # Step 2: Validação de qualidade
     if validate:
         print("\n[Step 2] Validação de qualidade...")
         all_passed = True
-        
+
         for year, df in datasets.items():
             checker = DataQualityChecker(df, year=year)
-            passed, _ = checker.run_all_checks(critical_columns=['ra'])
-            
+            passed, _ = checker.run_all_checks(critical_columns=["ra"])
+
             status = "✅" if passed else "❌"
             print(f"  {status} {year}: {len(df)} registros")
-            
+
             if not passed:
                 all_passed = False
                 print(checker.get_summary())
-        
+
         if not all_passed:
             print("\n⚠️ AVISO: Algumas validações falharam, mas continuando...")
-    
+
     # Step 3: Cria dataset de modelagem
     print("\n[Step 3] Criando dataset de modelagem...")
-    
+
     if feature_year not in datasets or label_year not in datasets:
         print(f"❌ ERRO: Anos {feature_year} ou {label_year} não disponíveis")
         return False, None
-    
+
     modeling_df = create_modeling_dataset(
         features_df=datasets[feature_year],
         labels_df=datasets[label_year],
         feature_year=feature_year,
-        label_year=label_year
+        label_year=label_year,
     )
-    
+
     # Step 3.5: Enriquecer com delta features do ano anterior
     prev_year = feature_year - 1
     if prev_year in datasets:
-        print(f"\n[Step 3.5] Adicionando delta features ({prev_year}→{feature_year})...")
+        print(
+            f"\n[Step 3.5] Adicionando delta features ({prev_year}→{feature_year})..."
+        )
         modeling_df = add_delta_features(
             modeling_df=modeling_df,
             prev_df=datasets[prev_year],
             prev_year=prev_year,
-            curr_year=feature_year
+            curr_year=feature_year,
         )
     else:
         print(f"\n[Step 3.5] Sem dados de {prev_year} para delta features (pulando)")
-    
+
     # Step 4: Validação final do dataset de modelagem
     print("\n[Step 4] Validação final...")
-    
+
     # Verifica leakage
-    feature_cols = [c for c in modeling_df.columns if not c.startswith('em_risco') and c != 'ra']
+    feature_cols = [
+        c for c in modeling_df.columns if not c.startswith("em_risco") and c != "ra"
+    ]
     checker = DataQualityChecker(modeling_df)
     leakage_result = checker.check_leakage(feature_cols)
-    
+
     if not leakage_result.passed:
         print(f"❌ LEAKAGE DETECTADO: {leakage_result.details}")
         return False, None
     else:
         print("  ✅ Sem leakage nas features")
-    
+
     # Step 5: Salva dataset final
     print("\n[Step 5] Salvando outputs...")
-    
+
     # Salva parquet
     modeling_path = output_processed / "modeling_dataset.parquet"
     modeling_df.to_parquet(modeling_path, index=False)
     print(f"  ✅ Salvo: {modeling_path}")
-    
+
     # Gera e salva data card
     data_card_path = output_processed / "data_card.json"
     data_card = generate_data_card(datasets, modeling_df, data_card_path)
     print(f"  ✅ Salvo: {data_card_path}")
-    
+
     # Resumo final
     print("\n" + "=" * 60)
     print("RESUMO DO PIPELINE")
     print("=" * 60)
     print(f"Datasets intermediários: {len(datasets)}")
     print(f"Dataset de modelagem: {len(modeling_df)} registros")
-    target_col = [c for c in modeling_df.columns if c.startswith('em_risco')][0]
+    target_col = [c for c in modeling_df.columns if c.startswith("em_risco")][0]
     print(f"Target distribution: {modeling_df[target_col].mean():.1%} em risco")
-    print(f"Features: {len([c for c in modeling_df.columns if c not in ['ra', target_col]])}")
+    print(
+        f"Features: {len([c for c in modeling_df.columns if c not in ['ra', target_col]])}"
+    )
     print("\n✅ Pipeline concluído com sucesso!")
-    
+
     return True, modeling_df
 
 
 if __name__ == "__main__":
     import argparse
-    
-    parser = argparse.ArgumentParser(description="Pipeline de criação do dataset de modelagem")
-    parser.add_argument("--source", type=str, default=str(SOURCE_FILE), help="Arquivo Excel fonte")
-    parser.add_argument("--feature-year", type=int, default=2023, help="Ano para features")
+
+    parser = argparse.ArgumentParser(
+        description="Pipeline de criação do dataset de modelagem"
+    )
+    parser.add_argument(
+        "--source", type=str, default=str(SOURCE_FILE), help="Arquivo Excel fonte"
+    )
+    parser.add_argument(
+        "--feature-year", type=int, default=2023, help="Ano para features"
+    )
     parser.add_argument("--label-year", type=int, default=2024, help="Ano para labels")
     parser.add_argument("--no-validate", action="store_true", help="Pula validações")
-    
+
     args = parser.parse_args()
-    
+
     success, df = run_pipeline(
         source_file=Path(args.source),
         feature_year=args.feature_year,
         label_year=args.label_year,
-        validate=not args.no_validate
+        validate=not args.no_validate,
     )
-    
+
     exit(0 if success else 1)

@@ -58,9 +58,7 @@ logger = get_logger("train")
 
 
 def load_and_prepare_data(
-    data_path: str,
-    target_col: str = TARGET_COL,
-    id_cols: list = None
+    data_path: str, target_col: str = TARGET_COL, id_cols: list = None
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
     """Carrega e prepara dados para treino."""
     if id_cols is None:
@@ -126,14 +124,16 @@ def train_single_model(
 ) -> Tuple[Pipeline, Dict[str, Any], float]:
     """
     Treina um modelo individual com validação.
-    
+
     Returns:
         Tuple[pipeline, metrics_dict, threshold]
     """
-    pipeline = Pipeline([
-        ("preprocessor", preprocessor),
-        ("classifier", model),
-    ])
+    pipeline = Pipeline(
+        [
+            ("preprocessor", preprocessor),
+            ("classifier", model),
+        ]
+    )
 
     pipeline.fit(X_train, y_train)
 
@@ -165,10 +165,10 @@ def train_single_model(
     # Adiciona calibração
     if calibration and calibration != "none":
         cal_metrics = calculate_calibration_metrics(y_val.values, y_proba_val)
-        val_metrics['brier_score'] = cal_metrics['brier_score']
-        val_metrics['calibration_error'] = cal_metrics['calibration_error']
+        val_metrics["brier_score"] = cal_metrics["brier_score"]
+        val_metrics["calibration_error"] = cal_metrics["calibration_error"]
 
-    val_metrics['model_name'] = model_name
+    val_metrics["model_name"] = model_name
 
     return pipeline, val_metrics, threshold
 
@@ -185,7 +185,7 @@ def train_and_evaluate_v1(
 ) -> Tuple[Dict[str, Dict], Pipeline, float, str]:
     """
     Treina múltiplos candidatos, avalia e seleciona melhor.
-    
+
     Returns:
         Tuple[all_results, best_pipeline, best_threshold, best_model_name]
     """
@@ -239,10 +239,13 @@ def train_and_evaluate_v1(
         y_proba_test = pipeline.predict_proba(X_test)[:, 1]
         y_pred_test = (y_proba_test >= threshold).astype(int)
         test_metrics = evaluate_predictions(
-            y_test.values, y_pred_test, y_proba_test, model_name=name,
-            include_calibration=(calibration and calibration != "none")
+            y_test.values,
+            y_pred_test,
+            y_proba_test,
+            model_name=name,
+            include_calibration=(calibration and calibration != "none"),
         )
-        test_metrics['threshold'] = threshold
+        test_metrics["threshold"] = threshold
         results_test[name] = test_metrics
 
         logger.info(f"  Test Recall: {test_metrics['recall']:.3f}")
@@ -250,8 +253,7 @@ def train_and_evaluate_v1(
 
     # Seleciona melhor baseado em validação
     best_name = max(
-        results_val.items(),
-        key=lambda x: (x[1].get('f2', 0), x[1].get('pr_auc', 0))
+        results_val.items(), key=lambda x: (x[1].get("f2", 0), x[1].get("pr_auc", 0))
     )[0]
 
     logger.info(f"\n{'='*50}")
@@ -260,8 +262,8 @@ def train_and_evaluate_v1(
     logger.info(f"  Test Recall: {results_test[best_name]['recall']:.3f}")
 
     all_results = {
-        'validation': results_val,
-        'test': results_test,
+        "validation": results_val,
+        "test": results_test,
     }
 
     return all_results, pipelines[best_name], thresholds[best_name], best_name
@@ -286,8 +288,8 @@ def save_artifacts_v1(
     logger.info(f"Modelo salvo: {model_path}")
 
     # 2. Metrics v1
-    best_test = all_results['test'][best_model_name]
-    best_val = all_results['validation'][best_model_name]
+    best_test = all_results["test"][best_model_name]
+    best_val = all_results["validation"][best_model_name]
 
     metrics_v1 = {
         "created_at": datetime.now().isoformat(),
@@ -301,6 +303,7 @@ def save_artifacts_v1(
 
     # 3. Metadata v1
     import sklearn
+
     metadata = {
         "model_version": "v1.1.0",
         "created_at": datetime.now().isoformat(),
@@ -312,8 +315,13 @@ def save_artifacts_v1(
         "population_filter": "all_phases",
         "expected_features": sorted(feature_names),
         "blocked_features": [
-            "ra", "nome", "em_risco_*", "defasagem_*",
-            "ponto_virada_*", "pedra_*", "fase_ideal_*",
+            "ra",
+            "nome",
+            "em_risco_*",
+            "defasagem_*",
+            "ponto_virada_*",
+            "pedra_*",
+            "fase_ideal_*",
         ],
         "preprocessing_summary": [
             "SimpleImputer(median) para numéricos",
@@ -348,7 +356,7 @@ def save_artifacts_v1(
     # 4. Signature v1
     feature_schema = {}
     for f in feature_names:
-        if 'instituicao' in f.lower():
+        if "instituicao" in f.lower():
             feature_schema[f] = "object"
         else:
             feature_schema[f] = "float64"
@@ -360,8 +368,10 @@ def save_artifacts_v1(
             "risk_label": "int",
             "model_version": "str",
         },
-        "example_request": {f: 5.0 if feature_schema[f] == "float64" else "A"
-                           for f in list(feature_names)[:5]},
+        "example_request": {
+            f: 5.0 if feature_schema[f] == "float64" else "A"
+            for f in list(feature_names)[:5]
+        },
         "example_response": {
             "risk_score": 0.72,
             "risk_label": 1,
@@ -372,26 +382,29 @@ def save_artifacts_v1(
 
     # 5. Model Comparison
     comparison_report = generate_model_comparison_report(
-        all_results['test'],
+        all_results["test"],
         primary_metric=PRIMARY_METRIC,
         constraints={"min_recall": MIN_RECALL_TARGET},
     )
-    comparison_report['validation_results'] = all_results['validation']
-    comparison_report['test_results'] = all_results['test']
-    comparison_report['selection_criteria'] = f"max {PRIMARY_METRIC} em validação"
+    comparison_report["validation_results"] = all_results["validation"]
+    comparison_report["test_results"] = all_results["test"]
+    comparison_report["selection_criteria"] = f"max {PRIMARY_METRIC} em validação"
     save_json(artifacts_dir / "model_comparison.json", comparison_report)
 
     # 6. Model Report (curto)
     from src.model_card import build_model_card
+
     report_md = build_model_card(metadata, best_test, comparison_report)
-    (artifacts_dir / "model_report.md").write_text(report_md, encoding='utf-8')
+    (artifacts_dir / "model_report.md").write_text(report_md, encoding="utf-8")
 
     logger.info(f"Todos artefatos v1 salvos em {artifacts_dir}")
 
 
 def main():
     parser = argparse.ArgumentParser(description="Treina modelo v1")
-    parser.add_argument("--data", type=str, default="data/processed/modeling_dataset.parquet")
+    parser.add_argument(
+        "--data", type=str, default="data/processed/modeling_dataset.parquet"
+    )
     parser.add_argument("--artifacts", type=str, default="artifacts")
     parser.add_argument("--seed", type=int, default=SEED)
     parser.add_argument("--calibration", type=str, default=CALIBRATION_METHOD)
@@ -413,7 +426,10 @@ def main():
     logger.info(f"Train: {len(y_train)}, Test: {len(y_test)}")
 
     all_results, best_pipeline, best_threshold, best_name = train_and_evaluate_v1(
-        X_train, y_train, X_test, y_test,
+        X_train,
+        y_train,
+        X_test,
+        y_test,
         seed=args.seed,
         calibration=args.calibration,
         min_precision=MIN_PRECISION,
@@ -433,7 +449,7 @@ def main():
     logger.info("\n" + "=" * 60)
     logger.info("COMPARATIVO FINAL (TEST)")
     logger.info("=" * 60)
-    comparison = compare_models(all_results['test'], PRIMARY_METRIC)
+    comparison = compare_models(all_results["test"], PRIMARY_METRIC)
     print(comparison.to_string(index=False))
 
     logger.info("\n✅ Pipeline v1 concluído!")

@@ -13,42 +13,44 @@ def build_model_card(
 ) -> str:
     """
     Gera model report em markdown (máx ~1 página).
-    
+
     Args:
         metadata: model_metadata_v1.json
         test_metrics: métricas do teste final
         comparison: model_comparison.json
-        
+
     Returns:
         String markdown
     """
-    version = metadata.get('model_version', 'v1.0.0')
-    target_def = metadata.get('target_definition', 'em_risco=1 se defasagem<0')
-    periods = metadata.get('training_periods', ['2023->2024'])
-    population = metadata.get('population_filter', 'all_phases')
-    model_family = metadata.get('model_family', 'unknown')
-    threshold = metadata.get('threshold_policy', {}).get('threshold_value', 0.5)
-    calibration = metadata.get('calibration', 'none')
-    
-    recall = test_metrics.get('recall', 0)
-    precision = test_metrics.get('precision', 0)
-    f1 = test_metrics.get('f1', 0)
-    f2 = test_metrics.get('f2', 0)
-    pr_auc = test_metrics.get('pr_auc', 0)
-    brier = test_metrics.get('brier_score', None)
-    n_samples = test_metrics.get('n_samples', 0)
-    n_positive = test_metrics.get('n_positive', 0)
-    
-    cm = test_metrics.get('confusion_matrix', [[0,0],[0,0]])
+    version = metadata.get("model_version", "v1.0.0")
+    target_def = metadata.get("target_definition", "em_risco=1 se defasagem<0")
+    periods = metadata.get("training_periods", ["2023->2024"])
+    population = metadata.get("population_filter", "all_phases")
+    model_family = metadata.get("model_family", "unknown")
+    threshold = metadata.get("threshold_policy", {}).get("threshold_value", 0.5)
+    calibration = metadata.get("calibration", "none")
+
+    recall = test_metrics.get("recall", 0)
+    precision = test_metrics.get("precision", 0)
+    f1 = test_metrics.get("f1", 0)
+    f2 = test_metrics.get("f2", 0)
+    pr_auc = test_metrics.get("pr_auc", 0)
+    brier = test_metrics.get("brier_score", None)
+    n_samples = test_metrics.get("n_samples", 0)
+    n_positive = test_metrics.get("n_positive", 0)
+
+    cm = test_metrics.get("confusion_matrix", [[0, 0], [0, 0]])
     tn, fp = cm[0] if len(cm) > 0 else (0, 0)
     fn, tp = cm[1] if len(cm) > 1 else (0, 0)
-    
-    ranking = comparison.get('ranking', [])
-    ranking_str = "\n".join([
-        f"| {r.get('rank',i+1)} | {r.get('model','')} | {r.get('recall',0):.3f} | {r.get('precision',0):.3f} | {r.get('pr_auc',0):.3f} |"
-        for i, r in enumerate(ranking[:5])
-    ])
-    
+
+    ranking = comparison.get("ranking", [])
+    ranking_str = "\n".join(
+        [
+            f"| {r.get('rank',i+1)} | {r.get('model','')} | {r.get('recall',0):.3f} | {r.get('precision',0):.3f} | {r.get('pr_auc',0):.3f} |"
+            for i, r in enumerate(ranking[:5])
+        ]
+    )
+
     md = f"""# Model Report - {version}
 
 **Gerado em:** {datetime.now().strftime('%Y-%m-%d %H:%M')}

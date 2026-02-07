@@ -43,51 +43,53 @@ def filter_jsonl_file(
 ) -> dict:
     """
     Filter JSONL file to remove records older than cutoff date.
-    
+
     Returns:
         dict with statistics: total_records, removed_records, retained_records
     """
     if not filepath.exists():
         logger.info(f"File not found, skipping: {filepath}")
         return {"total": 0, "removed": 0, "retained": 0, "skipped": True}
-    
+
     total = 0
     removed = 0
     retained_lines = []
-    
+
     # Make cutoff_date offset-naive for comparison if needed
-    cutoff_naive = cutoff_date.replace(tzinfo=None) if cutoff_date.tzinfo else cutoff_date
-    
+    cutoff_naive = (
+        cutoff_date.replace(tzinfo=None) if cutoff_date.tzinfo else cutoff_date
+    )
+
     with open(filepath, "r", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if not line:
                 continue
-            
+
             total += 1
             try:
                 record = json.loads(line)
                 ts_str = record.get(timestamp_field)
-                
+
                 if ts_str:
                     # Handle ISO format timestamps - normalize to naive UTC
                     ts_clean = ts_str.replace("Z", "+00:00")
                     ts = datetime.fromisoformat(ts_clean)
                     # Convert to naive (strip tzinfo) for comparison
                     ts_naive = ts.replace(tzinfo=None)
-                    
+
                     if ts_naive < cutoff_naive:
                         removed += 1
                         continue
-                
+
                 retained_lines.append(line)
-                
+
             except (json.JSONDecodeError, ValueError) as e:
                 logger.warning(f"Could not parse line in {filepath}: {e}")
                 retained_lines.append(line)  # Keep unparseable lines
-    
+
     retained = len(retained_lines)
-    
+
     if not dry_run and removed > 0:
         # Write filtered content back
         with open(filepath, "w", encoding="utf-8") as f:
@@ -96,8 +98,10 @@ def filter_jsonl_file(
                 f.write("\n")
         logger.info(f"Updated {filepath}: removed {removed}/{total} records")
     else:
-        logger.info(f"Would update {filepath}: remove {removed}/{total} records (dry_run={dry_run})")
-    
+        logger.info(
+            f"Would update {filepath}: remove {removed}/{total} records (dry_run={dry_run})"
+        )
+
     return {"total": total, "removed": removed, "retained": retained, "skipped": False}
 
 
@@ -108,34 +112,36 @@ def cleanup_old_logs(
 ) -> dict:
     """
     Clean up old log files based on retention policy.
-    
+
     Returns:
         Summary of cleanup operations.
     """
     cutoff = get_cutoff_date(retention_days)
-    logger.info(f"Retention policy: {retention_days} days, cutoff date: {cutoff.isoformat()}")
-    
+    logger.info(
+        f"Retention policy: {retention_days} days, cutoff date: {cutoff.isoformat()}"
+    )
+
     summary = {
         "retention_days": retention_days,
         "cutoff_date": cutoff.isoformat(),
         "dry_run": dry_run,
         "files": {},
     }
-    
+
     for target in RETENTION_TARGETS:
         filepath = base_dir / target
         result = filter_jsonl_file(filepath, cutoff, dry_run=dry_run)
         summary["files"][target] = result
-    
+
     # Calculate totals
     total_removed = sum(f["removed"] for f in summary["files"].values())
     total_retained = sum(f["retained"] for f in summary["files"].values())
-    
+
     summary["totals"] = {
         "removed": total_removed,
         "retained": total_retained,
     }
-    
+
     return summary
 
 
@@ -148,14 +154,16 @@ def cleanup_old_files_by_mtime(
     """
     Clean up old files based on modification time.
     """
-    cutoff_ts = (datetime.now(timezone.utc) - timedelta(days=retention_days)).timestamp()
-    
+    cutoff_ts = (
+        datetime.now(timezone.utc) - timedelta(days=retention_days)
+    ).timestamp()
+
     removed = []
     retained = []
-    
+
     if not directory.exists():
         return {"removed": [], "retained": [], "skipped": True}
-    
+
     for f in directory.glob(pattern):
         if f.is_file():
             if f.stat().st_mtime < cutoff_ts:
@@ -165,7 +173,7 @@ def cleanup_old_files_by_mtime(
                 logger.info(f"{'Would remove' if dry_run else 'Removed'}: {f}")
             else:
                 retained.append(str(f))
-    
+
     return {"removed": removed, "retained": retained, "skipped": False}
 
 
@@ -185,7 +193,7 @@ Examples:
   python retention.py --include-logs
         """,
     )
-    
+
     parser.add_argument(
         "--days",
         type=int,
@@ -207,16 +215,16 @@ Examples:
         action="store_true",
         help="Output results as JSON",
     )
-    
+
     args = parser.parse_args()
-    
+
     logger.info("=" * 60)
     logger.info("Data Retention Cleanup")
     logger.info("=" * 60)
-    
+
     # Run JSONL cleanup
     summary = cleanup_old_logs(BASE_DIR, args.days, dry_run=args.dry_run)
-    
+
     # Optionally clean old log files
     if args.include_logs:
         logs_dir = BASE_DIR / "logs"
@@ -224,7 +232,7 @@ Examples:
             logs_dir, args.days, pattern="*.log", dry_run=args.dry_run
         )
         summary["log_files"] = log_cleanup
-    
+
     # Output
     if args.output_json:
         print(json.dumps(summary, indent=2))
@@ -235,11 +243,13 @@ Examples:
         logger.info(f"  Dry run: {args.dry_run}")
         logger.info(f"  Total records removed: {summary['totals']['removed']}")
         logger.info(f"  Total records retained: {summary['totals']['retained']}")
-        
+
         for filename, stats in summary["files"].items():
             if not stats.get("skipped"):
-                logger.info(f"  {filename}: removed {stats['removed']}, retained {stats['retained']}")
-    
+                logger.info(
+                    f"  {filename}: removed {stats['removed']}, retained {stats['retained']}"
+                )
+
     return 0
 
 

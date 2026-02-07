@@ -21,23 +21,49 @@ PII_PATTERNS = {
 
 # Fields that might contain PII and should never be logged
 PII_FIELDS: Set[str] = {
-    "nome", "name", "cpf", "email", "telefone", "phone",
-    "endereco", "address", "cep", "rg", "documento", "document",
-    "senha", "password", "token", "api_key", "secret",
+    "nome",
+    "name",
+    "cpf",
+    "email",
+    "telefone",
+    "phone",
+    "endereco",
+    "address",
+    "cep",
+    "rg",
+    "documento",
+    "document",
+    "senha",
+    "password",
+    "token",
+    "api_key",
+    "secret",
 }
 
 # Fields safe to aggregate/log — features do domínio Passos Mágicos
 SAFE_FIELDS: Set[str] = {
     # Indicadores de desempenho
-    "iaa_2023", "ian_2023", "ida_2023", "ieg_2023",
-    "ipp_2023", "ips_2023", "ipv_2023",
+    "iaa_2023",
+    "ian_2023",
+    "ida_2023",
+    "ieg_2023",
+    "ipp_2023",
+    "ips_2023",
+    "ipv_2023",
     # Fase, idade e instituição
-    "fase_2023", "idade_2023", "instituicao_2023",
+    "fase_2023",
+    "idade_2023",
+    "instituicao_2023",
     # Features derivadas
-    "media_indicadores", "std_indicadores", "min_indicador",
-    "max_indicador", "range_indicadores",
+    "media_indicadores",
+    "std_indicadores",
+    "min_indicador",
+    "max_indicador",
+    "range_indicadores",
     # Campos genéricos seguros
-    "risk_score", "risk_label", "model_version",
+    "risk_score",
+    "risk_label",
+    "model_version",
 }
 
 
@@ -86,36 +112,36 @@ def sanitize_dict_for_logging(
 ) -> Dict[str, Any]:
     """
     Sanitize a dictionary for safe logging.
-    
+
     Args:
         data: Input dictionary
         redact_pii_fields: If True, redact known PII fields
         include_safe_only: If True, only include explicitly safe fields
-    
+
     Returns:
         Sanitized dictionary safe for logging
     """
     result = {}
-    
+
     for key, value in data.items():
         key_lower = key.lower()
-        
+
         # Skip if include_safe_only and not in safe list
         if include_safe_only and key_lower not in SAFE_FIELDS:
             continue
-        
+
         # Redact known PII fields
         if redact_pii_fields and key_lower in PII_FIELDS:
             result[key] = "[REDACTED]"
             continue
-        
+
         # Recursively sanitize nested dicts
         if isinstance(value, dict):
             result[key] = sanitize_dict_for_logging(
                 value, redact_pii_fields, include_safe_only
             )
             continue
-        
+
         # Check string values for PII patterns
         if isinstance(value, str):
             if has_pii(value):
@@ -123,10 +149,10 @@ def sanitize_dict_for_logging(
             else:
                 result[key] = value
             continue
-        
+
         # Pass through other types
         result[key] = value
-    
+
     return result
 
 
@@ -136,14 +162,14 @@ def aggregate_features(features: Dict[str, Any]) -> Dict[str, Any]:
     No individual-identifying information retained.
     """
     safe_data = {}
-    
+
     for key, value in features.items():
         key_lower = key.lower()
-        
+
         # Only include known safe fields
         if key_lower not in SAFE_FIELDS:
             continue
-        
+
         # Convert to safe types
         if isinstance(value, (int, float)):
             safe_data[key] = value
@@ -151,7 +177,7 @@ def aggregate_features(features: Dict[str, Any]) -> Dict[str, Any]:
             # Only include categorical/enum-like strings
             if not has_pii(value) and len(value) < 50:
                 safe_data[key] = value
-    
+
     return safe_data
 
 
@@ -160,21 +186,21 @@ class PrivacyContext:
     Context manager for privacy-aware operations.
     Ensures PII is not accidentally leaked.
     """
-    
+
     def __init__(self, context_name: str = "default"):
         self.context_name = context_name
         self._original_data = None
-    
+
     def sanitize_request(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Sanitize incoming request data."""
         self._original_data = data
         return sanitize_dict_for_logging(data, redact_pii_fields=True)
-    
+
     def get_loggable(self, data: Dict[str, Any] = None) -> Dict[str, Any]:
         """Get loggable version of data."""
         target = data or self._original_data or {}
         return sanitize_dict_for_logging(target, include_safe_only=True)
-    
+
     def create_audit_record(
         self,
         action: str,
@@ -198,7 +224,12 @@ class PrivacyContext:
 privacy = PrivacyContext("api")
 
 
-def log_safe(logger_instance: logging.Logger, level: int, message: str, data: Dict[str, Any] = None):
+def log_safe(
+    logger_instance: logging.Logger,
+    level: int,
+    message: str,
+    data: Dict[str, Any] = None,
+):
     """
     Log message with sanitized data.
     Ensures no PII leaks into logs.

@@ -73,14 +73,14 @@ def hash_model_artifact(model_path: str) -> Dict[str, str]:
     """
     path = Path(model_path)
     hashes = {}
-    
+
     if path.is_file():
         hashes[path.name] = hash_file(str(path))
     elif path.is_dir():
         for f in path.glob("*"):
             if f.is_file():
                 hashes[f.name] = hash_file(str(f))
-    
+
     return hashes
 
 
@@ -90,14 +90,14 @@ class AuditTrail:
     Persists records to JSONL file to survive restarts.
     In-memory buffer for fast reads, JSONL on disk for durability.
     """
-    
+
     def __init__(self, persist_path: str = None):
         self._records: List[Dict] = []
         self._max_records = 1000  # In-memory limit
         self.startup_time = datetime.now(timezone.utc).isoformat()
         self.git_sha = get_git_sha()
         self.git_branch = get_git_branch()
-        
+
         # Persistence setup
         self._persist_path: Optional[Path] = None
         self._file_handle = None
@@ -110,7 +110,7 @@ class AuditTrail:
             self._persist_path = Path(persist_path)
             self._persist_path.parent.mkdir(parents=True, exist_ok=True)
             self._load_from_disk()
-    
+
     def _load_from_disk(self) -> None:
         """Load existing records from JSONL file on startup."""
         if not self._persist_path or not self._persist_path.exists():
@@ -126,11 +126,13 @@ class AuditTrail:
                             continue
             # Trim to max
             if len(self._records) > self._max_records:
-                self._records = self._records[-self._max_records:]
-            logger.info(f"Audit trail loaded {len(self._records)} records from {self._persist_path}")
+                self._records = self._records[-self._max_records :]
+            logger.info(
+                f"Audit trail loaded {len(self._records)} records from {self._persist_path}"
+            )
         except Exception as e:
             logger.warning(f"Could not load audit trail from disk: {e}")
-    
+
     def _persist_record(self, record: Dict) -> None:
         """Append a single record to the JSONL file."""
         if not self._persist_path:
@@ -140,7 +142,7 @@ class AuditTrail:
                 f.write(json.dumps(record, default=str) + "\n")
         except Exception as e:
             logger.warning(f"Could not persist audit record: {e}")
-    
+
     def add_record(
         self,
         action: str,
@@ -155,16 +157,16 @@ class AuditTrail:
             "details": details or {},
             "git_sha": self.git_sha,
         }
-        
+
         self._records.append(record)
         self._persist_record(record)
-        
+
         # Trim old records in memory only
         if len(self._records) > self._max_records:
-            self._records = self._records[-self._max_records:]
-        
+            self._records = self._records[-self._max_records :]
+
         return record
-    
+
     def get_records(
         self,
         action: str = None,
@@ -175,14 +177,14 @@ class AuditTrail:
         if action:
             records = [r for r in records if r["action"] == action]
         return list(reversed(records[:limit]))
-    
+
     def get_summary(self) -> Dict:
         """Get audit summary."""
         actions = {}
         for r in self._records:
             action = r["action"]
             actions[action] = actions.get(action, 0) + 1
-        
+
         return {
             "startup_time": self.startup_time,
             "git_sha": self.git_sha,
@@ -190,7 +192,7 @@ class AuditTrail:
             "total_records": len(self._records),
             "actions": actions,
         }
-    
+
     def clear(self) -> None:
         """Clear audit trail - useful for testing."""
         self._records.clear()
@@ -206,7 +208,7 @@ class ModelLineage:
     """
     Track model lineage and provenance.
     """
-    
+
     def __init__(self, model_path: str = None, version: str = None):
         self.model_path = model_path
         self.version = version
@@ -214,10 +216,10 @@ class ModelLineage:
         self.artifact_hashes: Dict[str, str] = {}
         self.training_config: Dict[str, Any] = {}
         self.data_sources: List[str] = []
-        
+
         if model_path:
             self.artifact_hashes = hash_model_artifact(model_path)
-    
+
     def set_training_info(
         self,
         config: Dict[str, Any] = None,
@@ -228,7 +230,7 @@ class ModelLineage:
             self.training_config = config
         if data_sources:
             self.data_sources = data_sources
-    
+
     def get_lineage(self) -> Dict:
         """Get full lineage information."""
         return {
@@ -243,16 +245,16 @@ class ModelLineage:
                 "git_branch": get_git_branch(),
             },
         }
-    
+
     def verify_integrity(self) -> Dict[str, bool]:
         """Verify model artifact integrity against stored hashes."""
         if not self.model_path or not self.artifact_hashes:
             return {"verified": False, "reason": "no_hashes"}
-        
+
         current_hashes = hash_model_artifact(self.model_path)
         results = {}
         all_match = True
-        
+
         for name, expected_hash in self.artifact_hashes.items():
             actual_hash = current_hashes.get(name)
             match = actual_hash == expected_hash
@@ -262,7 +264,7 @@ class ModelLineage:
                 logger.warning(
                     f"Hash mismatch for {name}: expected {expected_hash}, got {actual_hash}"
                 )
-        
+
         return {
             "verified": all_match,
             "files": results,
