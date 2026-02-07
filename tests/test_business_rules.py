@@ -219,7 +219,7 @@ class TestBusinessRulesValidator:
         validator = BusinessRulesValidator(tolerance=0.1)
         result = validator.validate_ian(sample_data)
 
-        assert result.passed is True
+        assert result.passed
         assert result.pct_valid == 1.0
 
     def test_validate_ian_with_errors(self):
@@ -234,7 +234,7 @@ class TestBusinessRulesValidator:
         validator = BusinessRulesValidator(tolerance=0.1)
         result = validator.validate_ian(df)
 
-        assert result.passed is False
+        assert not result.passed
         assert result.n_invalid == 2
 
     def test_validate_ida_with_tolerance(self):
@@ -251,7 +251,7 @@ class TestBusinessRulesValidator:
         validator = BusinessRulesValidator(tolerance=0.5)
         result = validator.validate_ida(df)
 
-        assert result.passed is True
+        assert result.passed
 
     def test_validate_all_returns_list(self, sample_data):
         """validate_all retorna lista de resultados."""
