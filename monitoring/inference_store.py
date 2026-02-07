@@ -331,6 +331,11 @@ class InferenceStore:
     def __del__(self):
         """Flush remaining buffer on destruction."""
         try:
+            # Guard against Python shutdown (sys.meta_path becomes None)
+            import sys
+
+            if sys.meta_path is None:
+                return
             self.flush()
         except Exception:
             pass
