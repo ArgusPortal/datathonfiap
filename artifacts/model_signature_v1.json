@@ -3,7 +3,7 @@
     "instituicao_2023": "object",
     "idade_2023": "float64",
     "genero_2023": "float64",
-    "fase_2023": "object",
+    "fase_2023": "float64",
     "ano_ingresso_2023": "float64",
     "ian_2023": "float64",
     "ida_2023": "float64",
@@ -12,6 +12,13 @@
     "ips_2023": "float64",
     "ipp_2023": "float64",
     "ipv_2023": "float64",
+    "delta_ian_2022_2023": "float64",
+    "delta_ida_2022_2023": "float64",
+    "delta_ieg_2022_2023": "float64",
+    "delta_iaa_2022_2023": "float64",
+    "delta_ips_2022_2023": "float64",
+    "delta_ipv_2022_2023": "float64",
+    "has_prev_year_data": "float64",
     "ida_2023_missing": "float64",
     "ieg_2023_missing": "float64",
     "iaa_2023_missing": "float64",
@@ -23,7 +30,8 @@
     "min_indicador": "float64",
     "max_indicador": "float64",
     "std_indicadores": "float64",
-    "range_indicadores": "float64"
+    "range_indicadores": "float64",
+    "fase_x_media": "float64"
   },
   "output_schema": {
     "risk_score": "float",
@@ -34,7 +42,7 @@
     "instituicao_2023": "A",
     "idade_2023": 5.0,
     "genero_2023": 5.0,
-    "fase_2023": "A",
+    "fase_2023": 5.0,
     "ano_ingresso_2023": 5.0
   },
   "example_response": {

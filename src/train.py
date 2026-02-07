@@ -49,8 +49,9 @@ SEED = 42
 TARGET_COL = "em_risco_2024"
 ID_COLS = ["ra"]
 TARGET_YEAR = 2024
-PRIMARY_METRIC = "recall"
+PRIMARY_METRIC = "f2"
 MIN_RECALL_TARGET = 0.75
+MIN_PRECISION = 0.50
 CALIBRATION_METHOD = "sigmoid"  # "sigmoid", "isotonic", ou None
 
 logger = get_logger("train")
@@ -152,11 +153,11 @@ def train_single_model(
     # Probabilidades em validação
     y_proba_val = pipeline.predict_proba(X_val)[:, 1]
 
-    # Seleciona threshold em validação
+    # Seleciona threshold em validação (F2 balanceia recall e precision)
     threshold, val_metrics = select_threshold_with_constraints(
         y_val.values,
         y_proba_val,
-        objective="max_recall",
+        objective="max_f2",
         min_recall=min_recall,
         min_precision=min_precision,
     )
@@ -180,7 +181,7 @@ def train_and_evaluate_v1(
     seed: int = SEED,
     calibration: str = CALIBRATION_METHOD,
     min_recall: float = MIN_RECALL_TARGET,
-    min_precision: Optional[float] = None,
+    min_precision: Optional[float] = MIN_PRECISION,
 ) -> Tuple[Dict[str, Dict], Pipeline, float, str]:
     """
     Treina múltiplos candidatos, avalia e seleciona melhor.
@@ -250,7 +251,7 @@ def train_and_evaluate_v1(
     # Seleciona melhor baseado em validação
     best_name = max(
         results_val.items(),
-        key=lambda x: (x[1].get('recall', 0), x[1].get('pr_auc', 0))
+        key=lambda x: (x[1].get('f2', 0), x[1].get('pr_auc', 0))
     )[0]
 
     logger.info(f"\n{'='*50}")
@@ -323,9 +324,9 @@ def save_artifacts_v1(
         "model_family": best_model_name,
         "calibration": calibration,
         "threshold_policy": {
-            "objective": "max_recall",
+            "objective": "max_f2",
             "min_recall": MIN_RECALL_TARGET,
-            "min_precision": None,
+            "min_precision": MIN_PRECISION,
             "threshold_value": threshold,
         },
         "libs_versions": {
@@ -335,10 +336,11 @@ def save_artifacts_v1(
             "joblib": joblib.__version__,
         },
         "assumptions": [
-            "Features de 2023 predizem risco em 2024",
+            "Features de 2023 + deltas 2022->2023 predizem risco em 2024",
             "Sem backtest multi-ano (apenas 2023->2024)",
-            "Split holdout simples (sem GroupKFold por escola)",
+            "Split holdout simples com min_precision=0.50",
             "Calibração sigmoid aplicada",
+            "Seleção de threshold via max F2 com constraints",
         ],
     }
     save_json(artifacts_dir / "model_metadata_v1.json", metadata)
@@ -346,7 +348,7 @@ def save_artifacts_v1(
     # 4. Signature v1
     feature_schema = {}
     for f in feature_names:
-        if 'instituicao' in f.lower() or 'fase' in f.lower():
+        if 'instituicao' in f.lower():
             feature_schema[f] = "object"
         else:
             feature_schema[f] = "float64"
@@ -414,6 +416,7 @@ def main():
         X_train, y_train, X_test, y_test,
         seed=args.seed,
         calibration=args.calibration,
+        min_precision=MIN_PRECISION,
     )
 
     save_artifacts_v1(

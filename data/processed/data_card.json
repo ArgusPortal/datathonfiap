@@ -1,6 +1,6 @@
 {
   "pipeline_version": "1.0.0",
-  "created_at": "2026-01-15T20:02:25.294197",
+  "created_at": "2026-02-07T18:55:48.468553",
   "source_file": "C:\\Users\\argus\\workspace\\datathonfiap\\PEDE2024.xlsx",
   "interim_datasets": {
     "2022": {
@@ -12,7 +12,7 @@
         "turma",
         "nome",
         "ano_nasc",
-        "idade_22",
+        "idade",
         "genero",
         "ano_ingresso",
         "instituicao",
@@ -45,7 +45,7 @@
         "ipv",
         "ian",
         "fase_ideal",
-        "defas",
+        "defasagem",
         "destaque_ieg",
         "destaque_ida",
         "destaque_ipv",
@@ -57,7 +57,7 @@
         "turma": 0,
         "nome": 0,
         "ano_nasc": 0,
-        "idade_22": 0,
+        "idade": 0,
         "genero": 0,
         "ano_ingresso": 0,
         "instituicao": 0,
@@ -90,7 +90,7 @@
         "ipv": 0,
         "ian": 0,
         "fase_ideal": 0,
-        "defas": 0,
+        "defasagem": 0,
         "destaque_ieg": 0,
         "destaque_ida": 0,
         "destaque_ipv": 0,
@@ -316,7 +316,7 @@
   },
   "modeling_dataset": {
     "n_rows": 765,
-    "n_features": 12,
+    "n_features": 19,
     "features": [
       "instituicao_2023",
       "idade_2023",
@@ -329,7 +329,14 @@
       "iaa_2023",
       "ips_2023",
       "ipp_2023",
-      "ipv_2023"
+      "ipv_2023",
+      "delta_ian_2022_2023",
+      "delta_ida_2022_2023",
+      "delta_ieg_2022_2023",
+      "delta_iaa_2022_2023",
+      "delta_ips_2022_2023",
+      "delta_ipv_2022_2023",
+      "has_prev_year_data"
     ],
     "target_column": "em_risco_2024",
     "target_distribution": {
@@ -349,7 +356,14 @@
       "iaa_2023": 59,
       "ips_2023": 62,
       "ipp_2023": 72,
-      "ipv_2023": 72
+      "ipv_2023": 72,
+      "delta_ian_2022_2023": 297,
+      "delta_ida_2022_2023": 321,
+      "delta_ieg_2022_2023": 321,
+      "delta_iaa_2022_2023": 314,
+      "delta_ips_2022_2023": 315,
+      "delta_ipv_2022_2023": 321,
+      "has_prev_year_data": 0
     }
   },
   "quality_checks": {}

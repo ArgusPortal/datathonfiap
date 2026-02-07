@@ -40,6 +40,44 @@ def get_feature_list(df: pd.DataFrame, exclude_patterns: List[str] = None) -> Li
     return sorted(features)
 
 
+def normalize_fase_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Converte colunas de fase para valores ordinais numéricos (0-8).
+    
+    Mapeia representações diversas (ALFA, F1, 1, etc.) para escala ordinal.
+    
+    Args:
+        df: DataFrame com colunas de fase
+        
+    Returns:
+        DataFrame com fases convertidas para numérico
+    """
+    FASE_MAP = {
+        'alfa': 0, '0': 0, '0.0': 0,
+        '1': 1, '1.0': 1, 'f1': 1,
+        '2': 2, '2.0': 2, 'f2': 2,
+        '3': 3, '3.0': 3, 'f3': 3,
+        '4': 4, '4.0': 4, 'f4': 4,
+        '5': 5, '5.0': 5, 'f5': 5,
+        '6': 6, '6.0': 6, 'f6': 6,
+        '7': 7, '7.0': 7, 'f7': 7,
+        '8': 8, '8.0': 8, 'f8': 8,
+    }
+    
+    df = df.copy()
+    fase_cols = [c for c in df.columns
+                 if c.lower().startswith('fase') and 'ideal' not in c.lower()]
+    
+    for col in fase_cols:
+        df[col] = df[col].apply(
+            lambda x: FASE_MAP.get(str(x).strip().lower(), np.nan) if pd.notna(x) else np.nan
+        )
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+        logger.info(f"Fase '{col}' convertida para ordinal (0-8)")
+    
+    return df
+
+
 def make_features(df: pd.DataFrame, config: Dict[str, Any] = None) -> pd.DataFrame:
     """
     Aplica engenharia de features no DataFrame.
@@ -57,6 +95,9 @@ def make_features(df: pd.DataFrame, config: Dict[str, Any] = None) -> pd.DataFra
         config = {}
     
     df = df.copy()
+    
+    # Normaliza fase para ordinal numérico (0-8)
+    df = normalize_fase_columns(df)
     
     # Cria features indicadoras de missing
     df = create_missing_indicators(df)

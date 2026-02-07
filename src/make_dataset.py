@@ -60,6 +60,7 @@ COLUMN_MAPPING = {
     'fase_ideal': 'fase_ideal',
     'fase ideal': 'fase_ideal',
     'defasagem': 'defasagem',
+    'defas': 'defasagem',
     
     # Outros
     'idade_aluno': 'idade',
@@ -227,7 +228,7 @@ def normalize_instituicao(value: str) -> str:
         return 'Privada_Bolsa'
     elif 'privada' in value_no_accent:
         return 'Privada'
-    elif 'concluiu' in value_no_accent or '3' in value_no_accent and 'em' in value_no_accent:
+    elif 'concluiu' in value_no_accent or ('3' in value_no_accent and 'em' in value_no_accent):
         return 'Concluiu_EM'
     elif 'nenhuma' in value_no_accent:
         return 'Outro'
@@ -288,6 +289,18 @@ def load_and_normalize_sheet(
                         return x.strftime('%Y-%m-%d')
                     return str(x)
                 df[col] = df[col].apply(safe_str)
+    
+    # === NORMALIZAÇÃO DE COLUNAS ANO-ESPECÍFICAS ===
+    # Renomeia colunas com sufixo do ano para nome genérico
+    # Ex: idade_22 → idade, inde_22 → inde (para a aba de 2022)
+    short_year = str(year)[-2:]
+    year_renames = {}
+    for col in list(df.columns):
+        if col == f'idade_{short_year}' and 'idade' not in df.columns:
+            year_renames[col] = 'idade'
+    if year_renames:
+        df = df.rename(columns=year_renames)
+        print(f"    📎 Colunas renomeadas ({year}): {year_renames}")
     
     # === CORREÇÕES ESPECÍFICAS DE COLUNAS ===
     
@@ -442,6 +455,77 @@ def generate_data_card(
     return data_card
 
 
+def add_delta_features(
+    modeling_df: pd.DataFrame,
+    prev_df: pd.DataFrame,
+    prev_year: int,
+    curr_year: int
+) -> pd.DataFrame:
+    """
+    Enriquece dataset de modelagem com features delta do ano anterior.
+    
+    Calcula a variação (delta) dos indicadores entre prev_year e curr_year
+    para capturar evolução temporal dos alunos.
+    
+    Args:
+        modeling_df: Dataset de modelagem (features com sufixo _curr_year)
+        prev_df: DataFrame do ano anterior (indicadores sem sufixo)
+        prev_year: Ano anterior (ex: 2022)
+        curr_year: Ano das features (ex: 2023)
+        
+    Returns:
+        DataFrame enriquecido com delta features
+    """
+    DELTA_INDICATORS = ['ian', 'ida', 'ieg', 'iaa', 'ips', 'ipv']
+    
+    # Seleciona indicadores do ano anterior
+    prev_cols = ['ra'] + [i for i in DELTA_INDICATORS if i in prev_df.columns]
+    prev_data = prev_df[prev_cols].drop_duplicates(subset=['ra'], keep='first').copy()
+    
+    # Renomeia para evitar conflito
+    prev_rename = {col: f"_prev_{col}" for col in prev_data.columns if col != 'ra'}
+    prev_data = prev_data.rename(columns=prev_rename)
+    
+    # Converte para numérico
+    for col in prev_data.columns:
+        if col != 'ra':
+            prev_data[col] = pd.to_numeric(prev_data[col], errors='coerce')
+    
+    # Merge (left join para manter todos os alunos do dataset atual)
+    n_before = len(modeling_df)
+    modeling_df = modeling_df.merge(prev_data, on='ra', how='left')
+    assert len(modeling_df) == n_before, "Delta join não deve alterar número de linhas"
+    
+    # Computa deltas
+    deltas_created = []
+    for ind in DELTA_INDICATORS:
+        curr_col = f"{ind}_{curr_year}"
+        prev_col = f"_prev_{ind}"
+        delta_col = f"delta_{ind}_{prev_year}_{curr_year}"
+        
+        if curr_col in modeling_df.columns and prev_col in modeling_df.columns:
+            modeling_df[delta_col] = (
+                pd.to_numeric(modeling_df[curr_col], errors='coerce') -
+                modeling_df[prev_col]
+            )
+            deltas_created.append(delta_col)
+    
+    # Flag: aluno tinha dados no ano anterior?
+    first_prev = [c for c in modeling_df.columns if c.startswith('_prev_')]
+    if first_prev:
+        modeling_df['has_prev_year_data'] = modeling_df[first_prev[0]].notna().astype(int)
+    
+    # Remove colunas temporárias
+    prev_temp_cols = [c for c in modeling_df.columns if c.startswith('_prev_')]
+    modeling_df = modeling_df.drop(columns=prev_temp_cols)
+    
+    n_with_prev = int(modeling_df.get('has_prev_year_data', pd.Series([0])).sum())
+    print(f"  ✅ Delta features criadas: {deltas_created}")
+    print(f"  📊 Alunos com dados do ano anterior: {n_with_prev}/{len(modeling_df)}")
+    
+    return modeling_df
+
+
 def run_pipeline(
     source_file: Path = SOURCE_FILE,
     output_interim: Path = DATA_INTERIM,
@@ -539,6 +623,19 @@ def run_pipeline(
         feature_year=feature_year,
         label_year=label_year
     )
+    
+    # Step 3.5: Enriquecer com delta features do ano anterior
+    prev_year = feature_year - 1
+    if prev_year in datasets:
+        print(f"\n[Step 3.5] Adicionando delta features ({prev_year}→{feature_year})...")
+        modeling_df = add_delta_features(
+            modeling_df=modeling_df,
+            prev_df=datasets[prev_year],
+            prev_year=prev_year,
+            curr_year=feature_year
+        )
+    else:
+        print(f"\n[Step 3.5] Sem dados de {prev_year} para delta features (pulando)")
     
     # Step 4: Validação final do dataset de modelagem
     print("\n[Step 4] Validação final...")

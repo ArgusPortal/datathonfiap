@@ -1,6 +1,6 @@
 # Model Report - v1.1.0
 
-**Gerado em:** 2026-01-15 20:18
+**Gerado em:** 2026-02-07 18:56
 
 ## 1. Definição do Problema
 
@@ -19,20 +19,20 @@
 
 | Métrica | Valor |
 |---------|-------|
-| **Recall** | **1.000** |
-| Precision | 0.408 |
-| F1 | 0.579 |
-| F2 | 0.775 |
-| PR-AUC | 0.860 |
-| Brier Score | 0.1194269424278455 |
+| **Recall** | **0.935** |
+| Precision | 0.699 |
+| F1 | 0.800 |
+| F2 | 0.876 |
+| PR-AUC | 0.830 |
+| Brier Score | 0.13162929645602361 |
 
-**Threshold:** 0.0268
+**Threshold:** 0.3499
 
 ### Matriz de Confusão
 ```
               Pred=0   Pred=1
-Real=0 (ok)       1      90
-Real=1 (risco)    0      62
+Real=0 (ok)      66      25
+Real=1 (risco)    4      58
 ```
 
 - Total: 153 amostras (62 positivos = 40.5%)
@@ -41,15 +41,16 @@ Real=1 (risco)    0      62
 
 | Rank | Modelo | Recall | Precision | PR-AUC |
 |------|--------|--------|-----------|--------|
-| 1 | logreg | 1.000 | 0.408 | 0.892 |
-| 2 | hist_gb | 1.000 | 0.408 | 0.860 |
-| 3 | rf | 1.000 | 0.405 | 0.879 |
+| 1 | hist_gb | 0.935 | 0.699 | 0.830 |
+| 2 | rf | 0.984 | 0.592 | 0.847 |
+| 3 | logreg | 0.984 | 0.530 | 0.852 |
+| 4 | dummy_baseline | 0.000 | 0.000 | 0.423 |
 
 ## 5. Threshold Trade-off
 
 - Objetivo: maximizar recall com min_recall ≥ 0.75
-- Threshold escolhido em validação: 0.0268
-- Recall final: 1.000 | Precision: 0.408
+- Threshold escolhido em validação: 0.3499
+- Recall final: 0.935 | Precision: 0.699
 
 ## 6. Riscos e Limitações
 
