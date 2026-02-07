@@ -7,6 +7,7 @@ import hashlib
 import logging
 import os
 import time
+import asyncio
 from collections import defaultdict
 from functools import wraps
 from typing import Callable, Dict, Optional, Set
@@ -178,8 +179,25 @@ class SecurityMiddleware(BaseHTTPMiddleware):
                     response.headers["Retry-After"] = "60"
                     return response
         
-        # Process request
-        return await call_next(request)
+        # Process request with timeout enforcement
+        timeout_seconds = REQUEST_TIMEOUT_MS / 1000.0
+        try:
+            response = await asyncio.wait_for(
+                call_next(request),
+                timeout=timeout_seconds,
+            )
+            return response
+        except asyncio.TimeoutError:
+            logger.error(
+                f"Request timeout after {REQUEST_TIMEOUT_MS}ms",
+                extra={"request_id": request_id, "path": path},
+            )
+            return _error_response(
+                "REQUEST_TIMEOUT",
+                f"Request exceeded {REQUEST_TIMEOUT_MS}ms timeout",
+                request_id,
+                status=504,
+            )
 
 
 def validate_api_key(api_key: str) -> bool:

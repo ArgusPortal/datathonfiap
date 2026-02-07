@@ -26,13 +26,18 @@ PII_FIELDS: Set[str] = {
     "senha", "password", "token", "api_key", "secret",
 }
 
-# Fields safe to aggregate/log
+# Fields safe to aggregate/log — features do domínio Passos Mágicos
 SAFE_FIELDS: Set[str] = {
-    "turnover", "headcount", "idade", "idade_empresa", "setor",
-    "nota_exame", "horas_treinamento", "participou_projeto",
-    "numero_avaliacoes", "promocoes_ultimos_3_anos",
-    "nivel_senioridade", "nivel_escolaridade", "area_atuacao",
-    "percentual_meta_batida", "pedido_demissao",
+    # Indicadores de desempenho
+    "iaa_2023", "ian_2023", "ida_2023", "ieg_2023",
+    "ipp_2023", "ips_2023", "ipv_2023",
+    # Fase, idade e instituição
+    "fase_2023", "idade_2023", "instituicao_2023",
+    # Features derivadas
+    "media_indicadores", "std_indicadores", "min_indicador",
+    "max_indicador", "range_indicadores",
+    # Campos genéricos seguros
+    "risk_score", "risk_label", "model_version",
 }
 
 

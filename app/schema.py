@@ -26,7 +26,7 @@ class StudentFeatures(BaseModel):
     ipv_2023: Optional[float] = None  # Ponto de Virada
     
     # Fase e idade
-    fase_2023: Optional[float] = None
+    fase_2023: Optional[str] = None  # Fase é categórica (ex: "4", "7")
     idade_2023: Optional[float] = None
     
     # Instituição

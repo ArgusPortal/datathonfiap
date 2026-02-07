@@ -134,12 +134,12 @@ class TestSanitizeDictForLogging:
     
     def test_safe_only_mode(self):
         """Should only include safe fields when requested."""
-        data = {"nome": "John", "nota_exame": 7.5, "turnover": 0.15}
+        data = {"nome": "John", "ian_2023": 7.5, "ieg_2023": 6.0}
         result = sanitize_dict_for_logging(data, include_safe_only=True)
         
         assert "nome" not in result
-        assert result["nota_exame"] == 7.5
-        assert result["turnover"] == 0.15
+        assert result["ian_2023"] == 7.5
+        assert result["ieg_2023"] == 6.0
     
     def test_nested_dict(self):
         """Should handle nested dictionaries."""
@@ -164,31 +164,31 @@ class TestAggregateFeatures:
         """Should only include safe fields."""
         features = {
             "nome": "John",
-            "nota_exame": 7.5,
-            "turnover": 0.15,
+            "ian_2023": 7.5,
+            "ieg_2023": 6.0,
             "email": "test@example.com",
         }
         result = aggregate_features(features)
         
         assert "nome" not in result
         assert "email" not in result
-        assert result["nota_exame"] == 7.5
-        assert result["turnover"] == 0.15
+        assert result["ian_2023"] == 7.5
+        assert result["ieg_2023"] == 6.0
     
     def test_numeric_values_preserved(self):
         """Numeric values should be preserved."""
-        features = {"headcount": 100, "idade": 16}
+        features = {"idade_2023": 14.0, "iaa_2023": 7.5}
         result = aggregate_features(features)
         
-        assert result["headcount"] == 100
-        assert result["idade"] == 16
+        assert result["idade_2023"] == 14.0
+        assert result["iaa_2023"] == 7.5
     
     def test_pii_strings_excluded(self):
         """Strings with PII patterns should be excluded."""
-        features = {"area_atuacao": "123.456.789-00"}  # CPF in string
+        features = {"instituicao_2023": "123.456.789-00"}  # CPF in string
         result = aggregate_features(features)
         
-        assert "area_atuacao" not in result
+        assert "instituicao_2023" not in result
 
 
 class TestPrivacyContext:
@@ -206,12 +206,12 @@ class TestPrivacyContext:
     def test_get_loggable(self):
         """Should return loggable version."""
         ctx = PrivacyContext("test")
-        data = {"nome": "John", "nota_exame": 7.5}
+        data = {"nome": "John", "ian_2023": 7.5}
         ctx.sanitize_request(data)
         result = ctx.get_loggable()
         
         assert "nome" not in result
-        assert "nota_exame" in result
+        assert "ian_2023" in result
     
     def test_create_audit_record(self):
         """Should create audit record with sanitized data."""
@@ -236,7 +236,7 @@ class TestPiiFieldsConfig:
     
     def test_safe_fields_are_features(self):
         """SAFE_FIELDS should include model features."""
-        expected = ["turnover", "headcount", "nota_exame", "idade"]
+        expected = ["ian_2023", "ida_2023", "ieg_2023", "idade_2023", "media_indicadores"]
         for field in expected:
             assert field in SAFE_FIELDS
     

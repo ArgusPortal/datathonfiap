@@ -135,8 +135,8 @@ class TestAuditTrail:
     """Tests for AuditTrail."""
     
     def setup_method(self):
-        """Create fresh audit trail for each test."""
-        self.trail = AuditTrail()
+        """Create fresh audit trail for each test (no disk persistence)."""
+        self.trail = AuditTrail(persist_path="")
     
     def test_add_record(self):
         """Should add record to trail."""

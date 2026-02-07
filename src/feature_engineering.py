@@ -70,6 +70,9 @@ def make_features(df: pd.DataFrame, config: Dict[str, Any] = None) -> pd.DataFra
     # Cria features de risco compostas
     df = create_risk_composites(df)
     
+    # Cria features de interação
+    df = create_interaction_features(df)
+    
     logger.info(f"Features após engenharia: {len(df.columns)} colunas")
     return df
 

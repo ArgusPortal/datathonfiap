@@ -83,6 +83,10 @@ def load_and_prepare_data(
 def create_candidate_models(seed: int = SEED) -> Dict[str, Any]:
     """Cria modelos candidatos para comparação."""
     return {
+        "dummy_baseline": DummyClassifier(
+            strategy="stratified",
+            random_state=seed,
+        ),
         "logreg": LogisticRegression(
             class_weight="balanced",
             max_iter=1000,

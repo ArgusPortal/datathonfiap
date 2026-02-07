@@ -75,11 +75,6 @@ def resolve_model_paths() -> Tuple[Path, Path, Path]:
     return model_path, metadata_path, signature_path
 
 
-class ModelLoadError(Exception):
-    """Erro ao carregar modelo."""
-    pass
-
-
 def load_model(model_path: Path = MODEL_PATH) -> Any:
     """
     Carrega modelo serializado.
@@ -146,7 +141,16 @@ class ModelManager:
         metadata_path: Path = METADATA_PATH,
         signature_path: Optional[Path] = SIGNATURE_PATH
     ) -> None:
-        """Carrega modelo e metadados."""
+        """Carrega modelo e metadados, resolvendo via registry se MODEL_VERSION definido."""
+        # Resolve paths pelo registry (MODEL_VERSION) se configurado
+        resolved_model, resolved_meta, resolved_sig = resolve_model_paths()
+        if resolved_model != MODEL_PATH:
+            # Registry resolveu para paths específicos
+            model_path = resolved_model
+            metadata_path = resolved_meta
+            signature_path = resolved_sig
+            logger.info(f"Usando paths do registry: {model_path}")
+        
         self._model = load_model(model_path)
         
         if self._model is None:

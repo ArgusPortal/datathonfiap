@@ -201,7 +201,7 @@ def test_api_predict_endpoint():
         payload = {
             "instances": [
                 {
-                    "fase_2023": 3.0,
+                    "fase_2023": "3",
                     "iaa_2023": 7.5,
                     "ian_2023": 6.0,
                 }

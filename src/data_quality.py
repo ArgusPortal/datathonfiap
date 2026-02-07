@@ -300,12 +300,14 @@ class DataQualityChecker:
         self.results.append(result)
         return result
     
-    def run_all_checks(self, critical_columns: List[str] = None) -> Tuple[bool, List[QualityCheckResult]]:
+    def run_all_checks(self, critical_columns: List[str] = None,
+                        feature_columns: List[str] = None) -> Tuple[bool, List[QualityCheckResult]]:
         """
         Executa todas as verificações.
         
         Args:
             critical_columns: Colunas críticas para check de missing
+            feature_columns: Colunas de features para check de leakage
             
         Returns:
             Tuple[all_passed, list_of_results]
@@ -316,7 +318,7 @@ class DataQualityChecker:
         self.check_ranges()
         self.check_missing_values(critical_columns)
         self.check_dtypes()
-        # Leakage check deve ser chamado separadamente com lista de features
+        self.check_leakage(feature_columns)
         
         all_passed = all(r.passed for r in self.results)
         return all_passed, self.results

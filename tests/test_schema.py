@@ -29,11 +29,12 @@ class TestStudentFeatures:
         features = StudentFeatures(
             iaa_2023=7.5,
             ian_2023=6.0,
-            fase_2023=3.0,
+            fase_2023="3",
         )
         
         assert features.iaa_2023 == 7.5
         assert features.ian_2023 == 6.0
+        assert features.fase_2023 == "3"
     
     def test_allows_extra_fields(self):
         """Deve permitir campos extras (extra='allow')."""

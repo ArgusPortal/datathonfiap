@@ -87,14 +87,59 @@ def hash_model_artifact(model_path: str) -> Dict[str, str]:
 class AuditTrail:
     """
     Audit trail for model inference and operations.
+    Persists records to JSONL file to survive restarts.
+    In-memory buffer for fast reads, JSONL on disk for durability.
     """
     
-    def __init__(self):
+    def __init__(self, persist_path: str = None):
         self._records: List[Dict] = []
         self._max_records = 1000  # In-memory limit
         self.startup_time = datetime.now(timezone.utc).isoformat()
         self.git_sha = get_git_sha()
         self.git_branch = get_git_branch()
+        
+        # Persistence setup
+        self._persist_path: Optional[Path] = None
+        self._file_handle = None
+        if persist_path is None:
+            # Default: logs/audit_trail.jsonl
+            default_dir = Path(__file__).parent.parent / "logs"
+            default_dir.mkdir(parents=True, exist_ok=True)
+            persist_path = str(default_dir / "audit_trail.jsonl")
+        if persist_path:
+            self._persist_path = Path(persist_path)
+            self._persist_path.parent.mkdir(parents=True, exist_ok=True)
+            self._load_from_disk()
+    
+    def _load_from_disk(self) -> None:
+        """Load existing records from JSONL file on startup."""
+        if not self._persist_path or not self._persist_path.exists():
+            return
+        try:
+            with open(self._persist_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if line:
+                        try:
+                            self._records.append(json.loads(line))
+                        except json.JSONDecodeError:
+                            continue
+            # Trim to max
+            if len(self._records) > self._max_records:
+                self._records = self._records[-self._max_records:]
+            logger.info(f"Audit trail loaded {len(self._records)} records from {self._persist_path}")
+        except Exception as e:
+            logger.warning(f"Could not load audit trail from disk: {e}")
+    
+    def _persist_record(self, record: Dict) -> None:
+        """Append a single record to the JSONL file."""
+        if not self._persist_path:
+            return
+        try:
+            with open(self._persist_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps(record, default=str) + "\n")
+        except Exception as e:
+            logger.warning(f"Could not persist audit record: {e}")
     
     def add_record(
         self,
@@ -102,7 +147,7 @@ class AuditTrail:
         request_id: str = None,
         details: Dict[str, Any] = None,
     ) -> Dict:
-        """Add an audit record."""
+        """Add an audit record (in-memory + disk)."""
         record = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "action": action,
@@ -112,8 +157,9 @@ class AuditTrail:
         }
         
         self._records.append(record)
+        self._persist_record(record)
         
-        # Trim old records if exceeding limit
+        # Trim old records in memory only
         if len(self._records) > self._max_records:
             self._records = self._records[-self._max_records:]
         
@@ -148,6 +194,12 @@ class AuditTrail:
     def clear(self) -> None:
         """Clear audit trail - useful for testing."""
         self._records.clear()
+        # Also truncate persisted file
+        if self._persist_path and self._persist_path.exists():
+            try:
+                self._persist_path.write_text("")
+            except Exception as e:
+                logger.warning(f"Could not clear persisted audit trail: {e}")
 
 
 class ModelLineage:
