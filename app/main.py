@@ -2,20 +2,24 @@
 API FastAPI para predição de risco de defasagem escolar.
 Passos Mágicos - Datathon FIAP 2025
 Phase 8: Production Hardening - Security, Metrics, Audit
+Phase 9: Extended endpoints for frontend integration
 """
 
+import json
 import time
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 import pandas as pd
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, PlainTextResponse
 
 from app.config import (
     APP_NAME,
+    ARTIFACTS_DIR,
     AUDIT_ENABLED,
     EXTRA_FEATURE_POLICY,
     LOG_LEVEL,
@@ -130,6 +134,25 @@ app = FastAPI(
     description="API para predição de risco de defasagem escolar - Passos Mágicos",
     version="1.0.0",
     lifespan=lifespan,
+)
+
+# Phase 9: CORS for Frontend
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://localhost:80",
+        "http://localhost",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1",
+        "*",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Phase 8: Add Security Middleware
@@ -414,6 +437,210 @@ async def general_exception_handler(request: Request, exc: Exception):
             request_id=request_id,
         ).model_dump(),
     )
+
+
+# =========================================================
+# Phase 9: Extended endpoints for rich frontend integration
+# =========================================================
+
+
+def _load_json_artifact(filename: str):
+    """Load a JSON file from the artifacts directory."""
+    path = ARTIFACTS_DIR / filename
+    if not path.exists():
+        return None
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+@app.get("/artifacts/metrics", tags=["Artifacts"])
+async def get_artifact_metrics():
+    """Serve model_comparison.json with all validation/test metrics."""
+    data = _load_json_artifact("model_comparison.json")
+    if data is None:
+        raise HTTPException(status_code=404, detail="model_comparison.json not found")
+    return data
+
+
+@app.get("/artifacts/metadata", tags=["Artifacts"])
+async def get_artifact_metadata():
+    """Serve model_metadata.json complete."""
+    data = _load_json_artifact("model_metadata.json")
+    if data is None:
+        # Fallback to v1
+        data = _load_json_artifact("model_metadata_v1.json")
+    if data is None:
+        raise HTTPException(status_code=404, detail="model_metadata.json not found")
+    return data
+
+
+@app.get("/artifacts/report", tags=["Artifacts"])
+async def get_artifact_report():
+    """Serve model_report.md as text."""
+    path = ARTIFACTS_DIR / "model_report.md"
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="model_report.md not found")
+    content = path.read_text(encoding="utf-8")
+    return {"content": content, "format": "markdown"}
+
+
+@app.get("/inference/history", tags=["Inference"])
+async def get_inference_history(
+    limit: int = Query(default=200, ge=1, le=1000),
+):
+    """Return last N inference events from drift store (no PII)."""
+    events = drift_store.read_events(limit=limit)
+    return {
+        "events": events,
+        "total": len(events),
+    }
+
+
+@app.get("/drift/status", tags=["Drift"])
+async def get_drift_status():
+    """
+    Compute simplified PSI-like drift status per feature.
+    Compares last 50 events vs first 50 events (baseline).
+    Returns green/yellow/red status per feature.
+    """
+    events = drift_store.read_events(limit=500)
+
+    if len(events) < 10:
+        return {
+            "status": "insufficient_data",
+            "message": "Need at least 10 inference events to compute drift",
+            "features": {},
+            "score_drift": {"status": "insufficient_data", "psi": 0.0},
+            "overall_status": "green",
+        }
+
+    # Split into baseline (first half) and current (second half)
+    mid = len(events) // 2
+    baseline_events = events[:mid]
+    current_events = events[mid:]
+
+    # Aggregate feature distributions
+    def aggregate_feature_dist(event_list):
+        agg = {}
+        for ev in event_list:
+            batch_stats = ev.get("batch_stats", {})
+            feat_dist = batch_stats.get("feature_distribution", {})
+            for feat, bins in feat_dist.items():
+                if feat not in agg:
+                    agg[feat] = {"low": 0, "medium": 0, "high": 0}
+                for b in ("low", "medium", "high"):
+                    agg[feat][b] += bins.get(b, 0)
+        return agg
+
+    baseline_dist = aggregate_feature_dist(baseline_events)
+    current_dist = aggregate_feature_dist(current_events)
+
+    # Simple PSI calculation
+    def compute_psi(base_bins, curr_bins):
+        total_base = sum(base_bins.values()) or 1
+        total_curr = sum(curr_bins.values()) or 1
+        psi = 0.0
+        for b in ("low", "medium", "high"):
+            p = max(base_bins.get(b, 0) / total_base, 0.0001)
+            q = max(curr_bins.get(b, 0) / total_curr, 0.0001)
+            psi += (p - q) * np.log(p / q)
+        return abs(psi)
+
+    feature_status = {}
+    all_features = set(list(baseline_dist.keys()) + list(current_dist.keys()))
+
+    for feat in all_features:
+        base = baseline_dist.get(feat, {"low": 1, "medium": 1, "high": 1})
+        curr = current_dist.get(feat, {"low": 1, "medium": 1, "high": 1})
+        psi = compute_psi(base, curr)
+        if psi < 0.1:
+            status = "green"
+        elif psi < 0.25:
+            status = "yellow"
+        else:
+            status = "red"
+        feature_status[feat] = {
+            "psi": round(psi, 4),
+            "status": status,
+            "baseline_dist": base,
+            "current_dist": curr,
+        }
+
+    # Score drift
+    def aggregate_score_bins(event_list):
+        bins = {"low": 0, "medium": 0, "high": 0}
+        for ev in event_list:
+            pred_summary = ev.get("prediction_summary", {})
+            score_bins = pred_summary.get("score_bins", {})
+            for b in ("low", "medium", "high"):
+                bins[b] += score_bins.get(b, 0)
+        return bins
+
+    base_scores = aggregate_score_bins(baseline_events)
+    curr_scores = aggregate_score_bins(current_events)
+    score_psi = compute_psi(base_scores, curr_scores)
+
+    if score_psi < 0.1:
+        score_status = "green"
+    elif score_psi < 0.25:
+        score_status = "yellow"
+    else:
+        score_status = "red"
+
+    # Missing rate comparison
+    def aggregate_missing(event_list):
+        missing = {}
+        n_events = len(event_list)
+        for ev in event_list:
+            batch_stats = ev.get("batch_stats", {})
+            miss_summary = batch_stats.get("missing_summary", {})
+            for feat, count in miss_summary.items():
+                missing[feat] = missing.get(feat, 0) + count
+        return {k: v / max(n_events, 1) for k, v in missing.items()}
+
+    baseline_missing = aggregate_missing(baseline_events)
+    current_missing = aggregate_missing(current_events)
+
+    # Overall status
+    statuses = [f["status"] for f in feature_status.values()] + [score_status]
+    if "red" in statuses:
+        overall = "red"
+    elif "yellow" in statuses:
+        overall = "yellow"
+    else:
+        overall = "green"
+
+    return {
+        "status": "ok",
+        "features": feature_status,
+        "score_drift": {
+            "status": score_status,
+            "psi": round(score_psi, 4),
+            "baseline_dist": base_scores,
+            "current_dist": curr_scores,
+        },
+        "missing_rates": {
+            "baseline": baseline_missing,
+            "current": current_missing,
+        },
+        "overall_status": overall,
+        "n_baseline_events": len(baseline_events),
+        "n_current_events": len(current_events),
+    }
+
+
+@app.get("/audit/recent", tags=["Audit"])
+async def get_recent_audit(
+    limit: int = Query(default=50, ge=1, le=500),
+    action: Optional[str] = Query(default=None),
+):
+    """Return recent audit trail records."""
+    records = audit_trail.get_records(action=action, limit=limit)
+    summary = audit_trail.get_summary()
+    return {
+        "records": records,
+        "summary": summary,
+    }
 
 
 if __name__ == "__main__":

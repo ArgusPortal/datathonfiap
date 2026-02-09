@@ -71,3 +71,12 @@ docker-compose*
 *.bak
 *.tmp
 Makefile
+
+# Frontend dev artifacts
+frontend/node_modules
+frontend/dist
+frontend/.env.development
+frontend/.env.local
+htmlcov/
+coverage.xml
+loadtest/

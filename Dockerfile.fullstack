@@ -1,0 +1,154 @@
+# =============================================================================
+# Passos Mágicos — Full-Stack Container (API + Frontend)
+# Build: docker build -f Dockerfile.fullstack -t passos-magicos .
+# Run:   docker run -p 80:80 passos-magicos
+# =============================================================================
+
+# ---- Stage 1: Build Frontend ----
+FROM node:20-alpine AS frontend-builder
+
+WORKDIR /frontend
+COPY frontend/package.json frontend/package-lock.json* ./
+RUN npm ci --ignore-scripts 2>/dev/null || npm install
+COPY frontend/ .
+ENV NODE_ENV=production
+RUN npm run build
+
+# ---- Stage 2: Build Python Wheels ----
+FROM python:3.11-slim AS python-builder
+
+WORKDIR /build
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip wheel --no-cache-dir --wheel-dir=/wheels -r requirements.txt
+
+# ---- Stage 3: Final Production Image ----
+FROM python:3.11-slim
+
+LABEL maintainer="Datathon FIAP Team"
+LABEL version="3.0.0"
+LABEL description="Passos Mágicos – Full-stack: API + Frontend (nginx + uvicorn)"
+
+# Environment
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
+    PORT=8000 \
+    LOG_LEVEL=INFO \
+    API_KEYS="" \
+    RATE_LIMIT_RPM=60 \
+    MAX_BODY_BYTES=262144 \
+    REQUEST_TIMEOUT_MS=3000 \
+    METRICS_ENABLED=true \
+    AUDIT_ENABLED=true
+
+# System dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        curl nginx supervisor \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Non-root user (used by uvicorn)
+RUN groupadd --gid 1000 appgroup && \
+    useradd --uid 1000 --gid appgroup --shell /bin/false --no-create-home appuser
+
+WORKDIR /app
+
+# Python dependencies
+COPY --from=python-builder /wheels /wheels
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir /wheels/* && \
+    rm -rf /wheels
+
+# Application code
+COPY app/ ./app/
+COPY src/ ./src/
+COPY artifacts/ ./artifacts/
+
+# Frontend static build
+COPY --from=frontend-builder /frontend/dist /app/frontend/dist
+
+# Logs & monitoring dirs
+RUN mkdir -p logs monitoring/inference_store /var/log/supervisor && \
+    chown -R appuser:appgroup /app/logs /app/monitoring
+
+# ---- Nginx config ----
+RUN cat > /etc/nginx/sites-available/default << 'NGINX_CONF'
+server {
+    listen 80;
+    server_name _;
+
+    # Serve frontend SPA
+    root /app/frontend/dist;
+    index index.html;
+
+    # Proxy /api/* to uvicorn (strip /api prefix)
+    location /api/ {
+        proxy_pass http://127.0.0.1:8000/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 30s;
+        proxy_connect_timeout 5s;
+    }
+
+    # Also expose raw endpoints for backward compatibility
+    location /health  { proxy_pass http://127.0.0.1:8000; }
+    location /ready   { proxy_pass http://127.0.0.1:8000; }
+    location /docs    { proxy_pass http://127.0.0.1:8000; }
+    location /openapi.json { proxy_pass http://127.0.0.1:8000; }
+
+    # SPA fallback — must be last
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Cache static assets aggressively
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff2?)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # Security headers
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+}
+NGINX_CONF
+
+# ---- Supervisor config (manages nginx + uvicorn) ----
+RUN cat > /etc/supervisor/conf.d/app.conf << 'SUPERVISOR_CONF'
+[supervisord]
+nodaemon=true
+user=root
+logfile=/var/log/supervisor/supervisord.log
+pidfile=/var/run/supervisord.pid
+
+[program:nginx]
+command=nginx -g "daemon off;"
+autostart=true
+autorestart=true
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+
+[program:uvicorn]
+command=uvicorn app.main:app --host 0.0.0.0 --port %(ENV_PORT)s --workers 1
+directory=/app
+user=appuser
+autostart=true
+autorestart=true
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+SUPERVISOR_CONF
+
+EXPOSE 80
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD curl -f http://localhost/api/health || exit 1
+
+CMD ["supervisord", "-c", "/etc/supervisor/supervisord.conf"]
