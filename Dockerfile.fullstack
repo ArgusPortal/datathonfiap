@@ -64,13 +64,17 @@ RUN pip install --no-cache-dir --upgrade pip && \
 COPY app/ ./app/
 COPY src/ ./src/
 COPY artifacts/ ./artifacts/
+COPY data/processed/ ./data/processed/
 
 # Frontend static build
 COPY --from=frontend-builder /frontend/dist /app/frontend/dist
 
-# Logs & monitoring dirs
+# Logs & monitoring dirs (seed data included for demo)
 RUN mkdir -p logs monitoring/inference_store /var/log/supervisor && \
     chown -R appuser:appgroup /app/logs /app/monitoring
+COPY logs/drift_events.jsonl ./logs/drift_events.jsonl
+COPY logs/audit_trail.jsonl ./logs/audit_trail.jsonl
+RUN chown appuser:appgroup /app/logs/*.jsonl
 
 # ---- Nginx config ----
 RUN cat > /etc/nginx/sites-available/default << 'NGINX_CONF'

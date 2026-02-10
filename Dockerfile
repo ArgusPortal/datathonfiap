@@ -56,10 +56,13 @@ RUN pip install --no-cache-dir --upgrade pip && \
 COPY --chown=appuser:appgroup app/ ./app/
 COPY --chown=appuser:appgroup src/ ./src/
 COPY --chown=appuser:appgroup artifacts/ ./artifacts/
+COPY --chown=appuser:appgroup data/processed/ ./data/processed/
 
-# Create logs directory with proper permissions
+# Create logs directory with proper permissions & seed data
 RUN mkdir -p logs monitoring/inference_store && \
     chown -R appuser:appgroup /app
+COPY --chown=appuser:appgroup logs/drift_events.jsonl ./logs/drift_events.jsonl
+COPY --chown=appuser:appgroup logs/audit_trail.jsonl ./logs/audit_trail.jsonl
 
 # Switch to non-root user
 USER appuser

@@ -63,9 +63,11 @@ models/*.pth
 app/model/*.pkl
 app/model/*.joblib
 
-# Logs
+# Logs (keep seed data for Docker, ignore runtime logs)
 *.log
-logs/
+logs/*
+!logs/drift_events.jsonl
+!logs/audit_trail.jsonl
 
 # Environment variables
 .env
