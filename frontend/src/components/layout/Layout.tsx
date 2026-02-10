@@ -79,11 +79,11 @@ export function Layout() {
       >
         {/* Logo */}
         <div className="flex h-16 items-center gap-3 px-6 border-b">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg pm-hero-gradient shadow-md">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary shadow-sm">
             <Sparkles className="h-5 w-5 text-white" />
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-bold leading-tight gradient-text">Passos Mágicos</span>
+            <span className="text-sm font-bold leading-tight text-foreground">Passos Mágicos</span>
             <span className="text-[10px] text-muted-foreground leading-tight">
               Predição de Risco v2.0
             </span>
@@ -140,7 +140,6 @@ export function Layout() {
               <span className="text-xs text-muted-foreground">API Online</span>
             </div>
             <div className="flex items-center gap-1">
-              <GlossaryButton />
               <Button variant="ghost" size="icon" onClick={toggleTheme} title={theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}>
                 {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               </Button>
@@ -167,6 +166,7 @@ export function Layout() {
           </Button>
           <div className="flex-1" />
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <GlossaryButton />
             <Button
               variant="ghost"
               size="sm"
