@@ -1,0 +1,371 @@
+{
+  "ano_ingresso_2023": {
+    "type": "numeric",
+    "count": 765,
+    "missing_rate": 0.0,
+    "quantiles": {
+      "p05": 2017.0,
+      "p25": 2021.0,
+      "p50": 2022.0,
+      "p75": 2023.0,
+      "p95": 2023.0
+    },
+    "mean": 2021.2902,
+    "std": 1.8895,
+    "min": 2016.0,
+    "max": 2023.0
+  },
+  "anos_pm_2023": {
+    "type": "unknown",
+    "count": 0,
+    "missing_rate": 1.0
+  },
+  "delta_iaa_2022_2023": {
+    "type": "numeric",
+    "count": 765,
+    "missing_rate": 0.4105,
+    "quantiles": {
+      "p05": -9.5,
+      "p25": -2.1,
+      "p50": -0.5,
+      "p75": 0.5,
+      "p95": 1.5
+    },
+    "mean": -1.7756,
+    "std": 3.8372,
+    "min": -10.0,
+    "max": 9.6
+  },
+  "delta_ian_2022_2023": {
+    "type": "numeric",
+    "count": 765,
+    "missing_rate": 0.3882,
+    "quantiles": {
+      "p05": -5.0,
+      "p25": 0.0,
+      "p50": 0.0,
+      "p75": 0.0,
+      "p95": 5.0
+    },
+    "mean": 0.4861,
+    "std": 2.6965,
+    "min": -5.0,
+    "max": 7.5
+  },
+  "delta_ida_2022_2023": {
+    "type": "numeric",
+    "count": 765,
+    "missing_rate": 0.4196,
+    "quantiles": {
+      "p05": -2.0,
+      "p25": -0.9,
+      "p50": -0.1,
+      "p75": 1.0,
+      "p95": 2.985
+    },
+    "mean": 0.0795,
+    "std": 1.5615,
+    "min": -5.7,
+    "max": 5.3
+  },
+  "delta_ieg_2022_2023": {
+    "type": "numeric",
+    "count": 765,
+    "missing_rate": 0.4196,
+    "quantiles": {
+      "p05": -1.2,
+      "p25": -0.3,
+      "p50": 0.2,
+      "p75": 0.725,
+      "p95": 1.7
+    },
+    "mean": 0.2164,
+    "std": 0.9893,
+    "min": -2.8,
+    "max": 4.7
+  },
+  "delta_ips_2022_2023": {
+    "type": "numeric",
+    "count": 765,
+    "missing_rate": 0.4118,
+    "quantiles": {
+      "p05": -4.98,
+      "p25": -3.73,
+      "p50": -1.87,
+      "p75": 0.02,
+      "p95": 0.651
+    },
+    "mean": -1.9221,
+    "std": 2.0393,
+    "min": -6.88,
+    "max": 3.12
+  },
+  "delta_ipv_2022_2023": {
+    "type": "numeric",
+    "count": 765,
+    "missing_rate": 0.4196,
+    "quantiles": {
+      "p05": -0.9367,
+      "p25": -0.1309,
+      "p50": 0.5415,
+      "p75": 1.1721,
+      "p95": 2.0612
+    },
+    "mean": 0.546,
+    "std": 0.926,
+    "min": -2.077,
+    "max": 2.7815
+  },
+  "fase_2023": {
+    "type": "numeric",
+    "count": 0,
+    "missing_rate": 1.0,
+    "quantiles": {},
+    "mean": null,
+    "std": null
+  },
+  "fase_x_media": {
+    "type": "unknown",
+    "count": 0,
+    "missing_rate": 1.0
+  },
+  "genero_2023": {
+    "type": "numeric",
+    "count": 0,
+    "missing_rate": 1.0,
+    "quantiles": {},
+    "mean": null,
+    "std": null
+  },
+  "has_prev_year_data": {
+    "type": "numeric",
+    "count": 765,
+    "missing_rate": 0.0,
+    "quantiles": {
+      "p05": 0.0,
+      "p25": 0.0,
+      "p50": 1.0,
+      "p75": 1.0,
+      "p95": 1.0
+    },
+    "mean": 0.6118,
+    "std": 0.4877,
+    "min": 0.0,
+    "max": 1.0
+  },
+  "iaa_2023": {
+    "type": "numeric",
+    "count": 765,
+    "missing_rate": 0.0771,
+    "quantiles": {
+      "p05": 0.0,
+      "p25": 6.925,
+      "p50": 8.5,
+      "p75": 9.2,
+      "p95": 10.0
+    },
+    "mean": 6.9952,
+    "std": 3.5671,
+    "min": 0.0,
+    "max": 10.0
+  },
+  "iaa_2023_missing": {
+    "type": "unknown",
+    "count": 0,
+    "missing_rate": 1.0
+  },
+  "ian_2023": {
+    "type": "numeric",
+    "count": 765,
+    "missing_rate": 0.0,
+    "quantiles": {
+      "p05": 5.0,
+      "p25": 5.0,
+      "p50": 5.0,
+      "p75": 10.0,
+      "p95": 10.0
+    },
+    "mean": 7.4052,
+    "std": 2.5194,
+    "min": 2.5,
+    "max": 10.0
+  },
+  "ida_2023": {
+    "type": "numeric",
+    "count": 765,
+    "missing_rate": 0.0941,
+    "quantiles": {
+      "p05": 4.2,
+      "p25": 5.9,
+      "p50": 6.9,
+      "p75": 7.9,
+      "p95": 9.1
+    },
+    "mean": 6.8257,
+    "std": 1.4823,
+    "min": 2.2,
+    "max": 10.0
+  },
+  "ida_2023_missing": {
+    "type": "unknown",
+    "count": 0,
+    "missing_rate": 1.0
+  },
+  "idade_2023": {
+    "type": "numeric",
+    "count": 765,
+    "missing_rate": 0.0,
+    "quantiles": {
+      "p05": 8.0,
+      "p25": 10.0,
+      "p50": 12.0,
+      "p75": 14.0,
+      "p95": 19.0
+    },
+    "mean": 12.285,
+    "std": 3.3687,
+    "min": 7.0,
+    "max": 26.0
+  },
+  "ieg_2023": {
+    "type": "numeric",
+    "count": 765,
+    "missing_rate": 0.0941,
+    "quantiles": {
+      "p05": 7.1,
+      "p25": 8.3,
+      "p50": 9.1,
+      "p75": 9.6,
+      "p95": 10.0
+    },
+    "mean": 8.8648,
+    "std": 0.9703,
+    "min": 3.7,
+    "max": 10.0
+  },
+  "ieg_2023_missing": {
+    "type": "unknown",
+    "count": 0,
+    "missing_rate": 1.0
+  },
+  "instituicao_2023": {
+    "type": "categorical",
+    "count": 765,
+    "missing_rate": 0.0,
+    "n_unique": 6,
+    "top_values": {
+      "Publica": {
+        "count": 583,
+        "freq": 0.7621
+      },
+      "Privada_Apadrinhamento": {
+        "count": 90,
+        "freq": 0.1176
+      },
+      "Privada_Bolsa": {
+        "count": 64,
+        "freq": 0.0837
+      },
+      "Privada": {
+        "count": 22,
+        "freq": 0.0288
+      },
+      "Concluiu_EM": {
+        "count": 5,
+        "freq": 0.0065
+      },
+      "Outro": {
+        "count": 1,
+        "freq": 0.0013
+      }
+    }
+  },
+  "ipp_2023": {
+    "type": "numeric",
+    "count": 765,
+    "missing_rate": 0.0941,
+    "quantiles": {
+      "p05": 5.625,
+      "p25": 7.1875,
+      "p50": 7.7083,
+      "p75": 8.2812,
+      "p95": 8.9583
+    },
+    "mean": 7.6155,
+    "std": 0.9805,
+    "min": 4.375,
+    "max": 9.7917
+  },
+  "ipp_2023_missing": {
+    "type": "unknown",
+    "count": 0,
+    "missing_rate": 1.0
+  },
+  "ips_2023": {
+    "type": "numeric",
+    "count": 765,
+    "missing_rate": 0.081,
+    "quantiles": {
+      "p05": 2.52,
+      "p25": 2.52,
+      "p50": 5.0,
+      "p75": 7.52,
+      "p95": 7.52
+    },
+    "mean": 5.1563,
+    "std": 2.0911,
+    "min": 2.52,
+    "max": 9.38
+  },
+  "ips_2023_missing": {
+    "type": "unknown",
+    "count": 0,
+    "missing_rate": 1.0
+  },
+  "ipv_2023": {
+    "type": "numeric",
+    "count": 765,
+    "missing_rate": 0.0941,
+    "quantiles": {
+      "p05": 6.6365,
+      "p25": 7.5425,
+      "p50": 8.1167,
+      "p75": 8.7125,
+      "p95": 9.76
+    },
+    "mean": 8.116,
+    "std": 0.9191,
+    "min": 3.32,
+    "max": 10.01
+  },
+  "ipv_2023_missing": {
+    "type": "unknown",
+    "count": 0,
+    "missing_rate": 1.0
+  },
+  "max_indicador": {
+    "type": "unknown",
+    "count": 0,
+    "missing_rate": 1.0
+  },
+  "media_indicadores": {
+    "type": "unknown",
+    "count": 0,
+    "missing_rate": 1.0
+  },
+  "min_indicador": {
+    "type": "unknown",
+    "count": 0,
+    "missing_rate": 1.0
+  },
+  "range_indicadores": {
+    "type": "unknown",
+    "count": 0,
+    "missing_rate": 1.0
+  },
+  "std_indicadores": {
+    "type": "unknown",
+    "count": 0,
+    "missing_rate": 1.0
+  }
+}

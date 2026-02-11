@@ -1,13 +1,17 @@
 """
 Metrics Module - In-memory metrics for observabilidade.
 Fase 8: Hardening de Produção.
+
+Counters are persisted to disk so they survive container restarts.
 """
 
+import json
 import logging
 import os
 import threading
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Dict, List, Optional
 
 logger = logging.getLogger("api.metrics")
@@ -102,11 +106,16 @@ class Counter:
 
 class MetricsStore:
     """
-    In-memory metrics store.
+    In-memory metrics store with optional disk persistence for counters.
 
     NOTE: For production multi-replica deployments,
     consider using Prometheus client library or external metrics service.
     """
+
+    PERSIST_FILE = os.getenv(
+        "METRICS_PERSIST_PATH", os.path.join("logs", "metrics_state.json")
+    )
+    _PERSIST_EVERY = 10  # persist after every N predictions
 
     def __init__(self):
         # Request latencies (ms)
@@ -131,6 +140,11 @@ class MetricsStore:
         self.last_health_check: float = 0
 
         self._start_time = time.time()
+        self._persist_counter = 0
+        self._persist_lock = threading.Lock()
+
+        # Load persisted counters if available
+        self._load()
 
     def record_request(self, latency_ms: float, success: bool) -> None:
         """Record a request."""
@@ -142,12 +156,17 @@ class MetricsStore:
             self.requests_error.inc()
 
     def record_prediction(self, probability: float, threshold: float) -> None:
-        """Record a prediction result."""
+        """Record a prediction result and periodically persist."""
         self.predictions_total.inc()
         if probability >= threshold:
             self.predictions_positive.inc()
         else:
             self.predictions_negative.inc()
+
+        self._persist_counter += 1
+        if self._persist_counter >= self._PERSIST_EVERY:
+            self._persist_counter = 0
+            self.persist()
 
     def record_health_check(self) -> None:
         """Record a health check."""
@@ -258,6 +277,47 @@ class MetricsStore:
         lines.append(f'api_slo_healthy {1 if summary["slo"]["overall_healthy"] else 0}')
 
         return "\n".join(lines)
+
+    def persist(self) -> None:
+        """Persist prediction counters to disk."""
+        with self._persist_lock:
+            state = {
+                "predictions_total": self.predictions_total.get(),
+                "predictions_positive": self.predictions_positive.get(),
+                "predictions_negative": self.predictions_negative.get(),
+                "requests_total": self.requests_total.get(),
+                "requests_success": self.requests_success.get(),
+                "requests_error": self.requests_error.get(),
+            }
+            try:
+                path = Path(self.PERSIST_FILE)
+                path.parent.mkdir(parents=True, exist_ok=True)
+                tmp = path.with_suffix(".tmp")
+                tmp.write_text(json.dumps(state))
+                tmp.replace(path)
+            except Exception:
+                logger.debug("Failed to persist metrics state", exc_info=True)
+
+    def _load(self) -> None:
+        """Load persisted counters from disk."""
+        try:
+            path = Path(self.PERSIST_FILE)
+            if not path.exists():
+                return
+            state = json.loads(path.read_text())
+            self.predictions_total.inc(state.get("predictions_total", 0))
+            self.predictions_positive.inc(state.get("predictions_positive", 0))
+            self.predictions_negative.inc(state.get("predictions_negative", 0))
+            self.requests_total.inc(state.get("requests_total", 0))
+            self.requests_success.inc(state.get("requests_success", 0))
+            self.requests_error.inc(state.get("requests_error", 0))
+            logger.info(
+                "Loaded persisted metrics: %d predictions, %d requests",
+                state.get("predictions_total", 0),
+                state.get("requests_total", 0),
+            )
+        except Exception:
+            logger.debug("Failed to load persisted metrics", exc_info=True)
 
     def reset(self) -> None:
         """Reset all metrics - useful for testing."""

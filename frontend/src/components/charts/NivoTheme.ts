@@ -29,7 +29,7 @@ export const passosNivoTheme: NivoTheme = {
     legend: { text: { fontSize: 13, fill: '#374151', fontWeight: 600 } },
   },
   grid: { line: { stroke: '#f3f4f6', strokeWidth: 1 } },
-  crosshair: { line: { stroke: '#3366ff', strokeWidth: 1, strokeOpacity: 0.5 } },
+  crosshair: { line: { stroke: '#3b82f6', strokeWidth: 1, strokeOpacity: 0.5 } },
   tooltip: {
     container: {
       background: '#ffffff',
@@ -45,9 +45,9 @@ export const passosNivoTheme: NivoTheme = {
   legends: { text: { fontSize: 12, fill: '#6b7280' } },
   annotations: {
     text: { fontSize: 13, fill: '#374151', fontWeight: 600 },
-    link: { stroke: '#3366ff', strokeWidth: 1.5 },
-    outline: { stroke: '#3366ff', strokeWidth: 2 },
-    symbol: { fill: '#3366ff' },
+    link: { stroke: '#3b82f6', strokeWidth: 1.5 },
+    outline: { stroke: '#3b82f6', strokeWidth: 2 },
+    symbol: { fill: '#3b82f6' },
   },
 }
 
@@ -88,16 +88,16 @@ export const passosNivoThemeDark: NivoTheme = {
  * Ordenadas por prioridade visual: azul → roxo → laranja → verde → etc.
  */
 export const passosPalette = [
-  '#3366ff', // azul institucional PM
-  '#8b3dff', // roxo transformação
-  '#f97316', // laranja impacto
-  '#22c55e', // verde sucesso
-  '#ef4444', // vermelho risco
-  '#06b6d4', // cyan
-  '#ec4899', // rosa
-  '#eab308', // amarelo
-  '#14b8a6', // teal
-  '#6366f1', // indigo
+  '#3b82f6', // blue-500
+  '#6366f1', // indigo-500
+  '#f59e0b', // amber-500
+  '#22c55e', // green-500
+  '#ef4444', // red-500
+  '#06b6d4', // cyan-500
+  '#8b5cf6', // violet-500
+  '#ec4899', // pink-500
+  '#14b8a6', // teal-500
+  '#f97316', // orange-500
 ]
 
 /** Paleta para gráficos de risco (3 faixas) */
@@ -111,7 +111,7 @@ export const riskPalette = {
 export const divergentPalette = ['#ef4444', '#fca5a5', '#fef2f2', '#dbeafe', '#60a5fa', '#3366ff']
 
 /** Paleta sequencial para heatmaps de intensidade */
-export const sequentialPalette = ['#eef4ff', '#bcd0ff', '#5990ff', '#3366ff', '#1433e1', '#19298f']
+export const sequentialPalette = ['#eff6ff', '#bfdbfe', '#60a5fa', '#3b82f6', '#1d4ed8', '#1e3a8a']
 
 /** Hook helper para selecionar tema baseado no modo atual */
 export function useNivoTheme(isDark?: boolean): NivoTheme {

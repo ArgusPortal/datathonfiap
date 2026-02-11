@@ -68,14 +68,15 @@ Um sistema completo de **Machine Learning** que:
 </td>
 <td width="40%">
 
-### 📈 Métricas do Modelo
+### 📈 Métricas do Modelo (test)
 
 | Métrica | Valor |
 |:--------|:-----:|
-| **Recall** | 95.9% |
-| **ROC-AUC** | ~0.93 |
-| **Precision** | 69.1% |
-| **PR-AUC** | 0.83 |
+| **Recall** | 93.5% |
+| **F2-Score** | 0.876 |
+| **Precision** | 69.9% |
+| **PR-AUC** | 0.830 |
+| **Brier** | 0.132 |
 | **Threshold** | 0.350 |
 
 ### 🏗️ Stack
@@ -152,7 +153,7 @@ curl http://localhost:8000/health
 │                                                                              │
 │   ┌──────────┐     ┌──────────┐     ┌──────────┐     ┌──────────┐          │
 │   │  Dados   │────▶│ Pipeline │────▶│  Modelo  │────▶│   API    │          │
-│   │  PEDE    │     │    ML    │     │  v1.2.0  │     │ FastAPI  │          │
+│   │  PEDE    │     │    ML    │     │  v1.1.0  │     │ FastAPI  │          │
 │   └──────────┘     └──────────┘     └──────────┘     └────┬─────┘          │
 │                                                           │                 │
 │                    ┌──────────────────────────────────────┼────────────┐   │

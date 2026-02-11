@@ -1,0 +1,24 @@
+{
+  "version": "v1.1.0",
+  "created_at": "2026-02-11T21:54:06.214423+00:00",
+  "promoted_by": "auto",
+  "notes": "HistGradientBoosting+Calibration, 34 features, threshold 0.35, Recall 93.5%% Precision 69.9%% F2 0.876. Baseline built from 765 train samples.",
+  "status": "champion",
+  "hashes": {
+    "model.joblib": "d3cc87bb6591cb959d649d97293cbfd5d3dabc00072f8585b35f4707fa6b1bdc",
+    "model_metadata.json": "02134f76b226bc30f584c53466d0d3e20fd262348307bae41ffa5c726f115ebd",
+    "model_signature.json": "9460e3708de12a5cd14166b75a75ed08802e078dfa1e438363e7c13af91a9be2",
+    "metrics.json": "ec7fc27c5b8aa1a9683b3e209b5dcd53adca63d93378648ac301fd1d37e7549c",
+    "feature_profile.json": "ae2e3072526e38c6c999232115bdd3b077d49ba0626175ca93a2ad9ba8bd4a75",
+    "score_profile.json": "e90e7907f8bd2c41f55927e33e59acf91121fd40ce9926e301080f6b7cc0d872",
+    "baseline_metadata.json": "d54b71fde1b503db8e4d613aaa27f742bf4c2eae68b331d4d44295f7b312fed0"
+  },
+  "artifacts": [
+    "metrics.json",
+    "model.joblib",
+    "model_metadata.json",
+    "model_signature.json"
+  ],
+  "has_baseline": true,
+  "promoted_at": "2026-02-11T21:54:16.623527+00:00"
+}

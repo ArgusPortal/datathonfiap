@@ -1,0 +1,163 @@
+{
+  "overall": {
+    "n": 765,
+    "prevalence": 0.40261437908496733,
+    "recall": 0.9805194805194806,
+    "precision": 0.7531172069825436,
+    "f1": 0.8519040902679831,
+    "f2": 0.9246785058175138
+  },
+  "subgroups": {
+    "genero": {
+      "Feminino": {
+        "n": 415,
+        "prevalence": 0.35903614457831323,
+        "recall": 0.987,
+        "precision": 0.75,
+        "f1": 0.852,
+        "f2": 0.928
+      },
+      "Masculino": {
+        "n": 350,
+        "prevalence": 0.4542857142857143,
+        "recall": 0.975,
+        "precision": 0.756,
+        "f1": 0.852,
+        "f2": 0.922
+      },
+      "_disparity": {
+        "recall_disparity": 0.012
+      }
+    },
+    "fase": {
+      "ALFA": {
+        "n": 174,
+        "prevalence": 0.7586206896551724,
+        "recall": 1.0,
+        "precision": 0.805,
+        "f1": 0.892,
+        "f2": 0.954
+      },
+      "FASE 1": {
+        "n": 138,
+        "prevalence": 0.4420289855072464,
+        "recall": 0.984,
+        "precision": 0.69,
+        "f1": 0.811,
+        "f2": 0.906
+      },
+      "FASE 2": {
+        "n": 153,
+        "prevalence": 0.16339869281045752,
+        "recall": 0.88,
+        "precision": 0.449,
+        "f1": 0.595,
+        "f2": 0.738
+      },
+      "FASE 3": {
+        "n": 94,
+        "prevalence": 0.44680851063829785,
+        "recall": 1.0,
+        "precision": 0.894,
+        "f1": 0.944,
+        "f2": 0.977
+      },
+      "FASE 4": {
+        "n": 67,
+        "prevalence": 0.373134328358209,
+        "recall": 0.96,
+        "precision": 0.828,
+        "f1": 0.889,
+        "f2": 0.93
+      },
+      "FASE 5": {
+        "n": 43,
+        "prevalence": 0.4883720930232558,
+        "recall": 0.952,
+        "precision": 0.87,
+        "f1": 0.909,
+        "f2": 0.935
+      },
+      "FASE 6": {
+        "n": 17,
+        "prevalence": 0.11764705882352941,
+        "recall": 1.0,
+        "precision": 1.0,
+        "f1": 1.0,
+        "f2": 1.0
+      },
+      "FASE 7": {
+        "n": 20,
+        "prevalence": 0.0,
+        "recall": null,
+        "precision": null,
+        "f1": null,
+        "f2": null
+      },
+      "FASE 8": {
+        "n": 59,
+        "prevalence": 0.0,
+        "recall": null,
+        "precision": null,
+        "f1": null,
+        "f2": null
+      },
+      "_disparity": {
+        "recall_disparity": 0.12
+      }
+    },
+    "instituicao": {
+      "Concluiu_EM": {
+        "n": 5,
+        "prevalence": 0.0,
+        "recall": null,
+        "precision": null,
+        "f1": null,
+        "f2": null
+      },
+      "Outro": {
+        "n": 1,
+        "prevalence": 0.0,
+        "recall": null,
+        "precision": null,
+        "f1": null,
+        "f2": null
+      },
+      "Privada": {
+        "n": 22,
+        "prevalence": 0.4090909090909091,
+        "recall": 1.0,
+        "precision": 0.9,
+        "f1": 0.947,
+        "f2": 0.978
+      },
+      "Privada_Apadrinhamento": {
+        "n": 90,
+        "prevalence": 0.14444444444444443,
+        "recall": 0.923,
+        "precision": 1.0,
+        "f1": 0.96,
+        "f2": 0.938
+      },
+      "Privada_Bolsa": {
+        "n": 64,
+        "prevalence": 0.0,
+        "recall": null,
+        "precision": null,
+        "f1": null,
+        "f2": null
+      },
+      "Publica": {
+        "n": 583,
+        "prevalence": 0.49056603773584906,
+        "recall": 0.983,
+        "precision": 0.741,
+        "f1": 0.845,
+        "f2": 0.923
+      },
+      "_disparity": {
+        "recall_disparity": 0.077
+      }
+    }
+  }
+}

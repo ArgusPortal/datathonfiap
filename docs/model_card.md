@@ -5,7 +5,7 @@
 | Attribute | Value |
 |-----------|-------|
 | **Name** | Defasagem Risk Classifier |
-| **Version** | v1.2.0 |
+| **Version** | v1.1.0 |
 | **Type** | Binary Classification |
 | **Framework** | scikit-learn |
 | **Algorithm** | CalibratedClassifierCV (HistGradientBoosting base) |
@@ -70,7 +70,7 @@ Predição de risco de defasagem escolar para alunos do programa Passos Mágicos
 | delta_iaa_2022_2023 | float | Variação IAA 2022→2023 |
 | delta_ips_2022_2023 | float | Variação IPS 2022→2023 |
 | delta_ipv_2022_2023 | float | Variação IPV 2022→2023 |
-| has_prev_year_data | float | Flag: aluno tem dados do ano anterior |
+| has_prev_year_data | flo2at | Flag: aluno tem dados do ano anterior |
 | *_missing (6) | float | Flags de missing por indicador |
 | media_indicadores | float | Média dos indicadores educacionais |
 | min_indicador | float | Valor mínimo entre indicadores |
@@ -130,20 +130,50 @@ Calibração via sigmoid regression garante que:
 
 ## Fairness Analysis
 
-### Subgroups Analyzed
+Análise de equidade computada sobre o dataset completo (765 amostras, threshold 0.35).
+Arquivo completo: `artifacts/fairness_analysis.json`.
 
-| Subgroup | Metric | Value | Disparidade |
-|----------|--------|-------|-------------|
-| Idade < 14 | AUC | 0.83 | -2% |
-| Idade ≥ 14 | AUC | 0.86 | ref |
-| Série 1-5 | AUC | 0.84 | -1% |
-| Série 6-9 | AUC | 0.85 | ref |
+### Por Gênero
 
-### Mitigations
+| Grupo | N | Prevalência | Recall | Precision | F1 | F2 |
+|-------|---|-------------|--------|-----------|-----|-----|
+| Feminino | 415 | 35.9% | 0.987 | 0.750 | 0.852 | 0.928 |
+| Masculino | 350 | 45.4% | 0.975 | 0.756 | 0.852 | 0.922 |
 
-1. Amostragem estratificada por idade/série
-2. Threshold único (evita tratamento diferenciado)
-3. Monitoramento contínuo de disparidades
+**Recall disparity: 0.012** — equidade excelente entre gêneros.
+
+### Por Fase
+
+| Grupo | N | Prevalência | Recall | Precision | F1 | F2 |
+|-------|---|-------------|--------|-----------|-----|-----|
+| ALFA | 174 | 75.9% | 1.000 | 0.805 | 0.892 | 0.954 |
+| FASE 1 | 138 | 44.2% | 0.984 | 0.690 | 0.811 | 0.906 |
+| FASE 2 | 153 | 16.3% | 0.880 | 0.449 | 0.595 | 0.738 |
+| FASE 3 | 94 | 44.7% | 1.000 | 0.894 | 0.944 | 0.977 |
+| FASE 4 | 67 | 37.3% | 0.960 | 0.828 | 0.889 | 0.930 |
+| FASE 5 | 43 | 48.8% | 0.952 | 0.870 | 0.909 | 0.935 |
+| FASE 6 | 17 | 11.8% | 1.000 | 1.000 | 1.000 | 1.000 |
+| FASE 7 | 20 | 0.0% | — | — | — | — |
+| FASE 8 | 59 | 0.0% | — | — | — | — |
+
+**Recall disparity: 0.120** — FASE 2 tem menor recall (0.880), possivelmente por baixa prevalência (16.3%). FASE 7 e 8 não possuem casos positivos no dataset.
+
+### Por Instituição
+
+| Grupo | N | Prevalência | Recall | Precision | F1 | F2 |
+|-------|---|-------------|--------|-----------|-----|-----|
+| Pública | 583 | 49.1% | 0.983 | 0.741 | 0.845 | 0.923 |
+| Privada | 22 | 40.9% | 1.000 | 0.900 | 0.947 | 0.978 |
+| Privada (Apadrinhamento) | 90 | 14.4% | 0.923 | 1.000 | 0.960 | 0.938 |
+
+**Recall disparity: 0.077** — performance consistente entre tipos de instituição.
+
+### Mitigações
+
+1. Threshold único para todos os subgrupos (evita tratamento diferenciado)
+2. Monitoramento de PSI por feature demográfica (gênero, fase, instituição)
+3. Revisão humana obrigatória — modelo é auxiliar, não decisório
+4. Relatório de fairness atualizado a cada retrain
 
 ---
 
@@ -211,9 +241,8 @@ Calibração via sigmoid regression garante que:
 
 | Version | Date | Changes |
 |---------|------|---------|
-| v1.2.0 | 2026-02-07 | HistGradientBoosting, 34 features, threshold 0.35, business rules validation, delta features, missing flags |
-| v1.1.0 | 2025-01-15 | Calibration, threshold tuning |
-| v1.0.0 | 2025-01-01 | Initial release |
+| v1.1.0 | 2026-02-07 | HistGradientBoosting + CalibratedClassifierCV (sigmoid), 34 features, threshold 0.35, business rules validation, delta features, missing flags, fairness analysis |
+| v1.0.0 | 2026-02-01 | Initial release — Random Forest baseline |
 
 ---
 

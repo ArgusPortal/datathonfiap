@@ -306,8 +306,8 @@ export function DashboardPage() {
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="card-hover">
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-passos-100 dark:bg-passos-800/40">
-              <Activity className="h-4 w-4 text-passos-600 dark:text-passos-300" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+              <Activity className="h-4 w-4 text-primary" />
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Total Requisições</p>
@@ -320,8 +320,8 @@ export function DashboardPage() {
         </Card>
         <Card className="card-hover">
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-magic-100 dark:bg-magic-800/40">
-              <Clock className="h-4 w-4 text-magic-600 dark:text-magic-300" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
+              <Clock className="h-4 w-4 text-muted-foreground" />
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Latência p95</p>
@@ -520,10 +520,10 @@ export function DashboardPage() {
 
       {/* INFO CARDS — Explicações acadêmicas */}
       <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
-        <Card className="card-hover border-passos-200/50 dark:border-passos-800/30">
+        <Card className="card-hover">
           <CardContent className="p-5">
             <h3 className="font-semibold text-sm flex items-center gap-2 mb-2">
-              <Target className="h-4 w-4 text-passos-500" />
+              <Target className="h-4 w-4 text-primary" />
               Objetivo do Modelo
             </h3>
             <p className="text-xs text-muted-foreground leading-relaxed">
@@ -532,10 +532,10 @@ export function DashboardPage() {
             </p>
           </CardContent>
         </Card>
-        <Card className="card-hover border-magic-200/50 dark:border-magic-800/30">
+        <Card className="card-hover">
           <CardContent className="p-5">
             <h3 className="font-semibold text-sm flex items-center gap-2 mb-2">
-              <BarChart3 className="h-4 w-4 text-magic-500" />
+              <BarChart3 className="h-4 w-4 text-muted-foreground" />
               Performance do Modelo
             </h3>
             <p className="text-xs text-muted-foreground leading-relaxed">

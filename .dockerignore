@@ -43,6 +43,7 @@ data/
 logs/
 !logs/drift_events.jsonl
 !logs/audit_trail.jsonl
+!logs/metrics_state.json
 *.log
 
 # Notebooks

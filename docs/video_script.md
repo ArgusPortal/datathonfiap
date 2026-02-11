@@ -1,7 +1,7 @@
 # Roteiro do Vídeo — Datathon FIAP 2026
 
 **Duração total**: 4:30–5:00  
-**Apresentador(es)**: {{VIDEO_PRESENTER}}  
+**Apresentador(es)**: Equipe Datathon FIAP 2026  
 **Requisito**: pelo menos 1 integrante aparece em tela
 
 ---
@@ -53,7 +53,7 @@
 - API funcionando: /health, /metadata, /predict
 - Demonstração ao vivo: chamada curl com resultado real
 - Docker: build + run em segundos
-- Link cloud: {{API_LINK}} (ou localhost:8000 se local)
+- Link cloud: localhost:8080 (Docker fullstack) ou localhost:8000 (API standalone)
 
 **Tela**: terminal com curl executando → resposta JSON
 
@@ -101,5 +101,5 @@ curl -X POST http://localhost:8000/predict \
 
 - [ ] 1 chamada /predict ao vivo (terminal)
 - [ ] 1 tela do drift_report HTML
-- [ ] 1 evidência de pytest --cov (200 passed, 84%)
+- [ ] 1 evidência de pytest --cov (382 passed, 81%)
 - [ ] Pelo menos 1 integrante aparece em tela

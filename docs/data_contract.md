@@ -1,8 +1,15 @@
-# Data Contract: Modelo de Risco de Defasagem Escolar
+# Data Contract v1: Modelo de Risco de Defasagem Escolar
+
+> **⚠️ SUPERSEDED — Este documento foi substituído pelo [Data Contract v2](data_contract_v2.md)**
+>
+> O v1 foi o documento de planejamento inicial criado antes da análise exploratória.
+> Após a EDA, todas as especificações foram consolidadas no v2 com as 34 features
+> reais, tipos validados, ranges conferidos e regras de qualidade implementadas.
+> Este arquivo é mantido apenas como registro histórico da evolução do projeto.
 
 **Projeto**: Datathon FIAP - Passos Mágicos  
 **Data**: Janeiro 2026  
-**Versão**: 0.1 (MVP)
+**Versão**: 0.1 (MVP) — **Superseded by v2**
 
 ---
 
@@ -17,9 +24,8 @@
 ## 2. Chaves e Identificadores
 
 **IDs obrigatórios** (não usar como features):
-- `estudante_id`: identificador único do estudante
+- `estudante_id`: identificador único do estudante (RA)
 - `ano`: ano letivo (2022, 2023, 2024)
-- {{VERIFICAR: `turma_id`, `escola_id` se aplicável}}
 
 **IDs derivados** (construir durante preprocessing):
 - `index_temporal`: índice sequencial para ordenação (estudante + ano)
@@ -28,128 +34,125 @@
 
 ## 3. Features Candidatas (por Grupos)
 
-### 3.1 Indicadores Acadêmicos (PEDE/IAN)
-{{COLUNAS_EXEMPLO - substituir após análise do dicionário}}:
-- `inde_ano_t`: Índice de Desenvolvimento Educacional do ano t
-- `ian_ano_t`: Índice de Adequação de Nível do ano t
-- `ponto_virada_ano_t`: indicador de ponto de virada (escala {{especificar}})
-- `nota_lingua_portuguesa_t`: desempenho em português
-- `nota_matematica_t`: desempenho em matemática
-- {{ADICIONAR: outras métricas acadêmicas disponíveis}}
+> **Nota**: As features finais foram definidas no [Data Contract v2](data_contract_v2.md).
+> Abaixo está o levantamento inicial que guiou a exploração.
 
-### 3.2 Engajamento e Presença
-{{COLUNAS_EXEMPLO}}:
-- `taxa_presenca_ano_t`: % de presença no ano t
-- `numero_faltas_ano_t`: total de faltas
-- `participacao_atividades_extras_t`: flag ou contagem
-- {{ADICIONAR: métricas de engajamento familiar, eventos participados}}
+### 3.1 Indicadores Acadêmicos (PEDE)
+- `iaa_2023`: Índice de Autoavaliação [0-10]
+- `ian_2023`: Índice de Adequação ao Nível [0-10]
+- `ida_2023`: Índice de Desenvolvimento Acadêmico [0-10]
+- `ieg_2023`: Índice de Engajamento [0-10]
+- `ipp_2023`: Índice de Performance Pedagógica [0-10]
+- `ips_2023`: Índice de Performance Social [0-10]
+- `ipv_2023`: Índice de Ponto de Virada [0-10]
 
-### 3.3 Contexto do Estudante
-{{COLUNAS_EXEMPLO}}:
-- `fase_programa`: fase do estudante no programa (0–7)
-- `tempo_no_programa`: anos desde ingresso
-- `nivel_vulnerabilidade`: categorizado (baixo/médio/alto) {{confirmar escala}}
-- {{ADICIONAR: variáveis socioeconômicas disponíveis}}
+### 3.2 Contexto do Estudante
+- `fase_2023`: fase do estudante no programa (1–8)
+- `idade_2023`: idade do aluno (7–20)
+- `genero_2023`: gênero (0/1)
+- `instituicao_2023`: instituição de ensino (0–5)
+- `ano_ingresso_2023`: ano de ingresso no programa (2016–2023)
+- `anos_pm_2023`: tempo no programa Passos Mágicos (1–8)
 
-### 3.4 Histórico Longitudinal
-{{COLUNAS_EXEMPLO - construir via feature engineering}}:
-- `delta_inde_t_vs_t1`: variação do INDE entre anos
-- `delta_ian_t_vs_t1`: variação do IAN entre anos
-- `tendencia_notas`: slope das notas últimos N anos
-- {{ADICIONAR: outras features temporais agregadas}}
+### 3.3 Features Temporais (deltas 2022→2023)
+- `delta_iaa_2022_2023`, `delta_ian_2022_2023`, `delta_ida_2022_2023`
+- `delta_ieg_2022_2023`, `delta_ips_2022_2023`, `delta_ipv_2022_2023`
+- `has_prev_year_data`: flag indicando se o aluno tem dados de 2022
+
+### 3.4 Features Agregadas (derivadas)
+- `media_indicadores`, `min_indicador`, `max_indicador`
+- `std_indicadores`, `range_indicadores`
+- `fase_x_media`: interação fase × média dos indicadores
+- `*_missing`: flags de missing para cada indicador (6 flags)
 
 ### 3.5 Target
-- `em_risco_t_mais_1`: binário (0/1) — defasagem moderada OU severa no ano t+1
-- {{VERIFICAR: como é codificada a defasagem no dataset original (flag, categoria, score?)}}
+- `em_risco_2024`: binário (0/1) — 1 se defasagem < 0 (aluno atrasado no ano seguinte)
+- Calculado via: `defasagem = fase_efetiva - fase_ideal`
 
 ---
 
 ## 4. Colunas Proibidas
 
-**IDs e identificadores diretos**:
-- `estudante_id`, `nome`, `cpf`, `endereco_completo`
-- `turma_id`, `escola_id`, `professor_id` (risco de overfitting se cardinalidade alta)
-
-**Informações sensíveis** (se presentes):
-- Dados familiares identificáveis
-- Histórico médico/psicológico não agregado
+**IDs e identificadores diretos** (removidos no preprocessing):
+- `nome`, `cpf`, `endereco_completo` — dados pessoais (LGPD)
+- `turma_id`, `escola_id`, `professor_id` — alta cardinalidade, overfitting
 
 **Variáveis do futuro** (ano t+1):
-- Qualquer coluna que contenha `_t_mais_1` ou `_t+1` exceto o target
-- {{ADICIONAR: listar explicitamente após revisar dicionário}}
+- Qualquer coluna com sufixo `_2024` exceto o target `em_risco_2024`
+- `fase_2024`, `inde_2024`, `ian_2024` — dados do próprio período a prever
+- Colunas de status de matrícula no ano de predição
 
 ---
 
 ## 5. Leakage Watchlist
 
-**Colunas com ALTO RISCO de vazamento** (revisar antes de usar):
+**Colunas com ALTO RISCO de vazamento** (tratadas no pipeline):
 
-- `fase_efetiva_t_mais_1` vs `fase_ideal_t_mais_1`: se derivam da defasagem em t+1, NÃO USAR
-- `indicador_risco_pre_calculado`: se existe, pode ser derivado do target
-- `status_matricula_t_mais_1`: informação futura
-- `notas_parciais_t_mais_1`: dados do próprio ano que queremos predizer
-- {{ADICIONAR: qualquer coluna com sufixo do ano futuro após análise}}
+- `fase_2024` / indicadores `_2024`: informação do ano a ser previsto — removidas
+- `ponto_virada_2023`: validado como calculado apenas com dados até 2023 — **seguro para uso**
+- `inde_2023`: validado como agregação dos indicadores PEDE do ano corrente — **seguro**
 
 **Regra de ouro**: se a coluna só estaria disponível DEPOIS do evento que queremos predizer, NÃO USAR.
 
-**Colunas SUSPEITAS** (validar origem):
-- `ponto_virada`: confirmar se é calculado com dados apenas até ano t
-- `inde_ajustado`: verificar se usa informações futuras no cálculo
-- {{ADICIONAR: variáveis derivadas encontradas no dicionário}}
+**Mitigações implementadas**:
+- `src/preprocessing.py` remove colunas proibidas antes do treino
+- `src/data_quality.py` valida ausência de colunas futuras no dataset final
+- Testes unitários verificam que nenhuma feature `_2024` entra no modelo
 
 ---
 
-## 6. Disponibilidade por Etapa (Inscrição → Matrícula)
+## 6. Disponibilidade por Etapa
 
-| Feature Group | Momento Inscrição | Momento Matrícula | Momento Avaliação Final (ano t) |
-|---------------|-------------------|-------------------|---------------------------------|
-| IDs obrigatórios | ✅ Existe | ✅ Existe | ✅ Existe |
-| Indicadores acadêmicos (INDE, IAN) | {{INCERTO}} | {{INCERTO}} | ✅ Existe |
-| Engajamento/presença ano t | ❌ Não existe | {{PARCIAL?}} | ✅ Existe |
-| Contexto do estudante | {{PARCIAL}} | ✅ Existe | ✅ Existe |
-| Histórico longitudinal | {{INCERTO}} | {{INCERTO}} | ✅ Existe |
+| Feature Group | Final do Ano t (treino) | Momento da Predição (produção) |
+|---------------|------------------------|-------------------------------|
+| IDs obrigatórios | ✅ Disponível | ✅ Disponível |
+| Indicadores PEDE (IAA, IAN, IDA, IEG, IPP, IPS, IPV) | ✅ Disponível | ✅ Disponível |
+| Contexto (fase, idade, gênero, instituição) | ✅ Disponível | ✅ Disponível |
+| Deltas temporais (2022→2023) | ✅ Disponível | ✅ Disponível |
+| Features agregadas (média, std, range) | ✅ Calculadas no pipeline | ✅ Calculadas no pipeline |
+| Missing flags | ✅ Geradas no pipeline | ✅ Geradas no pipeline |
 
-**AÇÕES**:
-- {{Confirmar com stakeholders: quais dados estão disponíveis em cada etapa}}
-- {{Decidir: modelo único (usar apenas features disponíveis na inscrição) OU modelos múltiplos por etapa}}
-- MVP usa dados do **final do ano t** (máxima informação disponível)
+**Decisão**: o modelo utiliza dados do **final do ano t** (máxima informação disponível).
+A API recebe os indicadores do aluno e calcula features derivadas automaticamente.
 
 ---
 
 ## 7. Regras de Qualidade Mínimas
 
-**Missing values**:
-- Features críticas (IDs, ano, target): 0% missing permitido
-- Features acadêmicas: máximo 20% missing (imputar mediana/moda ou criar flag)
-- Features de engajamento: máximo 30% missing (pode indicar não-participação)
+**Missing values** (implementado em `src/data_quality.py`):
+- Features de ID e target: 0% missing
+- Indicadores PEDE: até 40% missing (realidade — 23 colunas têm >30% missing)
+  - Estratégia: imputação por mediana + flag `*_missing` para cada indicador
+- Features de contexto: até 5% missing
 
-**Ranges e tipos**:
-- `ano`: inteiro, valores válidos [2022, 2023, 2024]
-- `fase_programa`: inteiro, valores válidos [0, 1, 2, 3, 4, 5, 6, 7]
-- `taxa_presenca_ano_t`: float [0.0, 1.0] ou int [0, 100]
-- `inde_ano_t`, `ian_ano_t`: {{ESPECIFICAR ranges válidos após consultar documentação PEDE}}
-- `em_risco_t_mais_1`: binário {0, 1}, sem nulls
+**Ranges e tipos** (validados em runtime pela API):
+- `fase_2023`: inteiro [1, 8]
+- Indicadores PEDE (`iaa`, `ian`, `ida`, `ieg`, `ipp`, `ips`, `ipv`): float [0.0, 10.0]
+- `idade_2023`: inteiro [7, 20]
+- `genero_2023`: inteiro {0, 1}
+- `instituicao_2023`: inteiro [0, 5]
+- `em_risco_2024`: binário {0, 1}, sem nulls
 
-**Consistência temporal**:
-- Não existir registro do ano t+1 antes de existir registro do ano t para mesmo estudante
-- Delta de tempo entre features longitudinais deve ser válido (ex: `tempo_no_programa` monotonicamente crescente)
-
-**Checks automatizáveis (para pytest)**:
-- Schema validation: tipos corretos, colunas obrigatórias presentes
-- Nulls check: % missing dentro dos limites por coluna
-- Range check: valores dentro de limites esperados
-- Duplicatas: chave `(estudante_id, ano)` única
-- Temporal consistency: ordenação correta de anos por estudante
-- Leakage check: nenhuma coluna da watchlist presente no dataset de treino
+**Checks automatizados** (382 testes, 81.5% cobertura):
+- Schema validation: tipos corretos, 34 features obrigatórias
+- Nulls check: % missing dentro dos limites
+- Range check: validação de bounds no schema Pydantic da API
+- Duplicatas: chave composta única
+- Leakage check: nenhuma coluna `_2024` no dataset de treino
+- PSI drift check: 32 features monitoradas em produção
 
 ---
 
-## 8. Pendências de Dados (resolver antes de treino)
+## 8. Pendências Resolvidas
 
-{{TODO: colar dicionário completo de colunas fornecido pelo Datathon}}
-{{TODO: confirmar cálculo exato de INDE, IAN, PEDE (fórmulas e inputs)}}
-{{TODO: mapear quais colunas derivam de qual momento do funil (inscrição/matrícula/avaliação)}}
-{{TODO: validar se há colunas de texto livre que precisam NLP}}
-{{TODO: conferir se existem dados de anos anteriores a 2022 para construir histórico longitudinal}}
-{{TODO: definir estratégia de imputação por tipo de missing (MCAR vs MAR vs MNAR)}}
-{{TODO: estabelecer processo de validação de qualidade dos dados na entrada (schema + testes)}}
+Todas as pendências do planejamento inicial foram resolvidas durante a implementação:
+
+- ✅ **Dicionário de colunas**: mapeado a partir do dataset PEDE fornecido pelo Datathon
+- ✅ **Cálculo de INDE/IAN/PEDE**: indicadores extraídos diretamente do dataset (escala 0-10)
+- ✅ **Mapeamento temporal**: features utilizam exclusivamente dados até ano t (2023)
+- ✅ **Colunas de texto livre**: não utilizadas — todas as features são numéricas
+- ✅ **Dados históricos**: 2022 e 2023 disponíveis, deltas calculados para features temporais
+- ✅ **Estratégia de imputação**: mediana para numéricos + flag `*_missing` (MAR assumido)
+- ✅ **Validação de qualidade**: implementada em `src/data_quality.py` + schema Pydantic na API
+
+Para os detalhes finais de implementação, consulte o [Data Contract v2](data_contract_v2.md).

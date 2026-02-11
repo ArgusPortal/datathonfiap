@@ -74,7 +74,8 @@ RUN mkdir -p logs monitoring/inference_store /var/log/supervisor && \
     chown -R appuser:appgroup /app/logs /app/monitoring
 COPY logs/drift_events.jsonl ./logs/drift_events.jsonl
 COPY logs/audit_trail.jsonl ./logs/audit_trail.jsonl
-RUN chown appuser:appgroup /app/logs/*.jsonl
+COPY logs/metrics_state.json ./logs/metrics_state.json
+RUN chown appuser:appgroup /app/logs/*.jsonl /app/logs/*.json
 
 # ---- Nginx config ----
 RUN cat > /etc/nginx/sites-available/default << 'NGINX_CONF'

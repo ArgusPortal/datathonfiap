@@ -36,24 +36,17 @@ export function HeroSection({
   return (
     <div
       className={cn(
-        'relative overflow-hidden rounded-2xl border',
+        'relative overflow-hidden rounded-2xl border bg-muted/30',
         compact ? 'p-6' : 'p-8 lg:p-10',
         className,
       )}
     >
-      {/* Background gradient */}
-      <div className="absolute inset-0 pm-hero-gradient opacity-90 dark:opacity-70" />
-
-      {/* Decorative elements */}
-      <div className="absolute -top-12 -right-12 h-40 w-40 rounded-full bg-magic-500/10 blur-3xl" />
-      <div className="absolute -bottom-8 -left-8 h-32 w-32 rounded-full bg-passos-500/10 blur-3xl" />
-
       {/* Content */}
       <div className="relative z-10">
         {badge && (
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-passos-500/10 dark:bg-passos-500/20 px-3 py-1 mb-4">
-            <Sparkles className="h-3.5 w-3.5 text-passos-500" />
-            <span className="text-xs font-semibold text-passos-600 dark:text-passos-300">
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 mb-4">
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
+            <span className="text-xs font-semibold text-primary">
               {badge}
             </span>
           </div>
@@ -65,7 +58,7 @@ export function HeroSection({
             compact ? 'text-xl lg:text-2xl' : 'text-2xl lg:text-3xl',
           )}
         >
-          <span className="gradient-text">{title}</span>
+          {title}
         </h1>
 
         {subtitle && (

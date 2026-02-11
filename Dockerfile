@@ -63,6 +63,7 @@ RUN mkdir -p logs monitoring/inference_store && \
     chown -R appuser:appgroup /app
 COPY --chown=appuser:appgroup logs/drift_events.jsonl ./logs/drift_events.jsonl
 COPY --chown=appuser:appgroup logs/audit_trail.jsonl ./logs/audit_trail.jsonl
+COPY --chown=appuser:appgroup logs/metrics_state.json ./logs/metrics_state.json
 
 # Switch to non-root user
 USER appuser

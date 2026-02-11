@@ -89,6 +89,25 @@ const PredictionStoreContext = createContext<PredictionStore | null>(null)
 export function PredictionStoreProvider({ children }: { children: ReactNode }) {
   const [predictions, setPredictions] = useState<StudentPrediction[]>(loadFromStorage)
 
+  // Auto-hydrate from seed data when localStorage is empty
+  useEffect(() => {
+    if (predictions.length > 0) return
+    fetch('/seed_predictions.json')
+      .then((res) => {
+        if (!res.ok) return null
+        return res.json() as Promise<StudentPrediction[]>
+      })
+      .then((data) => {
+        if (data && data.length > 0) {
+          setPredictions(data)
+        }
+      })
+      .catch(() => {
+        // seed file not available — ignore
+      })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // Save to localStorage whenever predictions change
   useEffect(() => {
     saveToStorage(predictions)

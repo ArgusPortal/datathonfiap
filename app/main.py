@@ -15,6 +15,7 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, PlainTextResponse
 
 from app.config import (
@@ -123,6 +124,10 @@ async def lifespan(app: FastAPI):
 
     yield
 
+    # Persist metrics counters before shutdown
+    if METRICS_ENABLED:
+        metrics.persist()
+
     if AUDIT_ENABLED:
         audit_trail.add_record("shutdown")
     logger.info("Encerrando aplicação...")
@@ -137,8 +142,6 @@ app = FastAPI(
 )
 
 # Phase 9: CORS for Frontend
-from fastapi.middleware.cors import CORSMiddleware
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -482,6 +485,143 @@ async def get_artifact_report():
         raise HTTPException(status_code=404, detail="model_report.md not found")
     content = path.read_text(encoding="utf-8")
     return {"content": content, "format": "markdown"}
+
+
+# -------------------------------------------------------------------
+# EDA (Exploratory Data Analysis) endpoint
+# -------------------------------------------------------------------
+
+
+@app.get("/analysis/eda", tags=["Analysis"])
+async def get_eda():
+    """
+    Return exploratory data analysis computed from data_card.json
+    and modeling_dataset.parquet.
+    """
+    data_dir = BASE_DIR / "data" / "processed"
+    card_path = data_dir / "data_card.json"
+    parquet_path = data_dir / "modeling_dataset.parquet"
+
+    if not card_path.exists():
+        raise HTTPException(status_code=404, detail="data_card.json not found")
+
+    with open(card_path, "r", encoding="utf-8") as f:
+        data_card = json.load(f)
+
+    # --- Dataset overview ---
+    modeling = data_card.get("modeling_dataset", {})
+    interim = data_card.get("interim_datasets", {})
+    year_counts = {yr: info.get("n_rows", 0) for yr, info in interim.items()}
+
+    overview = {
+        "total_samples": modeling.get("n_rows", 0),
+        "n_features": modeling.get("n_features", 0),
+        "target": modeling.get("target_column", "em_risco_2024"),
+        "target_distribution": modeling.get("target_distribution", {}),
+        "years": sorted(interim.keys()),
+        "year_counts": year_counts,
+        "features": modeling.get("features", []),
+    }
+
+    # --- Missing data ---
+    missing_features = modeling.get("missing_features", {})
+    n_total = modeling.get("n_rows", 1)
+    missing_data = []
+    for feat, cnt in missing_features.items():
+        missing_data.append(
+            {
+                "feature": feat,
+                "count": cnt,
+                "percentage": round(cnt / n_total * 100, 1) if n_total else 0,
+            }
+        )
+    missing_data.sort(key=lambda x: x["count"], reverse=True)
+
+    # --- Feature statistics from parquet ---
+    feature_stats = []
+    correlations = []
+
+    if parquet_path.exists():
+        try:
+            df = pd.read_parquet(parquet_path)
+            numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+
+            # Descriptive stats
+            for col in numeric_cols:
+                s = df[col].dropna()
+                if len(s) == 0:
+                    continue
+                hist_values, hist_edges = np.histogram(s, bins=10)
+                histogram = []
+                for i in range(len(hist_values)):
+                    histogram.append(
+                        {
+                            "bin": f"{hist_edges[i]:.1f}-{hist_edges[i+1]:.1f}",
+                            "count": int(hist_values[i]),
+                        }
+                    )
+                feature_stats.append(
+                    {
+                        "name": col,
+                        "mean": round(float(s.mean()), 3),
+                        "std": round(float(s.std()), 3),
+                        "min": round(float(s.min()), 3),
+                        "max": round(float(s.max()), 3),
+                        "q25": round(float(s.quantile(0.25)), 3),
+                        "q50": round(float(s.quantile(0.50)), 3),
+                        "q75": round(float(s.quantile(0.75)), 3),
+                        "missing": int(df[col].isna().sum()),
+                        "histogram": histogram,
+                    }
+                )
+
+            # Correlation matrix (top features only)
+            target_col = modeling.get("target_column", "em_risco_2024")
+            feat_cols = [c for c in modeling.get("features", []) if c in numeric_cols]
+            if target_col in df.columns:
+                feat_cols_with_target = feat_cols + [target_col]
+            else:
+                feat_cols_with_target = feat_cols
+
+            if feat_cols_with_target:
+                corr_df = df[feat_cols_with_target].corr()
+                for row_name in corr_df.index:
+                    for col_name in corr_df.columns:
+                        val = corr_df.loc[row_name, col_name]
+                        if not np.isnan(val):
+                            correlations.append(
+                                {
+                                    "x": col_name,
+                                    "y": row_name,
+                                    "value": round(float(val), 3),
+                                }
+                            )
+        except Exception as e:
+            logger.warning(f"EDA parquet read error: {e}")
+
+    # --- Year-over-year missing data comparison ---
+    year_missing = {}
+    for yr, info in interim.items():
+        m = info.get("missing_by_column", {})
+        n = info.get("n_rows", 1)
+        total_missing = sum(m.values())
+        total_cells = n * info.get("n_columns", 1)
+        year_missing[yr] = {
+            "n_rows": n,
+            "n_columns": info.get("n_columns", 0),
+            "total_missing_cells": total_missing,
+            "missing_percentage": round(total_missing / total_cells * 100, 1)
+            if total_cells
+            else 0,
+        }
+
+    return {
+        "overview": overview,
+        "missing_data": missing_data,
+        "feature_stats": feature_stats,
+        "correlations": correlations,
+        "year_missing": year_missing,
+    }
 
 
 @app.get("/inference/history", tags=["Inference"])

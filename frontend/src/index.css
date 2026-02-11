@@ -8,19 +8,19 @@
     --foreground: 224 71% 4%;
     --card: 0 0% 100%;
     --card-foreground: 224 71% 4%;
-    --primary: 227 100% 60%;
+    --primary: 221 83% 53%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 263 100% 62%;
+    --secondary: 220 14% 46%;
     --secondary-foreground: 0 0% 100%;
     --muted: 220 14% 96%;
     --muted-foreground: 220 9% 46%;
-    --accent: 263 40% 96%;
-    --accent-foreground: 263 60% 40%;
+    --accent: 220 14% 96%;
+    --accent-foreground: 220 30% 40%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 20% 98%;
     --border: 220 13% 91%;
     --input: 220 13% 91%;
-    --ring: 227 100% 60%;
+    --ring: 221 83% 53%;
     --radius: 0.625rem;
     --popover: 0 0% 100%;
     --popover-foreground: 224 71% 4%;
@@ -31,19 +31,19 @@
     --foreground: 210 20% 98%;
     --card: 225 40% 8%;
     --card-foreground: 210 20% 98%;
-    --primary: 227 100% 62%;
+    --primary: 221 83% 53%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 263 100% 68%;
+    --secondary: 220 14% 65%;
     --secondary-foreground: 0 0% 100%;
     --muted: 225 28% 14%;
     --muted-foreground: 217 11% 65%;
-    --accent: 263 28% 17%;
-    --accent-foreground: 263 60% 80%;
+    --accent: 220 20% 17%;
+    --accent-foreground: 220 30% 80%;
     --destructive: 0 63% 31%;
     --destructive-foreground: 210 20% 98%;
     --border: 225 20% 18%;
     --input: 225 20% 18%;
-    --ring: 227 100% 62%;
+    --ring: 221 83% 53%;
     --popover: 225 40% 8%;
     --popover-foreground: 210 20% 98%;
   }
@@ -134,40 +134,23 @@
 .stagger-5 { animation-delay: 250ms; }
 .stagger-6 { animation-delay: 300ms; }
 
-/* Gradient text */
+/* Primary text emphasis */
 .gradient-text {
-  @apply bg-clip-text text-transparent;
-  background-image: linear-gradient(135deg, #3366ff, #8b3dff);
+  @apply text-primary font-bold;
 }
 
-/* Hero gradient backgrounds – Passos Mágicos branding */
+/* Subtle hero background */
 .hero-gradient {
-  background: linear-gradient(135deg, 
-    #eef4ff 0%, 
-    #ffffff 40%, 
-    #f5f0ff 100%
-  );
+  @apply bg-muted/50;
 }
 
 .dark .hero-gradient {
-  background: linear-gradient(135deg, 
-    hsl(225 40% 8%) 0%, 
-    hsl(225 40% 6%) 40%, 
-    hsl(263 28% 10%) 100%
-  );
+  @apply bg-muted/30;
 }
 
-/* Passos Mágicos brand gradients */
+/* Simple brand accent background */
 .pm-hero-gradient {
-  background: linear-gradient(135deg, #19298f 0%, #3366ff 40%, #8b3dff 100%);
-}
-
-.pm-impact-gradient {
-  background: linear-gradient(135deg, #3366ff 0%, #8b3dff 100%);
-}
-
-.pm-warm-gradient {
-  background: linear-gradient(135deg, #f97316 0%, #8b3dff 100%);
+  @apply bg-primary;
 }
 
 /* Subtle shine on hover for cards */

@@ -1609,10 +1609,10 @@ export function ModelPage() {
             )}
 
             {/* Reprodução */}
-            <Card className="border-passos-200/50 dark:border-passos-800/30">
+            <Card className="">
               <CardContent className="p-5">
                 <h3 className="font-semibold text-sm flex items-center gap-2 mb-3">
-                  <BookOpen className="h-4 w-4 text-passos-500" />
+                  <BookOpen className="h-4 w-4 text-primary" />
                   Como Reproduzir
                 </h3>
                 <div className="space-y-2 text-xs text-muted-foreground">

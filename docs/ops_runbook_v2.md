@@ -128,6 +128,6 @@ python -m monitoring.performance_drift --window 30
 
 | Role | Responsável |
 |------|-------------|
-| On-call | {{ON_CALL}} |
-| Tech Lead | {{TECH_LEAD}} |
-| Data Team | {{DATA_TEAM}} |
+| On-call | Equipe Datathon FIAP |
+| Tech Lead | Equipe Datathon FIAP |
+| Data Team | Equipe Datathon FIAP |

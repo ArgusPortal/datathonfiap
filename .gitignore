@@ -68,6 +68,7 @@ app/model/*.joblib
 logs/*
 !logs/drift_events.jsonl
 !logs/audit_trail.jsonl
+!logs/metrics_state.json
 
 # Environment variables
 .env

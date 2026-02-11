@@ -117,7 +117,11 @@ em_risco = (defasagem < 0).astype(int)
 - **Selection bias**: alunos que permanecem no programa podem diferir dos que saem
 - **Desbalanceamento**: classe minoritária pode ter poucos exemplos para treino
 - **Multicolinearidade**: features do PEDE podem ter alta correlação entre si
-- {{Adicionar após EDA: riscos específicos identificados nos dados}}
+- **Missing values elevado**: 23 colunas com >30% missing em 2023 — mitigado com imputação por mediana + flags `*_missing`
+- **Tipos mistos entre anos**: colunas como `fase` armazenadas como string em alguns anos e int em outros — normalizado no preprocessing
+- **Amostra pequena**: apenas 765 alunos no dataset final — limita poder estatístico e impede validação cruzada robusta
+- **Desbalanceamento por fase**: ALFA tem 75.9% de risco vs FASE 7-8 com 0% — modelo pode generalizar mal para fases extremas
+- **Dados faltantes de anos anteriores**: 39% dos alunos sem dados 2022 (deltas temporais = NaN) — tratado com `has_prev_year_data` flag
 
 ---
 

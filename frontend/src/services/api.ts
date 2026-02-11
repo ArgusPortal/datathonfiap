@@ -78,6 +78,10 @@ export const api = {
   // Audit
   auditRecent: (limit = 50) =>
     request<{ records: AuditRecord[]; summary: Record<string, unknown> }>(`/audit/recent?limit=${limit}`),
+
+  // EDA (Exploratory Data Analysis)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  eda: () => request<any>('/analysis/eda'),
 }
 
 export { ApiError }

@@ -18,11 +18,10 @@
 
 ## Momento de Uso no Funil
 
-{{TODO: confirmar etapas exatas do fluxo inscrição→matrícula→acompanhamento}}
-
-- Aplicação primária: **pós-inscrição, pré-matrícula definitiva** (usar dados do ano t para predizer risco em t+1)
-- Permite ajustar alocação de vagas em programas especiais antes do início do ano letivo
-- {{Verificar se há momento intermediário de reavaliação durante o ano}}
+- **Fluxo**: Inscrição → Matrícula → Avaliações PEDE (bimestral) → Fechamento do ano
+- Aplicação primária: **pós-fechamento do ano t** (usar dados completos do PEDE para predizer risco em t+1)
+- Permite ajustar alocação de vagas em programas de reforço antes do início do próximo ano letivo
+- Reavaliação intermediária: possível ao final de cada semestre com dados parciais
 
 ## Preferência de Erro e Métrica
 
@@ -42,6 +41,6 @@
 
 ## Pendências de Produto (resolver nas próximas fases)
 
-{{TODO: confirmar capacidade operacional de intervenção (quantos alunos por ciclo)}}
-{{TODO: validar momento exato de coleta de features (quais dados já existem na inscrição)}}
-{{TODO: definir plano de monitoramento pós-deploy (drift, performance)}}
+- **Capacidade de intervenção**: a definir com coordenação pedagógica — atualmente ~40% da base é classificada como risco (threshold 0.35), o que pode exceder capacidade de atendimento individual. Considerar ajuste de threshold conforme recursos.
+- **Coleta de features**: validado — todos os 7 indicadores PEDE estão disponíveis no fechamento do ano (IAA, IAN, IDA, IEG, IPP, IPS, IPV). Dados de contexto (fase, idade, gênero, instituição) disponíveis desde a matrícula.
+- **Monitoramento pós-deploy**: implementado — PSI drift para 32 features, contadores de métricas persistidos, inference store com audit trail, drift report HTML com classificação GREEN/YELLOW/RED.

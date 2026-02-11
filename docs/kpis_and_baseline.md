@@ -32,23 +32,31 @@
 ## 3. Baseline (Período Pré-Adoção)
 
 ### Período de Referência
-- **Baseline:** 2022-2024 (pré-adoção do modelo)
-- **Pós-adoção:** a partir de {{ADOPTION_DATE}}
+- **Baseline:** 2022–2024 (pré-adoção do modelo)
+- **Pós-adoção:** a partir da implantação em produção (previsto para 2026)
 
 ### Métricas Baseline por Segmento
 
-| Segmento | Taxa Defasagem | IAN Médio | N Alunos |
-|----------|----------------|-----------|----------|
-| **Geral** | {{baseline_geral}}% | {{ian_geral}} | {{n_geral}} |
-| Fase 1-3 | {{baseline_f1}}% | {{ian_f1}} | {{n_f1}} |
-| Fase 4-6 | {{baseline_f2}}% | {{ian_f2}} | {{n_f2}} |
-| Fase 7-9 | {{baseline_f3}}% | {{ian_f3}} | {{n_f3}} |
-| Topázio | {{baseline_top}}% | {{ian_top}} | {{n_top}} |
-| Ametista | {{baseline_ame}}% | {{ian_ame}} | {{n_ame}} |
-| Ágata | {{baseline_aga}}% | {{ian_aga}} | {{n_aga}} |
-| Quartzo | {{baseline_qua}}% | {{ian_qua}} | {{n_qua}} |
+| Segmento | Taxa Risco (em_risco_2024) | IAN Médio | N Alunos |
+|----------|---------------------------|-----------|----------|
+| **Geral** | 40.3% | 7.405 | 765 |
+| Alfa + Fase 1-3 | 46.5% | 7.044 | 559 |
+| Fase 4-6 | 37.8% | 7.579 | 127 |
+| Fase 7-8 | 0.0% | 9.684 | 79 |
+| ALFA | 75.9% | 7.328 | 174 |
+| FASE 1 | 44.2% | 6.196 | 138 |
+| FASE 2 | 16.3% | 7.092 | 153 |
+| FASE 3 | 44.7% | 7.686 | 94 |
+| FASE 4 | 37.3% | 7.948 | 67 |
+| FASE 5 | 48.8% | 7.326 | 43 |
+| FASE 6 | 11.8% | 6.765 | 17 |
+| FASE 7 | 0.0% | 8.750 | 20 |
+| FASE 8 | 0.0% | 10.000 | 59 |
 
-*Preencher com dados históricos antes do go-live*
+*Dados computados a partir de `data/processed/modeling_dataset.parquet` (765 alunos com dados 2023→2024)*
+
+> **Nota**: Pedra (Topázio, Ametista, Ágata, Quartzo) não está disponível no dataset de modelagem.
+> Os recortes por Pedra poderão ser adicionados quando o campo for incluído no pipeline de features.
 
 ---
 
