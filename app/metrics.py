@@ -143,9 +143,6 @@ class MetricsStore:
         self._persist_counter = 0
         self._persist_lock = threading.Lock()
 
-        # Load persisted counters if available
-        self._load()
-
     def record_request(self, latency_ms: float, success: bool) -> None:
         """Record a request."""
         self.latency.add(latency_ms)

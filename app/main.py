@@ -107,6 +107,7 @@ async def lifespan(app: FastAPI):
 
         # Phase 8: Initialize model lineage and metrics
         init_model_lineage(str(MODEL_PATH), model_manager.version)
+        metrics._load()  # restore persisted counters from previous run
         metrics.set_model_info(model_manager.version)
 
         if AUDIT_ENABLED:
