@@ -488,6 +488,15 @@ async def get_artifact_report():
     return {"content": content, "format": "markdown"}
 
 
+@app.get("/artifacts/fairness", tags=["Artifacts"])
+async def get_artifact_fairness():
+    """Serve fairness_analysis.json with subgroup metrics."""
+    data = _load_json_artifact("fairness_analysis.json")
+    if data is None:
+        raise HTTPException(status_code=404, detail="fairness_analysis.json not found")
+    return data
+
+
 # -------------------------------------------------------------------
 # EDA (Exploratory Data Analysis) endpoint
 # -------------------------------------------------------------------

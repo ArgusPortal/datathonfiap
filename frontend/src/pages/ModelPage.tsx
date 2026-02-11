@@ -20,6 +20,7 @@ import {
   ChevronRight,
   Fingerprint,
   TrendingUp,
+  Scale,
 } from 'lucide-react'
 import {
   Card,
@@ -36,12 +37,13 @@ import {
   TabsContent,
 } from '@/components/ui'
 import api from '@/services/api'
-import type { ModelComparisonData, ArtifactMetadata, MetadataResponse } from '@/types'
+import type { ModelComparisonData, ArtifactMetadata, MetadataResponse, FairnessAnalysis } from '@/types'
 import { formatPercentage } from '@/lib/utils'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
 import { BumpRanking, type BumpSerie } from '@/components/charts/BumpRanking'
 import { ROCCurve, type ROCPoint } from '@/components/charts/ROCCurve'
 import { FeatureImportance } from '@/components/charts/FeatureImportance'
+import { FairnessTable, DisparitySummary } from '@/components/charts/FairnessChart'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -197,6 +199,7 @@ export function ModelPage() {
   const [comparison, setComparison] = useState<ModelComparisonData | null>(null)
   const [artifactMeta, setArtifactMeta] = useState<ArtifactMetadata | null>(null)
   const [report, setReport] = useState<string | null>(null)
+  const [fairness, setFairness] = useState<FairnessAnalysis | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -207,11 +210,12 @@ export function ModelPage() {
     setLoading(true)
     setError(null)
 
-    const [metaRes, compRes, artifactRes, reportRes] = await Promise.allSettled([
+    const [metaRes, compRes, artifactRes, reportRes, fairnessRes] = await Promise.allSettled([
       api.metadata(),
       api.artifactMetrics(),
       api.artifactMetadata(),
       api.artifactReport(),
+      api.artifactFairness(),
     ])
 
     if (metaRes.status === 'fulfilled') setMetadata(metaRes.value)
@@ -221,6 +225,7 @@ export function ModelPage() {
     }
     if (artifactRes.status === 'fulfilled') setArtifactMeta(artifactRes.value)
     if (reportRes.status === 'fulfilled') setReport(reportRes.value.content)
+    if (fairnessRes.status === 'fulfilled') setFairness(fairnessRes.value)
 
     // If all failed, show error
     if (
@@ -292,6 +297,9 @@ export function ModelPage() {
           </TabsTrigger>
           <TabsTrigger value="ethics">
             <Shield className="h-4 w-4 mr-1.5" /> Ética & LGPD
+          </TabsTrigger>
+          <TabsTrigger value="fairness">
+            <Scale className="h-4 w-4 mr-1.5" /> Fairness
           </TabsTrigger>
           <TabsTrigger value="governance">
             <Settings2 className="h-4 w-4 mr-1.5" /> Governança
@@ -971,7 +979,7 @@ export function ModelPage() {
                   {[
                     {
                       title: 'Viéses Potenciais',
-                      desc: 'O modelo pode apresentar viéses relacionados a idade, fase ou instituição. Monitoramento contínuo de fairness é recomendado.',
+                      desc: 'O modelo é avaliado quanto a viéses por gênero, fase e instituição. Consulte a aba "Fairness" para métricas detalhadas de equidade por subgrupo.',
                     },
                     {
                       title: 'Transparência',
@@ -1025,6 +1033,119 @@ export function ModelPage() {
                 </CardContent>
               </Card>
             )}
+          </div>
+        </TabsContent>
+
+        {/* ================================================================
+            TAB: Fairness
+        ================================================================ */}
+        <TabsContent value="fairness">
+          <div className="space-y-6">
+            {/* Header explanation */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Scale className="h-5 w-5 text-primary" />
+                  Análise de Fairness
+                </CardTitle>
+                <CardDescription>
+                  Avaliação de equidade do modelo por subgrupos demográficos.
+                  Disparidade de recall mede a diferença entre o melhor e pior
+                  recall entre subgrupos — valores menores indicam maior equidade.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loading && !fairness ? (
+                  <SkeletonRows rows={6} />
+                ) : !fairness ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Scale className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                    <p className="text-sm">Dados de fairness não disponíveis</p>
+                    <p className="text-xs mt-1">
+                      Execute <code className="bg-muted px-1 py-0.5 rounded">scripts/compute_fairness.py</code> para gerar a análise
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {/* Overall metrics */}
+                    <div className="p-4 rounded-lg bg-muted/30 border">
+                      <h4 className="font-semibold text-sm mb-3">Métricas Globais (N = {fairness.overall.n})</h4>
+                      <div className="grid gap-3 grid-cols-2 sm:grid-cols-4 text-center">
+                        <div>
+                          <p className="text-xs text-muted-foreground">Recall</p>
+                          <p className="text-lg font-bold">{formatPercentage(fairness.overall.recall ?? 0)}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Precision</p>
+                          <p className="text-lg font-bold">{formatPercentage(fairness.overall.precision ?? 0)}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">F1</p>
+                          <p className="text-lg font-bold">{formatPercentage(fairness.overall.f1 ?? 0)}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Prevalência</p>
+                          <p className="text-lg font-bold">{formatPercentage(fairness.overall.prevalence)}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Disparity summary */}
+                    <div>
+                      <h4 className="font-semibold text-sm mb-3">Resumo de Disparidade (Recall)</h4>
+                      <DisparitySummary
+                        generoDisparity={
+                          (fairness.subgroups.genero._disparity as { recall_disparity: number })
+                            ?.recall_disparity ?? null
+                        }
+                        faseDisparity={
+                          (fairness.subgroups.fase._disparity as { recall_disparity: number })
+                            ?.recall_disparity ?? null
+                        }
+                        instituicaoDisparity={
+                          (fairness.subgroups.instituicao._disparity as { recall_disparity: number })
+                            ?.recall_disparity ?? null
+                        }
+                      />
+                    </div>
+
+                    {/* Detailed tables */}
+                    <FairnessTable
+                      title="Gênero"
+                      description="Métricas por gênero do aluno"
+                      group={fairness.subgroups.genero}
+                      icon="👥"
+                    />
+
+                    <FairnessTable
+                      title="Fase"
+                      description="Métricas por fase/série escolar"
+                      group={fairness.subgroups.fase}
+                      icon="📚"
+                    />
+
+                    <FairnessTable
+                      title="Instituição"
+                      description="Métricas por tipo de instituição de ensino"
+                      group={fairness.subgroups.instituicao}
+                      icon="🏫"
+                    />
+
+                    {/* Interpretation guide */}
+                    <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
+                      <p className="font-medium text-sm mb-2">📖 Como interpretar</p>
+                      <ul className="text-xs text-muted-foreground space-y-1.5">
+                        <li>• <strong>Disparidade ≤ 5%</strong>: Excelente equidade — sem ação necessária</li>
+                        <li>• <strong>Disparidade 5-10%</strong>: Aceitável — monitorar nas próximas versões</li>
+                        <li>• <strong>Disparidade 10-15%</strong>: Atenção — investigar causas e considerar mitigação</li>
+                        <li>• <strong>Disparidade &gt; 15%</strong>: Alto — ação corretiva recomendada (reamostragem, re-ponderação)</li>
+                        <li>• Subgrupos com <strong>"—"</strong> não possuem amostras positivas suficientes para cálculo</li>
+                      </ul>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
 

@@ -370,26 +370,46 @@ export function MonitoringPage() {
             {/* Health banner */}
             <Card>
               <CardContent className="p-4 flex flex-wrap items-center gap-4">
-                <StatusBadge status={health?.status ?? 'offline'} />
+                <StatusBadge
+                  status={
+                    !health
+                      ? 'offline'
+                      : slo && !slo.overall_healthy
+                      ? 'degraded'
+                      : health.status
+                  }
+                  label={
+                    !health
+                      ? 'Offline'
+                      : health.status !== 'healthy'
+                      ? 'Modelo não carregado'
+                      : slo && !slo.overall_healthy
+                      ? 'Degradado — SLO violado'
+                      : 'Saudável'
+                  }
+                />
                 <Badge variant="outline" className="gap-1.5">
                   <Server className="h-3 w-3" />
-                  {health?.model_version ?? 'N/A'}
+                  Modelo {health?.model_version ?? 'N/A'}
                 </Badge>
                 <Badge variant="outline" className="gap-1.5">
                   <Clock className="h-3 w-3" />
                   Uptime: {health ? formatUptime(health.uptime_seconds) : '—'}
                 </Badge>
-                {slo && (
+                {slo && !slo.overall_healthy && (
+                  <span className="ml-auto text-xs text-muted-foreground">
+                    {!slo.error_rate_slo_met && `Taxa de erro: ${(slo.error_rate * 100).toFixed(1)}% (meta ≤ ${(slo.error_rate_slo * 100).toFixed(0)}%)`}
+                    {!slo.error_rate_slo_met && !slo.latency_slo_met && ' | '}
+                    {!slo.latency_slo_met && `Latência p95: ${slo.latency_p95_ms?.toFixed(0)}ms (meta ≤ ${slo.latency_slo_ms}ms)`}
+                  </span>
+                )}
+                {slo && slo.overall_healthy && (
                   <Badge
                     variant="outline"
-                    className={`gap-1.5 ml-auto ${
-                      slo.overall_healthy
-                        ? 'border-green-300 text-green-700 dark:border-green-700 dark:text-green-400'
-                        : 'border-red-300 text-red-700 dark:border-red-700 dark:text-red-400'
-                    }`}
+                    className="gap-1.5 ml-auto border-green-300 text-green-700 dark:border-green-700 dark:text-green-400"
                   >
                     <Shield className="h-3 w-3" />
-                    SLO: {slo.overall_healthy ? 'Compliant' : 'Violado'}
+                    SLO ✓ Compliant
                   </Badge>
                 )}
               </CardContent>

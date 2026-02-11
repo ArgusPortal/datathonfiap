@@ -10,6 +10,7 @@ import type {
   DriftStatus,
   InferenceEvent,
   AuditRecord,
+  FairnessAnalysis,
 } from '@/types'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
@@ -67,6 +68,7 @@ export const api = {
   artifactMetrics: () => request<ModelComparisonData>('/artifacts/metrics'),
   artifactMetadata: () => request<ArtifactMetadata>('/artifacts/metadata'),
   artifactReport: () => request<{ content: string; format: string }>('/artifacts/report'),
+  artifactFairness: () => request<FairnessAnalysis>('/artifacts/fairness'),
 
   // Inference history
   inferenceHistory: (limit = 200) =>

@@ -261,3 +261,26 @@ export interface AuditRecord {
   details: Record<string, unknown>
   git_sha: string
 }
+
+// --- Fairness ---
+export interface FairnessSubgroupMetrics {
+  n: number
+  prevalence: number
+  recall: number | null
+  precision: number | null
+  f1: number | null
+  f2: number | null
+}
+
+export interface FairnessGroup {
+  [subgroup: string]: FairnessSubgroupMetrics | { recall_disparity: number }
+}
+
+export interface FairnessAnalysis {
+  overall: FairnessSubgroupMetrics
+  subgroups: {
+    genero: FairnessGroup
+    fase: FairnessGroup
+    instituicao: FairnessGroup
+  }
+}
