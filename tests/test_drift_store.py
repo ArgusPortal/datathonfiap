@@ -95,13 +95,20 @@ class TestNormalizeBins:
 
     def test_collapse_fine_to_canonical(self):
         """Deve colapsar bins granulares em 3 bins canônicos."""
-        dist = {"very_low": 10, "low": 5, "medium_low": 8, "medium": 3, "medium_high": 4, "high": 2}
+        dist = {
+            "very_low": 10,
+            "low": 5,
+            "medium_low": 8,
+            "medium": 3,
+            "medium_high": 4,
+            "high": 2,
+        }
 
         result = normalize_bins(dist)
 
-        assert result["low"] == 15       # very_low + low
-        assert result["medium"] == 11    # medium_low + medium
-        assert result["high"] == 6       # medium_high + high
+        assert result["low"] == 15  # very_low + low
+        assert result["medium"] == 11  # medium_low + medium
+        assert result["high"] == 6  # medium_high + high
 
     def test_collapse_binary_bins(self):
         """Deve colapsar zero/one em binary."""
@@ -139,7 +146,7 @@ class TestNormalizeBins:
 
         result = normalize_bins(dist)
 
-        assert result["low"] == 15   # low + very_low
+        assert result["low"] == 15  # low + very_low
         assert result["medium"] == 3
 
 
@@ -183,12 +190,12 @@ class TestAggregateBatchStats:
     def test_feature_distribution(self):
         """Deve agregar distribuição de features com 7 bins."""
         instances = [
-            {"score": 1.0},   # very_low
-            {"score": 3.0},   # low
-            {"score": 5.0},   # medium_low
-            {"score": 6.5},   # medium
-            {"score": 7.5},   # medium_high
-            {"score": 9.0},   # high
+            {"score": 1.0},  # very_low
+            {"score": 3.0},  # low
+            {"score": 5.0},  # medium_low
+            {"score": 6.5},  # medium
+            {"score": 7.5},  # medium_high
+            {"score": 9.0},  # high
         ]
 
         stats = aggregate_batch_stats(instances)

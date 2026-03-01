@@ -1,0 +1,258 @@
+[
+  {
+    "feature": "ips_2023",
+    "perm_importance": 0.07372,
+    "temporal_psi": 0.5363,
+    "missing_rate": 0.081,
+    "quadrant": "VOLATILE",
+    "action": "Monitorar — preditiva mas sensível a drift, retreinar se necessário"
+  },
+  {
+    "feature": "ipp_2023",
+    "perm_importance": 0.067139,
+    "temporal_psi": 0.6137,
+    "missing_rate": 0.094,
+    "quadrant": "VOLATILE",
+    "action": "Monitorar — preditiva mas sensível a drift, retreinar se necessário"
+  },
+  {
+    "feature": "delta_ipv_2022_2023",
+    "perm_importance": 0.043947,
+    "temporal_psi": 0.1344,
+    "missing_rate": 0.42,
+    "quadrant": "VOLATILE",
+    "action": "Monitorar — preditiva mas sensível a drift, retreinar se necessário"
+  },
+  {
+    "feature": "std_indicadores",
+    "perm_importance": 0.032021,
+    "temporal_psi": 4.4425,
+    "missing_rate": 0.0,
+    "quadrant": "VOLATILE",
+    "action": "Monitorar — preditiva mas sensível a drift, retreinar se necessário"
+  },
+  {
+    "feature": "delta_iaa_2022_2023",
+    "perm_importance": 0.021535,
+    "temporal_psi": 0.3276,
+    "missing_rate": 0.41,
+    "quadrant": "VOLATILE",
+    "action": "Monitorar — preditiva mas sensível a drift, retreinar se necessário"
+  },
+  {
+    "feature": "media_indicadores",
+    "perm_importance": 0.019169,
+    "temporal_psi": 0.192,
+    "missing_rate": 0.0,
+    "quadrant": "VOLATILE",
+    "action": "Monitorar — preditiva mas sensível a drift, retreinar se necessário"
+  },
+  {
+    "feature": "ida_2023",
+    "perm_importance": 0.01865,
+    "temporal_psi": 0.4561,
+    "missing_rate": 0.094,
+    "quadrant": "VOLATILE",
+    "action": "Monitorar — preditiva mas sensível a drift, retreinar se necessário"
+  },
+  {
+    "feature": "ian_2023",
+    "perm_importance": 0.018284,
+    "temporal_psi": 0.1867,
+    "missing_rate": 0.0,
+    "quadrant": "VOLATILE",
+    "action": "Monitorar — preditiva mas sensível a drift, retreinar se necessário"
+  },
+  {
+    "feature": "delta_ieg_2022_2023",
+    "perm_importance": 0.016864,
+    "temporal_psi": 0.1221,
+    "missing_rate": 0.42,
+    "quadrant": "VOLATILE",
+    "action": "Monitorar — preditiva mas sensível a drift, retreinar se necessário"
+  },
+  {
+    "feature": "delta_ian_2022_2023",
+    "perm_importance": 0.011863,
+    "temporal_psi": 0.2989,
+    "missing_rate": 0.388,
+    "quadrant": "VOLATILE",
+    "action": "Monitorar — preditiva mas sensível a drift, retreinar se necessário"
+  },
+  {
+    "feature": "idade_2023",
+    "perm_importance": 0.010323,
+    "temporal_psi": 9.6678,
+    "missing_rate": 0.0,
+    "quadrant": "VOLATILE",
+    "action": "Monitorar — preditiva mas sensível a drift, retreinar se necessário"
+  },
+  {
+    "feature": "delta_ida_2022_2023",
+    "perm_importance": 0.009041,
+    "temporal_psi": 0.327,
+    "missing_rate": 0.42,
+    "quadrant": "NOISE",
+    "action": "Considerar remoção — causa drift sem contribuir para predição"
+  },
+  {
+    "feature": "delta_ips_2022_2023",
+    "perm_importance": 0.00769,
+    "temporal_psi": 0.2359,
+    "missing_rate": 0.412,
+    "quadrant": "NOISE",
+    "action": "Considerar remoção — causa drift sem contribuir para predição"
+  },
+  {
+    "feature": "genero_2023",
+    "perm_importance": 0.007327,
+    "temporal_psi": 0.0,
+    "missing_rate": 0.0,
+    "quadrant": "STABLE",
+    "action": "Manter — contribuição marginal mas estável"
+  },
+  {
+    "feature": "ano_ingresso_2023",
+    "perm_importance": 0.007068,
+    "temporal_psi": 1.0296,
+    "missing_rate": 0.0,
+    "quadrant": "NOISE",
+    "action": "Considerar remoção — causa drift sem contribuir para predição"
+  },
+  {
+    "feature": "ieg_2023",
+    "perm_importance": 0.004877,
+    "temporal_psi": 0.1198,
+    "missing_rate": 0.094,
+    "quadrant": "NOISE",
+    "action": "Considerar remoção — causa drift sem contribuir para predição"
+  },
+  {
+    "feature": "has_prev_year_data",
+    "perm_importance": 0.001415,
+    "temporal_psi": 0.1405,
+    "missing_rate": 0.0,
+    "quadrant": "NOISE",
+    "action": "Considerar remoção — causa drift sem contribuir para predição"
+  },
+  {
+    "feature": "instituicao_2023",
+    "perm_importance": 0.00124,
+    "temporal_psi": 0.0,
+    "missing_rate": 0.0,
+    "quadrant": "STABLE",
+    "action": "Manter — contribuição marginal mas estável"
+  },
+  {
+    "feature": "iaa_2023",
+    "perm_importance": 0.000329,
+    "temporal_psi": 0.3866,
+    "missing_rate": 0.077,
+    "quadrant": "NOISE",
+    "action": "Considerar remoção — causa drift sem contribuir para predição"
+  },
+  {
+    "feature": "fase_2023",
+    "perm_importance": 0.0,
+    "temporal_psi": 0.0,
+    "missing_rate": 0.773,
+    "quadrant": "STABLE",
+    "action": "Avaliar remoção — importância nula ou negativa"
+  },
+  {
+    "feature": "ipp_2023_missing",
+    "perm_importance": 0.0,
+    "temporal_psi": 2.5741,
+    "missing_rate": 0.0,
+    "quadrant": "NOISE",
+    "action": "Considerar remoção — causa drift sem contribuir para predição"
+  },
+  {
+    "feature": "iaa_2023_missing",
+    "perm_importance": 0.0,
+    "temporal_psi": 2.0723,
+    "missing_rate": 0.0,
+    "quadrant": "NOISE",
+    "action": "Considerar remoção — causa drift sem contribuir para predição"
+  },
+  {
+    "feature": "ieg_2023_missing",
+    "perm_importance": 0.0,
+    "temporal_psi": 2.5741,
+    "missing_rate": 0.0,
+    "quadrant": "NOISE",
+    "action": "Considerar remoção — causa drift sem contribuir para predição"
+  },
+  {
+    "feature": "ida_2023_missing",
+    "perm_importance": 0.0,
+    "temporal_psi": 2.5741,
+    "missing_rate": 0.0,
+    "quadrant": "NOISE",
+    "action": "Considerar remoção — causa drift sem contribuir para predição"
+  },
+  {
+    "feature": "min_indicador",
+    "perm_importance": 0.0,
+    "temporal_psi": 2.0723,
+    "missing_rate": 0.0,
+    "quadrant": "NOISE",
+    "action": "Considerar remoção — causa drift sem contribuir para predição"
+  },
+  {
+    "feature": "ips_2023_missing",
+    "perm_importance": 0.0,
+    "temporal_psi": 2.1872,
+    "missing_rate": 0.0,
+    "quadrant": "NOISE",
+    "action": "Considerar remoção — causa drift sem contribuir para predição"
+  },
+  {
+    "feature": "anos_pm_2023",
+    "perm_importance": 0.0,
+    "temporal_psi": 1.0296,
+    "missing_rate": 0.0,
+    "quadrant": "NOISE",
+    "action": "Considerar remoção — causa drift sem contribuir para predição"
+  },
+  {
+    "feature": "ipv_2023_missing",
+    "perm_importance": 0.0,
+    "temporal_psi": 2.5741,
+    "missing_rate": 0.0,
+    "quadrant": "NOISE",
+    "action": "Considerar remoção — causa drift sem contribuir para predição"
+  },
+  {
+    "feature": "fase_x_media",
+    "perm_importance": 0.0,
+    "temporal_psi": 0.0,
+    "missing_rate": 0.773,
+    "quadrant": "STABLE",
+    "action": "Avaliar remoção — importância nula ou negativa"
+  },
+  {
+    "feature": "range_indicadores",
+    "perm_importance": 0.0,
+    "temporal_psi": 6.1054,
+    "missing_rate": 0.0,
+    "quadrant": "NOISE",
+    "action": "Considerar remoção — causa drift sem contribuir para predição"
+  },
+  {
+    "feature": "max_indicador",
+    "perm_importance": -0.00465,
+    "temporal_psi": 6.1054,
+    "missing_rate": 0.0,
+    "quadrant": "NOISE",
+    "action": "Considerar remoção — causa drift sem contribuir para predição"
+  },
+  {
+    "feature": "ipv_2023",
+    "perm_importance": -0.006732,
+    "temporal_psi": 0.3728,
+    "missing_rate": 0.094,
+    "quadrant": "NOISE",
+    "action": "Considerar remoção — causa drift sem contribuir para predição"
+  }
+]

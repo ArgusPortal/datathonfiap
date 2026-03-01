@@ -9,187 +9,254 @@ Usage:
 import argparse
 import json
 import random
-import sys
 import time
 import uuid
 
 import requests
 
-# ---------- realistic value ranges per feature ----------
-# Ranges designed to match training distribution so drift detection stays green.
-# Drift bins: <4 = low, 4-7 = medium, >=7 = high.
-# fase_x_media is derived (fase_2023 * media_indicadores), not independent.
-FEATURE_RANGES = {
-    "ano_ingresso_2023": (2016, 2023),
-    "anos_pm_2023": (1, 8),
-    "delta_iaa_2022_2023": (-3.0, 3.0),
-    "delta_ian_2022_2023": (-3.0, 3.0),
-    "delta_ida_2022_2023": (-3.0, 3.0),
-    "delta_ieg_2022_2023": (-3.0, 3.0),
-    "delta_ips_2022_2023": (-3.0, 3.0),
-    "delta_ipv_2022_2023": (-3.0, 3.0),
-    "fase_2023": (1, 8),
-    # fase_x_media is computed from fase_2023 * media_indicadores
-    "genero_2023": (0, 1),
-    "has_prev_year_data": (0, 1),
-    "iaa_2023": (0.0, 10.0),
-    "iaa_2023_missing": (0, 1),
-    "ian_2023": (0.0, 10.0),
-    "ida_2023": (0.0, 10.0),
-    "ida_2023_missing": (0, 1),
-    "idade_2023": (7, 20),
-    "ieg_2023": (0.0, 10.0),
-    "ieg_2023_missing": (0, 1),
-    "instituicao_2023": (0, 5),
-    "ipp_2023": (0.0, 10.0),
-    "ipp_2023_missing": (0, 1),
-    "ips_2023": (0.0, 10.0),
-    "ips_2023_missing": (0, 1),
-    "ipv_2023": (0.0, 10.0),
-    "ipv_2023_missing": (0, 1),
-    "max_indicador": (0.0, 10.0),
-    "media_indicadores": (0.0, 10.0),
-    "min_indicador": (0.0, 10.0),
-    "range_indicadores": (0.0, 8.0),
-    "std_indicadores": (0.0, 4.0),
+# ---------- Training-distribution-aware feature sampling ----------
+# Parameters extracted from the training dataset (data/processed/modeling_dataset.parquet)
+# via feature_engineering.make_features(). Seed instances are sampled from truncated
+# normal distributions matching these stats so PSI drift stays minimal.
+
+# Format: (mean, std, min, max) — sampled via truncated normal
+# Integer features use round(); binary features use weighted coin.
+TRAINING_DISTS = {
+    # -- PEDE indicators (continuous 0-10) --
+    "iaa_2023": (7.00, 3.57, 0.0, 10.0),
+    "ian_2023": (7.41, 2.52, 2.5, 10.0),
+    "ida_2023": (6.83, 1.48, 2.2, 10.0),
+    "ieg_2023": (8.87, 0.97, 3.7, 10.0),
+    "ipp_2023": (7.62, 0.98, 4.38, 9.79),
+    "ips_2023": (5.16, 2.09, 2.52, 9.38),
+    "ipv_2023": (8.12, 0.92, 3.32, 10.01),
+    # -- Deltas 2022→2023 --
+    "delta_iaa_2022_2023": (-1.78, 3.84, -10.0, 9.6),
+    "delta_ian_2022_2023": (0.49, 2.70, -5.0, 7.5),
+    "delta_ida_2022_2023": (0.08, 1.56, -5.7, 5.3),
+    "delta_ieg_2022_2023": (0.22, 0.99, -2.8, 4.7),
+    "delta_ips_2022_2023": (-1.92, 2.04, -6.88, 3.12),
+    "delta_ipv_2022_2023": (0.55, 0.93, -2.08, 2.78),
+    # -- Demographics --
+    "idade_2023": (12.29, 3.37, 7, 26),
+    "ano_ingresso_2023": (2021.29, 1.89, 2016, 2023),
+    "anos_pm_2023": (1.71, 1.89, 0, 7),
+    "fase_2023": (3, 2.5, 1, 8),  # ordinal 1-8
 }
 
-# ---------- predefined profiles ----------
+# Binary / discrete features with their P(=1) from training data
+BINARY_DISTS = {
+    "genero_2023": 0.46,  # P(male)=46%
+    "has_prev_year_data": 0.61,  # 61% have previous year data
+}
+
+# Missing indicators — all default to 0, set to 1 when indicator is None
+MISSING_FLAGS = [
+    "iaa_2023_missing",
+    "ida_2023_missing",
+    "ieg_2023_missing",
+    "ipp_2023_missing",
+    "ips_2023_missing",
+    "ipv_2023_missing",
+]
+
+# Categorical feature — sampled proportionally to training distribution
+INSTITUICAO_WEIGHTS = {
+    0: 0.762,  # Publica (583/765)
+    1: 0.118,  # Privada_Apadrinhamento (90/765)
+    2: 0.084,  # Privada_Bolsa (64/765)
+    3: 0.029,  # Privada (22/765)
+    4: 0.007,  # Concluiu_EM (5/765)
+}
+
+# ---------- predefined profiles (shift mean/std for each archetype) ----------
 PROFILES = [
     {
         "label": "Alto risco - indicadores baixos",
         "overrides": {
-            "iaa_2023": (0.5, 3.0),
-            "ian_2023": (0.5, 3.0),
-            "ida_2023": (0.5, 3.0),
-            "ieg_2023": (0.5, 3.0),
-            "ipp_2023": (0.5, 3.0),
-            "ips_2023": (0.5, 3.0),
-            "ipv_2023": (0.5, 3.0),
-            "media_indicadores": (0.5, 3.0),
-            "max_indicador": (1.0, 4.0),
-            "min_indicador": (0.0, 2.0),
-            "delta_iaa_2022_2023": (-3.0, -0.5),
-            "delta_ian_2022_2023": (-3.0, -0.5),
+            "iaa_2023": (2.5, 2.0, 0.0, 5.0),
+            "ian_2023": (3.0, 1.5, 2.5, 5.5),
+            "ida_2023": (4.0, 1.2, 2.2, 6.0),
+            "ieg_2023": (5.5, 1.5, 3.7, 7.5),
+            "ipp_2023": (5.5, 1.0, 4.38, 7.0),
+            "ips_2023": (3.0, 0.8, 2.52, 4.5),
+            "ipv_2023": (5.5, 1.5, 3.32, 7.5),
+            "delta_iaa_2022_2023": (-3.5, 2.5, -10.0, 0.0),
+            "delta_ian_2022_2023": (-1.5, 2.0, -5.0, 1.0),
         },
     },
     {
         "label": "Baixo risco - indicadores altos",
         "overrides": {
-            "iaa_2023": (7.0, 10.0),
-            "ian_2023": (7.0, 10.0),
-            "ida_2023": (7.0, 10.0),
-            "ieg_2023": (7.0, 10.0),
-            "ipp_2023": (7.0, 10.0),
-            "ips_2023": (7.0, 10.0),
-            "ipv_2023": (7.0, 10.0),
-            "media_indicadores": (7.0, 10.0),
-            "max_indicador": (8.0, 10.0),
-            "min_indicador": (5.0, 8.0),
-            "delta_iaa_2022_2023": (0.5, 3.0),
-            "delta_ian_2022_2023": (0.5, 3.0),
+            "iaa_2023": (9.0, 1.0, 7.0, 10.0),
+            "ian_2023": (9.0, 1.0, 7.5, 10.0),
+            "ida_2023": (8.5, 1.0, 6.5, 10.0),
+            "ieg_2023": (9.5, 0.4, 8.5, 10.0),
+            "ipp_2023": (8.5, 0.6, 7.5, 9.79),
+            "ips_2023": (7.5, 1.2, 5.0, 9.38),
+            "ipv_2023": (9.0, 0.5, 7.5, 10.01),
+            "delta_iaa_2022_2023": (1.5, 2.0, 0.0, 9.6),
+            "delta_ian_2022_2023": (1.5, 1.5, 0.0, 7.5),
         },
     },
     {
         "label": "Risco moderado - indicadores medianos",
         "overrides": {
-            "iaa_2023": (4.0, 6.0),
-            "ian_2023": (4.0, 6.0),
-            "ida_2023": (4.0, 6.0),
-            "ieg_2023": (4.0, 6.0),
-            "ipp_2023": (4.0, 6.0),
-            "ips_2023": (4.0, 6.0),
-            "ipv_2023": (4.0, 6.0),
-            "media_indicadores": (4.0, 6.0),
+            "iaa_2023": (6.0, 2.0, 3.0, 8.5),
+            "ian_2023": (6.5, 1.5, 4.0, 8.5),
+            "ida_2023": (6.0, 1.0, 4.5, 7.5),
+            "ieg_2023": (8.0, 0.8, 6.5, 9.5),
+            "ipp_2023": (7.0, 0.8, 5.5, 8.5),
+            "ips_2023": (4.5, 1.5, 2.52, 7.0),
+            "ipv_2023": (7.5, 0.8, 5.5, 9.0),
         },
     },
     {
         "label": "Aluno novo sem historico",
         "overrides": {
-            "has_prev_year_data": (0, 0),
-            "anos_pm_2023": (1, 1),
-            "delta_iaa_2022_2023": (0, 0),
-            "delta_ian_2022_2023": (0, 0),
-            "delta_ida_2022_2023": (0, 0),
-            "delta_ieg_2022_2023": (0, 0),
-            "delta_ips_2022_2023": (0, 0),
-            "delta_ipv_2022_2023": (0, 0),
-            "iaa_2023_missing": (1, 1),
-            "ida_2023_missing": (1, 1),
-            "ieg_2023_missing": (1, 1),
-            "ipp_2023_missing": (1, 1),
-            "ips_2023_missing": (1, 1),
-            "ipv_2023_missing": (1, 1),
+            "has_prev_year_data": 0,  # fixed value, not a distribution
+            "anos_pm_2023": (0.5, 0.5, 0, 1),
+            "ano_ingresso_2023": (2023, 0.3, 2022, 2023),
+            "delta_iaa_2022_2023": (0, 0.01, 0, 0),
+            "delta_ian_2022_2023": (0, 0.01, 0, 0),
+            "delta_ida_2022_2023": (0, 0.01, 0, 0),
+            "delta_ieg_2022_2023": (0, 0.01, 0, 0),
+            "delta_ips_2022_2023": (0, 0.01, 0, 0),
+            "delta_ipv_2022_2023": (0, 0.01, 0, 0),
         },
+        "force_missing": True,  # force all _missing flags = 1
     },
     {
         "label": "Aluno veterano fase avancada",
         "overrides": {
-            "fase_2023": (6, 8),
-            "anos_pm_2023": (5, 8),
-            "idade_2023": (15, 20),
-            "ano_ingresso_2023": (2016, 2019),
-            "has_prev_year_data": (1, 1),
+            "fase_2023": (7, 1.0, 6, 8),
+            "anos_pm_2023": (5, 1.5, 3, 7),
+            "idade_2023": (17, 2.0, 15, 26),
+            "ano_ingresso_2023": (2018, 1.5, 2016, 2021),
+            "has_prev_year_data": 1,  # fixed value
         },
     },
 ]
 
 
-def rand_val(lo, hi):
-    if isinstance(lo, int) and isinstance(hi, int):
-        return random.randint(lo, hi)
-    return round(random.uniform(lo, hi), 2)
+def trunc_normal(mean, std, lo, hi):
+    """Sample from a truncated normal distribution via rejection sampling."""
+    for _ in range(100):
+        v = random.gauss(mean, std)
+        if lo <= v <= hi:
+            return v
+    # Fallback: clamp
+    return max(lo, min(hi, random.gauss(mean, std)))
 
 
 # Features that can realistically be missing (indicators from assessments)
 NULLABLE_FEATURES = [
-    "iaa_2023", "ian_2023", "ida_2023", "ieg_2023",
-    "ipp_2023", "ips_2023", "ipv_2023",
+    "iaa_2023",
+    "ian_2023",
+    "ida_2023",
+    "ieg_2023",
+    "ipp_2023",
+    "ips_2023",
+    "ipv_2023",
 ]
 
 
 def generate_instance(profile=None):
-    ranges = dict(FEATURE_RANGES)
-    if profile:
-        ranges.update(profile["overrides"])
-    inst = {feat: rand_val(*rng) for feat, rng in ranges.items()}
+    overrides = profile.get("overrides", {}) if profile else {}
+    force_missing = profile.get("force_missing", False) if profile else False
+    inst = {}
 
-    # ~15% chance of having 1-3 missing indicator features (realistic scenario)
-    if random.random() < 0.15:
-        n_missing = random.randint(1, 3)
-        for feat in random.sample(NULLABLE_FEATURES, min(n_missing, len(NULLABLE_FEATURES))):
+    # 1. Sample continuous/integer features from truncated normals
+    for feat, (mean, std, lo, hi) in TRAINING_DISTS.items():
+        if feat in overrides:
+            ov = overrides[feat]
+            if isinstance(ov, (int, float)):
+                # Fixed value override
+                inst[feat] = ov
+            else:
+                inst[feat] = round(trunc_normal(*ov), 2)
+        else:
+            inst[feat] = round(trunc_normal(mean, std, lo, hi), 2)
+
+    # Round integer-type features
+    for int_feat in ("idade_2023", "ano_ingresso_2023", "anos_pm_2023", "fase_2023"):
+        if int_feat in inst:
+            inst[int_feat] = int(round(inst[int_feat]))
+
+    # 2. Binary features
+    for feat, p_one in BINARY_DISTS.items():
+        if feat in overrides:
+            ov = overrides[feat]
+            inst[feat] = (
+                ov if isinstance(ov, int) else (1 if random.random() < ov else 0)
+            )
+        else:
+            inst[feat] = 1 if random.random() < p_one else 0
+
+    # 3. Categorical: instituicao
+    inst["instituicao_2023"] = random.choices(
+        list(INSTITUICAO_WEIGHTS.keys()),
+        weights=list(INSTITUICAO_WEIGHTS.values()),
+    )[0]
+
+    # 4. Missing indicator flags (default 0)
+    for flag in MISSING_FLAGS:
+        inst[flag] = 0
+
+    # 5. Simulate missing PEDE indicators (~9-10% missing, matching training data)
+    if force_missing:
+        for feat in NULLABLE_FEATURES:
             inst[feat] = None
-            # Set corresponding _missing flag to 1
+            flag = feat + "_missing"
+            if flag in inst:
+                inst[flag] = 1
+    elif random.random() < 0.15:
+        n_missing = random.randint(1, 3)
+        for feat in random.sample(
+            NULLABLE_FEATURES, min(n_missing, len(NULLABLE_FEATURES))
+        ):
+            inst[feat] = None
             flag = feat + "_missing"
             if flag in inst:
                 inst[flag] = 1
 
-    # Derive fase_x_media from actual feature values (keeps internal consistency)
-    inst["fase_x_media"] = round(inst["fase_2023"] * inst["media_indicadores"], 2)
-    # Ensure aggregated indicators are consistent with individual ones
-    # Filter out None values (missing indicators) for aggregation
-    indicator_keys = ["iaa_2023", "ian_2023", "ida_2023", "ieg_2023",
-                      "ipp_2023", "ips_2023", "ipv_2023"]
+    # 6. Compute derived features from individual indicators (consistent)
+    indicator_keys = [
+        "iaa_2023",
+        "ian_2023",
+        "ida_2023",
+        "ieg_2023",
+        "ipp_2023",
+        "ips_2023",
+        "ipv_2023",
+    ]
     indicators = [inst[k] for k in indicator_keys if inst.get(k) is not None]
     if indicators:
         inst["media_indicadores"] = round(sum(indicators) / len(indicators), 2)
         inst["max_indicador"] = round(max(indicators), 2)
         inst["min_indicador"] = round(min(indicators), 2)
         inst["range_indicadores"] = round(max(indicators) - min(indicators), 2)
-        inst["std_indicadores"] = round(
-            (sum((x - inst["media_indicadores"])**2 for x in indicators)
-             / len(indicators)) ** 0.5, 2)
+        if len(indicators) > 1:
+            mean_ind = sum(indicators) / len(indicators)
+            inst["std_indicadores"] = round(
+                (sum((x - mean_ind) ** 2 for x in indicators) / len(indicators)) ** 0.5,
+                2,
+            )
+        else:
+            inst["std_indicadores"] = 0.0
     else:
         inst["media_indicadores"] = None
         inst["max_indicador"] = None
         inst["min_indicador"] = None
         inst["range_indicadores"] = None
         inst["std_indicadores"] = None
-    # Recompute fase_x_media with corrected media
-    if inst["media_indicadores"] is not None:
+
+    # 7. Compute fase_x_media interaction
+    if inst.get("media_indicadores") is not None:
         inst["fase_x_media"] = round(inst["fase_2023"] * inst["media_indicadores"], 2)
     else:
         inst["fase_x_media"] = None
+
     return inst
 
 
@@ -339,7 +406,7 @@ def send_predictions(base_url: str, n: int):
     flush_batch(batch_instances, batch_labels)
 
     print(f"\n{'='*60}")
-    print(f"  Resultado:")
+    print("  Resultado:")
     print(f"    Requisições enviadas : {stats['total']}")
     print(f"    Alto risco           : {stats['high_risk']}")
     print(f"    Risco moderado       : {stats['medium_risk']}")
@@ -364,14 +431,12 @@ def send_predictions(base_url: str, n: int):
             "location.reload();\n"
         )
     print(f"  Script JS salvo em: {js_path}")
-    print(f"     Abra o portal, pressione F12, cole o conteudo e Enter.\n")
-    print(f"  Ou acesse: http://localhost:8080 > Predicao > use o formulario.\n")
+    print("     Abra o portal, pressione F12, cole o conteudo e Enter.\n")
+    print("  Ou acesse: http://localhost:8080 > Predicao > use o formulario.\n")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Seed prediction data for the portal"
-    )
+    parser = argparse.ArgumentParser(description="Seed prediction data for the portal")
     parser.add_argument(
         "--url", default="http://localhost:8080/api", help="Base API URL"
     )

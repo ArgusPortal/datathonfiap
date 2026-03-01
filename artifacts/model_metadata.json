@@ -41,8 +41,8 @@
     "threshold_value": 0.0011859301774256575
   },
   "assumptions": [
-    "Features de 2023 predizem risco em 2024",
-    "Sem dados de 2022 disponíveis no dataset final",
+    "Features de 2023 + deltas 2022→2023 predizem risco em 2024",
+    "Dados de 2022 usados para cálculo de deltas inter-anuais",
     "Split train/test por holdout simples (20%)"
   ]
 }

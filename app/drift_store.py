@@ -43,7 +43,12 @@ def compute_feature_stats(features: Dict[str, Any]) -> Dict[str, Any]:
 
         # Boolean-like (0/1) and small integer features
         elif isinstance(value, (int, float)):
-            if isinstance(value, bool) or (isinstance(value, (int, float)) and value in (0, 1) and key.endswith("_missing")):
+            is_binary = isinstance(value, bool) or (
+                isinstance(value, (int, float))
+                and value in (0, 1)
+                and key.endswith("_missing")
+            )
+            if is_binary:
                 # Binary features: keep as 0/1 bins
                 bin_label = "one" if value else "zero"
             elif value < 2:
@@ -106,14 +111,14 @@ def aggregate_batch_stats(instances: List[Dict[str, Any]]) -> Dict[str, Any]:
 # Mapa de normalização: colapsa bins granulares em 3 bins canônicos
 # para comparação PSI compatível entre versões de schema
 BIN_NORMALIZATION_MAP = {
-    "very_low": "low",       # <2  → canônico "low" (0-4)
-    "low": "low",            # 2-4 → canônico "low"
+    "very_low": "low",  # <2  → canônico "low" (0-4)
+    "low": "low",  # 2-4 → canônico "low"
     "medium_low": "medium",  # 4-6 → canônico "medium" (4-7)
-    "medium": "medium",      # 6-7 → canônico "medium"
-    "medium_high": "high",   # 7-8.5 → canônico "high" (7+)
-    "high": "high",          # ≥8.5 → canônico "high"
-    "zero": "binary",        # 0   → canônico "binary" (0/1 features)
-    "one": "binary",         # 1   → canônico "binary"
+    "medium": "medium",  # 6-7 → canônico "medium"
+    "medium_high": "high",  # 7-8.5 → canônico "high" (7+)
+    "high": "high",  # ≥8.5 → canônico "high"
+    "zero": "binary",  # 0   → canônico "binary" (0/1 features)
+    "one": "binary",  # 1   → canônico "binary"
 }
 
 

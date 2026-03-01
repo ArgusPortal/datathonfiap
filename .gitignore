@@ -77,6 +77,12 @@ logs/*
 # Documentation builds
 docs/_build/
 
+# GitHub Copilot agents, instructions, prompts
+.github/agents/
+.github/instructions/
+.github/prompts/
+.github/copilot-instructions.md
+
 # macOS
 .DS_Store
 .AppleDouble

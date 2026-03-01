@@ -1,0 +1,56 @@
+{
+  "experiments": [
+    {
+      "name": "BASELINE (all 32)",
+      "n_features": 32,
+      "f2_mean": 0.8588387642321116,
+      "f2_std": 0.008040763953168854,
+      "recall_mean": 0.9870438921205711,
+      "recall_std": 0.012084450438670463,
+      "precision_mean": 0.5660793859374038,
+      "precision_std": 0.022039311464618343
+    },
+    {
+      "name": "REMOVE_NEGATIVE (30)",
+      "n_features": 30,
+      "f2_mean": 0.8561685759921657,
+      "f2_std": 0.011655034597566644,
+      "recall_mean": 0.9804865150713908,
+      "recall_std": 0.012170232066588049,
+      "precision_mean": 0.5695644325440453,
+      "precision_std": 0.03078624836221819
+    },
+    {
+      "name": "REMOVE_NOISE (16)",
+      "n_features": 22,
+      "f2_mean": 0.856968793298887,
+      "f2_std": 0.009412709775172178,
+      "recall_mean": 0.9869381279746167,
+      "recall_std": 0.01910909640371333,
+      "precision_mean": 0.5641399666360821,
+      "precision_std": 0.038544460875254566
+    },
+    {
+      "name": "VOLATILE_ONLY (11)",
+      "n_features": 11,
+      "f2_mean": 0.8687796612113567,
+      "f2_std": 0.007950294520756776,
+      "recall_mean": 0.9836594394500265,
+      "recall_std": 0.017958428085245854,
+      "precision_mean": 0.5942300453475081,
+      "precision_std": 0.03202426881108127
+    },
+    {
+      "name": "VOLATILE+STABLE (15)",
+      "n_features": 15,
+      "f2_mean": 0.8641460688323408,
+      "f2_std": 0.007807789348268344,
+      "recall_mean": 0.9772078265468007,
+      "recall_std": 0.022051507390431834,
+      "precision_mean": 0.5952230926523876,
+      "precision_std": 0.04887155008349614
+    }
+  ],
+  "best": "VOLATILE_ONLY (11)",
+  "recommendation": "Best config: VOLATILE_ONLY (11)"
+}
