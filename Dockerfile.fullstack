@@ -29,6 +29,9 @@ LABEL maintainer="Datathon FIAP Team"
 LABEL version="3.0.0"
 LABEL description="Passos Mágicos – Full-stack: API + Frontend (nginx + uvicorn)"
 
+# Git SHA (baked at build time)
+ARG GIT_SHA=unknown
+
 # Environment
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -40,7 +43,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     MAX_BODY_BYTES=262144 \
     REQUEST_TIMEOUT_MS=3000 \
     METRICS_ENABLED=true \
-    AUDIT_ENABLED=true
+    AUDIT_ENABLED=true \
+    GIT_SHA=${GIT_SHA}
 
 # System dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \

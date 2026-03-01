@@ -37,13 +37,25 @@ def compute_feature_stats(features: Dict[str, Any]) -> Dict[str, Any]:
         if value is None or (isinstance(value, float) and np.isnan(value)):
             stats["missing_features"].append(key)
 
-        # Estatísticas numéricas (apenas indicadores, sem valores exatos)
+        # Categorical / string features — bin by value
+        elif isinstance(value, str):
+            stats["numeric_summary"][key] = f"cat_{value}"
+
+        # Boolean-like (0/1) and small integer features
         elif isinstance(value, (int, float)):
-            # Armazena apenas o bin/quantil aproximado, não o valor exato
-            if value < 4:
+            if isinstance(value, bool) or (isinstance(value, (int, float)) and value in (0, 1) and key.endswith("_missing")):
+                # Binary features: keep as 0/1 bins
+                bin_label = "one" if value else "zero"
+            elif value < 2:
+                bin_label = "very_low"
+            elif value < 4:
                 bin_label = "low"
+            elif value < 6:
+                bin_label = "medium_low"
             elif value < 7:
                 bin_label = "medium"
+            elif value < 8.5:
+                bin_label = "medium_high"
             else:
                 bin_label = "high"
             stats["numeric_summary"][key] = bin_label
@@ -73,22 +85,64 @@ def aggregate_batch_stats(instances: List[Dict[str, Any]]) -> Dict[str, Any]:
 
         for feat, bin_label in stats["numeric_summary"].items():
             if feat not in feature_bins:
-                feature_bins[feat] = {"low": 0, "medium": 0, "high": 0}
-            feature_bins[feat][bin_label] += 1
+                feature_bins[feat] = {}
+            feature_bins[feat][bin_label] = feature_bins[feat].get(bin_label, 0) + 1
 
     # Conta missing por feature
     missing_counts: Dict[str, int] = {}
     for feat in all_missing:
         missing_counts[feat] = missing_counts.get(feat, 0) + 1
 
-    # Top-5 features com mais missing
-    top_missing = sorted(missing_counts.items(), key=lambda x: -x[1])[:5]
+    # All features with missing values (not just top-5) for drift monitoring
+    top_missing = sorted(missing_counts.items(), key=lambda x: -x[1])
 
     return {
         "n_instances": len(instances),
         "missing_summary": dict(top_missing),
         "feature_distribution": feature_bins,
     }
+
+
+# Mapa de normalização: colapsa bins granulares em 3 bins canônicos
+# para comparação PSI compatível entre versões de schema
+BIN_NORMALIZATION_MAP = {
+    "very_low": "low",       # <2  → canônico "low" (0-4)
+    "low": "low",            # 2-4 → canônico "low"
+    "medium_low": "medium",  # 4-6 → canônico "medium" (4-7)
+    "medium": "medium",      # 6-7 → canônico "medium"
+    "medium_high": "high",   # 7-8.5 → canônico "high" (7+)
+    "high": "high",          # ≥8.5 → canônico "high"
+    "zero": "binary",        # 0   → canônico "binary" (0/1 features)
+    "one": "binary",         # 1   → canônico "binary"
+}
+
+
+def normalize_bins(dist: Dict[str, int]) -> Dict[str, int]:
+    """
+    Normaliza distribuição de bins para esquema canônico de 3 bins.
+    Garante comparação PSI correta entre versões de schema de binning.
+
+    Mapeamento:
+      very_low + low → low
+      medium_low + medium → medium
+      medium_high + high → high
+      zero + one → binary
+      cat_* → preservado
+
+    Args:
+        dist: Distribuição original {bin_name: count}
+
+    Returns:
+        Distribuição normalizada {canonical_bin: count}
+    """
+    normalized: Dict[str, int] = {}
+    for bin_key, count in dist.items():
+        if bin_key.startswith("cat_"):
+            canonical = bin_key  # Categorical bins preservados
+        else:
+            canonical = BIN_NORMALIZATION_MAP.get(bin_key, bin_key)
+        normalized[canonical] = normalized.get(canonical, 0) + count
+    return normalized
 
 
 class DriftStore:
@@ -130,6 +184,7 @@ class DriftStore:
             "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
             "request_id": request_id,
             "model_version": model_version,
+            "bin_schema_version": 2,
             "batch_stats": batch_stats,
             "prediction_summary": {
                 "n_predictions": len(predictions),
@@ -168,6 +223,23 @@ class DriftStore:
                     continue
 
         return events
+
+    def clear_events(self) -> int:
+        """Remove todos os eventos do log. Retorna contagem de eventos removidos."""
+        count = 0
+        if self.log_path.exists():
+            with open(self.log_path, "r", encoding="utf-8") as f:
+                count = sum(1 for _ in f)
+            self.log_path.unlink()
+            logger.info(f"Drift log cleared: {count} events removed")
+        return count
+
+    def event_count(self) -> int:
+        """Retorna contagem total de eventos no log."""
+        if not self.log_path.exists():
+            return 0
+        with open(self.log_path, "r", encoding="utf-8") as f:
+            return sum(1 for _ in f)
 
 
 # Instância global

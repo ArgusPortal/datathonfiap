@@ -30,7 +30,7 @@ from app.config import (
     PORT,
     SIGNATURE_PATH,
 )
-from app.drift_store import drift_store
+from app.drift_store import drift_store, normalize_bins
 from app.logging_config import RequestLogger, generate_request_id, setup_logging
 from app.model_loader import ModelManager
 from app.observability import log_inference_request
@@ -649,8 +649,9 @@ async def get_inference_history(
 @app.get("/drift/status", tags=["Drift"])
 async def get_drift_status():
     """
-    Compute simplified PSI-like drift status per feature.
-    Compares last 50 events vs first 50 events (baseline).
+    Compute PSI-based drift status per feature.
+    Compares second half of events (current) vs first half (baseline).
+    Normalizes bins across schema versions for accurate PSI calculation.
     Returns green/yellow/red status per feature.
     """
     events = drift_store.read_events(limit=500)
@@ -669,6 +670,17 @@ async def get_drift_status():
     baseline_events = events[:mid]
     current_events = events[mid:]
 
+    # Detect bin schema versions in baseline vs current
+    def get_schema_versions(event_list):
+        versions = set()
+        for ev in event_list:
+            versions.add(ev.get("bin_schema_version", 1))
+        return versions
+
+    baseline_schemas = get_schema_versions(baseline_events)
+    current_schemas = get_schema_versions(current_events)
+    schema_mismatch = baseline_schemas != current_schemas
+
     # Aggregate feature distributions
     def aggregate_feature_dist(event_list):
         agg = {}
@@ -677,20 +689,26 @@ async def get_drift_status():
             feat_dist = batch_stats.get("feature_distribution", {})
             for feat, bins in feat_dist.items():
                 if feat not in agg:
-                    agg[feat] = {"low": 0, "medium": 0, "high": 0}
-                for b in ("low", "medium", "high"):
-                    agg[feat][b] += bins.get(b, 0)
+                    agg[feat] = {}
+                for b, count in bins.items():
+                    agg[feat][b] = agg[feat].get(b, 0) + count
         return agg
 
     baseline_dist = aggregate_feature_dist(baseline_events)
     current_dist = aggregate_feature_dist(current_events)
 
-    # Simple PSI calculation
-    def compute_psi(base_bins, curr_bins):
+    # PSI calculation with bin normalization for cross-schema compatibility
+    def compute_psi(base_bins, curr_bins, should_normalize=False):
+        if should_normalize:
+            base_bins = normalize_bins(base_bins)
+            curr_bins = normalize_bins(curr_bins)
+        all_bins = set(list(base_bins.keys()) + list(curr_bins.keys()))
+        if not all_bins:
+            return 0.0
         total_base = sum(base_bins.values()) or 1
         total_curr = sum(curr_bins.values()) or 1
         psi = 0.0
-        for b in ("low", "medium", "high"):
+        for b in all_bins:
             p = max(base_bins.get(b, 0) / total_base, 0.0001)
             q = max(curr_bins.get(b, 0) / total_curr, 0.0001)
             psi += (p - q) * np.log(p / q)
@@ -700,23 +718,26 @@ async def get_drift_status():
     all_features = set(list(baseline_dist.keys()) + list(current_dist.keys()))
 
     for feat in all_features:
-        base = baseline_dist.get(feat, {"low": 1, "medium": 1, "high": 1})
-        curr = current_dist.get(feat, {"low": 1, "medium": 1, "high": 1})
-        psi = compute_psi(base, curr)
+        base = baseline_dist.get(feat, {})
+        curr = current_dist.get(feat, {})
+        psi = compute_psi(base, curr, should_normalize=schema_mismatch)
         if psi < 0.1:
             status = "green"
         elif psi < 0.25:
             status = "yellow"
         else:
             status = "red"
+        # For display, show the normalized distributions when schema mismatch
+        display_base = normalize_bins(base) if schema_mismatch else base
+        display_curr = normalize_bins(curr) if schema_mismatch else curr
         feature_status[feat] = {
             "psi": round(psi, 4),
             "status": status,
-            "baseline_dist": base,
-            "current_dist": curr,
+            "baseline_dist": display_base,
+            "current_dist": display_curr,
         }
 
-    # Score drift
+    # Score drift (score bins are always low/medium/high — no normalization needed)
     def aggregate_score_bins(event_list):
         bins = {"low": 0, "medium": 0, "high": 0}
         for ev in event_list:
@@ -760,8 +781,29 @@ async def get_drift_status():
     else:
         overall = "green"
 
+    # Generate human-readable message
+    n_red = sum(1 for f in feature_status.values() if f["status"] == "red")
+    n_yellow = sum(1 for f in feature_status.values() if f["status"] == "yellow")
+    n_green = sum(1 for f in feature_status.values() if f["status"] == "green")
+
+    if schema_mismatch:
+        message = (
+            f"Bins normalizados para comparação (schema v{sorted(baseline_schemas)} vs v{sorted(current_schemas)}). "
+            f"{n_red} features com drift significativo, {n_yellow} moderado, {n_green} estável."
+        )
+    elif overall == "green":
+        message = f"Todas as {n_green} features estão estáveis. Sem drift detectado."
+    elif overall == "yellow":
+        message = f"{n_yellow} features com drift moderado. Monitorar nas próximas inferências."
+    else:
+        message = (
+            f"{n_red} features com drift significativo, {n_yellow} moderado. "
+            f"Considere retreinar o modelo se o drift persistir."
+        )
+
     return {
-        "status": "ok",
+        "status": overall,
+        "message": message,
         "features": feature_status,
         "score_drift": {
             "status": score_status,
@@ -774,8 +816,25 @@ async def get_drift_status():
             "current": current_missing,
         },
         "overall_status": overall,
+        "schema_mismatch": schema_mismatch,
         "n_baseline_events": len(baseline_events),
         "n_current_events": len(current_events),
+    }
+
+
+@app.post("/drift/reset-baseline", tags=["Drift"])
+async def reset_drift_baseline():
+    """
+    Reset drift baseline by clearing all stored events.
+    Use after model retraining, bin schema changes, or to establish a new baseline.
+    New inference events will rebuild the baseline organically.
+    """
+    count = drift_store.clear_events()
+    logger.info(f"Drift baseline reset: {count} events cleared")
+    return {
+        "status": "ok",
+        "message": f"Baseline resetado. {count} eventos removidos. Novas inferências formarão o novo baseline.",
+        "events_cleared": count,
     }
 
 

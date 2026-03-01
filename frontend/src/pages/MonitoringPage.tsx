@@ -14,6 +14,7 @@ import {
   Filter,
   Database,
   Hash,
+  CheckCircle2,
 } from 'lucide-react'
 import {
   Card,
@@ -126,6 +127,13 @@ function PSIDriftBar({ features }: { features: Record<string, { psi: number; sta
     [features],
   )
 
+  // Compute left margin dynamically based on longest label
+  const leftMargin = useMemo(() => {
+    if (data.length === 0) return 60
+    const maxLen = Math.max(...data.map((d) => d.feature.length))
+    return Math.max(120, Math.min(280, maxLen * 8.5))
+  }, [data])
+
   if (data.length === 0) return null
 
   return (
@@ -136,12 +144,12 @@ function PSIDriftBar({ features }: { features: Record<string, { psi: number; sta
         indexBy="feature"
         layout="horizontal"
         theme={nivoTheme}
-        margin={{ top: 4, right: 50, bottom: 30, left: 60 }}
+        margin={{ top: 4, right: 50, bottom: 30, left: leftMargin }}
         padding={0.35}
         colors={({ data: d }) => (d as Record<string, unknown>).color as string}
         borderRadius={3}
         axisBottom={{ tickSize: 0, tickPadding: 6, legend: 'PSI', legendPosition: 'middle', legendOffset: 24 }}
-        axisLeft={{ tickSize: 0, tickPadding: 8 }}
+        axisLeft={{ tickSize: 0, tickPadding: 8, truncateTickAt: 0 }}
         labelSkipWidth={40}
         labelTextColor="#fff"
         enableGridY={false}
@@ -628,8 +636,14 @@ export function MonitoringPage() {
                           {driftLabel(drift.overall_status)}
                         </h3>
                         <p className="text-sm mt-1 opacity-90">
-                          {drift.message || `Status geral: ${drift.status}`}
+                          {drift.message || `Status geral: ${drift.overall_status}`}
                         </p>
+                        {drift.schema_mismatch && (
+                          <div className="flex items-center gap-1.5 mt-2 text-xs text-amber-700 dark:text-amber-400">
+                            <AlertTriangle className="h-3 w-3" />
+                            <span>Bins normalizados automaticamente — resete o baseline para recalibrar com o schema atual.</span>
+                          </div>
+                        )}
                         <div className="flex flex-wrap gap-4 mt-3 text-xs">
                           {drift.n_baseline_events != null && (
                             <span className="flex items-center gap-1">
@@ -645,13 +659,64 @@ export function MonitoringPage() {
                           )}
                         </div>
                       </div>
-                      <Button variant="outline" size="sm" onClick={fetchDrift} disabled={driftLoading}>
-                        <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${driftLoading ? 'animate-spin' : ''}`} />
-                        Atualizar
-                      </Button>
+                      <div className="flex flex-col gap-2">
+                        <Button variant="outline" size="sm" onClick={fetchDrift} disabled={driftLoading}>
+                          <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${driftLoading ? 'animate-spin' : ''}`} />
+                          Atualizar
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs text-muted-foreground"
+                          onClick={async () => {
+                            if (!confirm('Resetar baseline de drift? Todos os eventos serão removidos e novas inferências formarão o novo baseline.')) return
+                            try {
+                              await api.resetDriftBaseline()
+                              await fetchDrift()
+                            } catch {
+                              // silently fail
+                            }
+                          }}
+                          disabled={driftLoading}
+                        >
+                          <Database className="h-3 w-3 mr-1" />
+                          Resetar Baseline
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Drift action recommendations */}
+                {drift.overall_status !== 'green' && (
+                  <Card className="border-dashed">
+                    <CardContent className="p-4">
+                      <h4 className="text-sm font-semibold flex items-center gap-2 mb-2">
+                        <Info className="h-4 w-4 text-primary" />
+                        Recomendações
+                      </h4>
+                      <ul className="text-xs text-muted-foreground space-y-1.5 list-disc list-inside">
+                        {drift.schema_mismatch && (
+                          <li>
+                            <strong>Schema mismatch detectado</strong> — o formato de bins mudou entre baseline e dados atuais.
+                            Use &quot;Resetar Baseline&quot; e envie novas inferências para recalibrar.
+                          </li>
+                        )}
+                        {drift.overall_status === 'red' && !drift.schema_mismatch && (
+                          <>
+                            <li>Verifique se houve mudança na população de alunos ou nos critérios de coleta.</li>
+                            <li>Considere retreinar o modelo com dados recentes via <code className="bg-muted px-1 rounded">python -m src.retrain</code>.</li>
+                            <li>Monitore o score drift — se PSI do score também subir, a performance do modelo pode estar degradada.</li>
+                          </>
+                        )}
+                        {drift.overall_status === 'yellow' && (
+                          <li>Drift moderado detectado. Continue monitorando — se persistir por mais de 2 semanas, considere retreinamento.</li>
+                        )}
+                        <li>Score drift PSI = {drift.score_drift.psi.toFixed(4)} ({drift.score_drift.status === 'green' ? 'estável' : 'mudança detectada'}) — indica se as predições do modelo mudaram.</li>
+                      </ul>
+                    </CardContent>
+                  </Card>
+                )}
 
                 {/* Per-feature PSI grid */}
                 <Card>
@@ -748,6 +813,22 @@ export function MonitoringPage() {
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
+                      {Object.keys({
+                        ...drift.missing_rates.baseline,
+                        ...drift.missing_rates.current,
+                      }).length === 0 ? (
+                        <div className="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/30 p-4">
+                          <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                          <div>
+                            <p className="text-sm font-medium text-green-800 dark:text-green-300">
+                              Nenhum valor ausente detectado
+                            </p>
+                            <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">
+                              Todas as features estão completas — nenhuma coluna apresentou valores nulos no baseline ou nos dados atuais.
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
                       <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                           <thead>
@@ -791,6 +872,7 @@ export function MonitoringPage() {
                           </tbody>
                         </table>
                       </div>
+                      )}
                     </CardContent>
                   </Card>
                 )}

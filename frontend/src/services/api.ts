@@ -76,6 +76,7 @@ export const api = {
 
   // Drift
   driftStatus: () => request<DriftStatus>('/drift/status'),
+  resetDriftBaseline: () => request<{ status: string; message: string; events_cleared: number }>('/drift/reset-baseline', { method: 'POST' }),
 
   // Audit
   auditRecent: (limit = 50) =>

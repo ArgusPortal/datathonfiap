@@ -141,26 +141,55 @@ def rand_val(lo, hi):
     return round(random.uniform(lo, hi), 2)
 
 
+# Features that can realistically be missing (indicators from assessments)
+NULLABLE_FEATURES = [
+    "iaa_2023", "ian_2023", "ida_2023", "ieg_2023",
+    "ipp_2023", "ips_2023", "ipv_2023",
+]
+
+
 def generate_instance(profile=None):
     ranges = dict(FEATURE_RANGES)
     if profile:
         ranges.update(profile["overrides"])
     inst = {feat: rand_val(*rng) for feat, rng in ranges.items()}
+
+    # ~15% chance of having 1-3 missing indicator features (realistic scenario)
+    if random.random() < 0.15:
+        n_missing = random.randint(1, 3)
+        for feat in random.sample(NULLABLE_FEATURES, min(n_missing, len(NULLABLE_FEATURES))):
+            inst[feat] = None
+            # Set corresponding _missing flag to 1
+            flag = feat + "_missing"
+            if flag in inst:
+                inst[flag] = 1
+
     # Derive fase_x_media from actual feature values (keeps internal consistency)
     inst["fase_x_media"] = round(inst["fase_2023"] * inst["media_indicadores"], 2)
     # Ensure aggregated indicators are consistent with individual ones
-    indicators = [inst.get(k, 5.0) for k in
-                  ["iaa_2023", "ian_2023", "ida_2023", "ieg_2023",
-                   "ipp_2023", "ips_2023", "ipv_2023"]]
-    inst["media_indicadores"] = round(sum(indicators) / len(indicators), 2)
-    inst["max_indicador"] = round(max(indicators), 2)
-    inst["min_indicador"] = round(min(indicators), 2)
-    inst["range_indicadores"] = round(max(indicators) - min(indicators), 2)
-    inst["std_indicadores"] = round(
-        (sum((x - inst["media_indicadores"])**2 for x in indicators)
-         / len(indicators)) ** 0.5, 2)
+    # Filter out None values (missing indicators) for aggregation
+    indicator_keys = ["iaa_2023", "ian_2023", "ida_2023", "ieg_2023",
+                      "ipp_2023", "ips_2023", "ipv_2023"]
+    indicators = [inst[k] for k in indicator_keys if inst.get(k) is not None]
+    if indicators:
+        inst["media_indicadores"] = round(sum(indicators) / len(indicators), 2)
+        inst["max_indicador"] = round(max(indicators), 2)
+        inst["min_indicador"] = round(min(indicators), 2)
+        inst["range_indicadores"] = round(max(indicators) - min(indicators), 2)
+        inst["std_indicadores"] = round(
+            (sum((x - inst["media_indicadores"])**2 for x in indicators)
+             / len(indicators)) ** 0.5, 2)
+    else:
+        inst["media_indicadores"] = None
+        inst["max_indicador"] = None
+        inst["min_indicador"] = None
+        inst["range_indicadores"] = None
+        inst["std_indicadores"] = None
     # Recompute fase_x_media with corrected media
-    inst["fase_x_media"] = round(inst["fase_2023"] * inst["media_indicadores"], 2)
+    if inst["media_indicadores"] is not None:
+        inst["fase_x_media"] = round(inst["fase_2023"] * inst["media_indicadores"], 2)
+    else:
+        inst["fase_x_media"] = None
     return inst
 
 

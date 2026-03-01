@@ -226,6 +226,7 @@ export interface DriftStatus {
     current: Record<string, number>
   }
   overall_status: 'green' | 'yellow' | 'red'
+  schema_mismatch?: boolean
   n_baseline_events?: number
   n_current_events?: number
   message?: string

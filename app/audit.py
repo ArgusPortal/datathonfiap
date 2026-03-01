@@ -6,6 +6,7 @@ Fase 8: Hardening de Produção.
 import hashlib
 import json
 import logging
+import os
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
@@ -15,7 +16,11 @@ logger = logging.getLogger("api.audit")
 
 
 def get_git_sha() -> str:
-    """Get current git commit SHA."""
+    """Get current git commit SHA (from env var or git CLI)."""
+    # Prefer env var (baked into Docker image at build time)
+    env_sha = os.environ.get("GIT_SHA", "").strip()
+    if env_sha and env_sha != "unknown":
+        return env_sha[:12]
     try:
         result = subprocess.run(
             ["git", "rev-parse", "HEAD"],
