@@ -1,13 +1,13 @@
 # Model Report - v1.2.0
 
-**Gerado em:** 2026-02-07 18:56
+**Gerado em:** 2026-03-07 10:18
 
 ## 1. Definição do Problema
 
 - **Target:** em_risco=1 se defasagem<0 em t+1 (aluno atrasado)
 - **Período:** 2023->2024 (val split interno)
 - **População:** all_phases
-- **Modelo:** hist_gb (calibração: sigmoid)
+- **Modelo:** rf (calibração: sigmoid)
 
 ## 2. Por que Recall como Métrica Principal?
 
@@ -19,20 +19,20 @@
 
 | Métrica | Valor |
 |---------|-------|
-| **Recall** | **0.935** |
-| Precision | 0.699 |
-| F1 | 0.800 |
-| F2 | 0.876 |
-| PR-AUC | 0.830 |
-| Brier Score | 0.13162929645602361 |
+| **Recall** | **0.919** |
+| Precision | 0.695 |
+| F1 | 0.792 |
+| F2 | 0.864 |
+| PR-AUC | 0.835 |
+| Brier Score | 0.12805315399843317 |
 
-**Threshold:** 0.3499
+**Threshold:** 0.2814
 
 ### Matriz de Confusão
 ```
               Pred=0   Pred=1
 Real=0 (ok)      66      25
-Real=1 (risco)    4      58
+Real=1 (risco)    5      57
 ```
 
 - Total: 153 amostras (62 positivos = 40.5%)
@@ -41,16 +41,16 @@ Real=1 (risco)    4      58
 
 | Rank | Modelo | Recall | Precision | PR-AUC |
 |------|--------|--------|-----------|--------|
-| 1 | hist_gb | 0.935 | 0.699 | 0.830 |
-| 2 | rf | 0.984 | 0.592 | 0.847 |
-| 3 | logreg | 0.984 | 0.530 | 0.852 |
+| 1 | rf | 0.919 | 0.695 | 0.835 |
+| 2 | hist_gb | 0.855 | 0.757 | 0.840 |
+| 3 | logreg | 1.000 | 0.484 | 0.812 |
 | 4 | dummy_baseline | 0.000 | 0.000 | 0.423 |
 
 ## 5. Threshold Trade-off
 
 - Objetivo: maximizar recall com min_recall ≥ 0.75
-- Threshold escolhido em validação: 0.3499
-- Recall final: 0.935 | Precision: 0.699
+- Threshold escolhido em validação: 0.2814
+- Recall final: 0.919 | Precision: 0.695
 
 ## 6. Riscos e Limitações
 

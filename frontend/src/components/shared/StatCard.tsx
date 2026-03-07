@@ -28,7 +28,7 @@ export function StatCard({ title, value, subtitle, icon, trend, className, loadi
   }
 
   return (
-    <Card className={cn('transition-shadow hover:shadow-md', className)}>
+    <Card className={cn('card-hover card-shine', className)}>
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <p className="text-sm font-medium text-muted-foreground">{title}</p>
@@ -39,7 +39,7 @@ export function StatCard({ title, value, subtitle, icon, trend, className, loadi
           )}
         </div>
         <div className="mt-3">
-          <p className="text-2xl font-bold">{value}</p>
+          <p className="text-2xl font-bold tabular-nums">{value}</p>
           {subtitle && (
             <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p>
           )}

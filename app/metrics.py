@@ -10,9 +10,10 @@ import logging
 import os
 import threading
 import time
+from collections import deque
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger("api.metrics")
 
@@ -143,6 +144,12 @@ class MetricsStore:
         self._persist_counter = 0
         self._persist_lock = threading.Lock()
 
+        # Snapshot history for latency/traffic charts
+        self._history: deque[Dict[str, Any]] = deque(maxlen=120)
+        self._snapshot_interval = 10  # seconds
+        self._last_snapshot_time: float = 0
+        self._prev_totals: Dict[str, int] | None = None
+
     def record_request(self, latency_ms: float, success: bool) -> None:
         """Record a request."""
         self.latency.add(latency_ms)
@@ -151,6 +158,42 @@ class MetricsStore:
             self.requests_success.inc()
         else:
             self.requests_error.inc()
+        self._maybe_snapshot()
+
+    def _maybe_snapshot(self) -> None:
+        """Append a metrics snapshot if enough time has passed."""
+        now = time.time()
+        if now - self._last_snapshot_time < self._snapshot_interval:
+            return
+        self._last_snapshot_time = now
+
+        total_req = self.requests_total.get()
+        total_err = self.requests_error.get()
+
+        prev = self._prev_totals
+        req_delta = max(0, total_req - prev["requests"]) if prev else 0
+        err_delta = max(0, total_err - prev["errors"]) if prev else 0
+        self._prev_totals = {"requests": total_req, "errors": total_err}
+
+        # Skip first tick (no delta baseline yet)
+        if prev is None:
+            return
+
+        ts = time.strftime("%H:%M:%S", time.localtime(now))
+        self._history.append(
+            {
+                "time": ts,
+                "timestamp": now,
+                "latency": round(self.latency.percentile(95) or 0, 2),
+                "requests": req_delta,
+                "errors": err_delta,
+            }
+        )
+
+    def get_history(self, limit: int = 60) -> List[Dict[str, Any]]:
+        """Return recent metrics snapshots for charting."""
+        items = list(self._history)
+        return items[-limit:]
 
     def record_prediction(self, probability: float, threshold: float) -> None:
         """Record a prediction result and periodically persist."""

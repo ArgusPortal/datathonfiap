@@ -6,7 +6,7 @@
  * e exibe: visão geral, distribuições, dados faltantes,
  * correlações e análise do target.
  */
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useRef } from 'react'
 import {
   FlaskConical,
   BarChart3,
@@ -30,6 +30,7 @@ import {
 } from '@/components/ui'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
+import { ExportChartButton } from '@/components/shared/ExportChartButton'
 import { ResponsiveBar } from '@nivo/bar'
 import { ResponsivePie } from '@nivo/pie'
 import { ResponsiveHeatMap } from '@nivo/heatmap'
@@ -117,6 +118,12 @@ export function AnalysisPage() {
   const [data, setData] = useState<EdaData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  const yearChartRef = useRef<HTMLDivElement>(null)
+  const targetChartRef = useRef<HTMLDivElement>(null)
+  const missingChartRef = useRef<HTMLDivElement>(null)
+  const heatmapRef = useRef<HTMLDivElement>(null)
+  const distributionRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     api.eda()
@@ -217,8 +224,8 @@ export function AnalysisPage() {
           { label: 'Features', value: data?.overview.n_features, icon: Layers, fmt: (v: number) => String(v) },
           { label: 'Anos', value: data?.overview.years.length, icon: Calendar, fmt: (v: number) => `${v} (${data?.overview.years[0]}–${data?.overview.years[data!.overview.years.length - 1]})` },
           { label: 'Taxa de Risco', value: data?.overview.target_distribution.ratio_em_risco, icon: AlertTriangle, fmt: (v: number) => `${(v * 100).toFixed(1)}%` },
-        ].map(({ label, value, icon: Icon, fmt }) => (
-          <Card key={label}>
+        ].map(({ label, value, icon: Icon, fmt }, idx) => (
+          <Card key={label} className={`card-hover card-shine animate-fade-in-up stagger-${idx + 1}`}>
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-1">
                 <Icon className="h-4 w-4 text-muted-foreground" />
@@ -237,18 +244,19 @@ export function AnalysisPage() {
       {/* ROW 1: Year evolution + Target distribution */}
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
         {/* Alunos per year */}
-        <Card>
+        <Card className="card-hover card-shine">
           <CardHeader>
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-primary" />
               <CardTitle>Evolução por Ano</CardTitle>
               <InfoTooltip content="Número de alunos presentes nos dados brutos de cada ano letivo. O dataset de modelagem usa 2022→2023 como features e 2024 como target." />
+              <span className="ml-auto"><ExportChartButton chartRef={yearChartRef} filename="evolucao-ano" /></span>
             </div>
             <CardDescription>Total de registros por ano letivo</CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? <Skeleton className="h-[240px] w-full" /> : (
-              <div className="h-[240px]">
+              <div className="h-[240px]" ref={yearChartRef}>
                 <ResponsiveBar
                   data={yearBars}
                   keys={['alunos']}
@@ -273,18 +281,19 @@ export function AnalysisPage() {
         </Card>
 
         {/* Target distribution */}
-        <Card>
+        <Card className="card-hover card-shine">
           <CardHeader>
             <div className="flex items-center gap-2">
               <PieChart className="h-4 w-4 text-primary" />
               <CardTitle>Distribuição do Target</CardTitle>
               <InfoTooltip content="Proporção de alunos classificados como 'em risco' de defasagem vs. 'sem risco'. Target desbalanceado: ~40% em risco." />
+              <span className="ml-auto"><ExportChartButton chartRef={targetChartRef} filename="target-distribuicao" /></span>
             </div>
             <CardDescription>em_risco_2024 — variável a ser predita</CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? <Skeleton className="h-[240px] w-full" /> : (
-              <div className="h-[240px]">
+              <div className="h-[240px]" ref={targetChartRef}>
                 <ResponsivePie
                   data={targetPie}
                   margin={{ top: 20, right: 80, bottom: 20, left: 80 }}
@@ -316,12 +325,13 @@ export function AnalysisPage() {
       </div>
 
       {/* ROW 2: Missing data analysis */}
-      <Card>
+      <Card className="card-hover card-shine">
         <CardHeader>
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-4 w-4 text-primary" />
             <CardTitle>Dados Faltantes</CardTitle>
             <InfoTooltip content="Percentual de valores ausentes por feature no dataset de modelagem (765 amostras). Deltas têm mais missings porque dependem de dados do ano anterior." />
+            <span className="ml-auto"><ExportChartButton chartRef={missingChartRef} filename="dados-faltantes" /></span>
           </div>
           <CardDescription>Features com maior proporção de missing values</CardDescription>
         </CardHeader>
@@ -329,7 +339,7 @@ export function AnalysisPage() {
           {loading ? <Skeleton className="h-[340px] w-full" /> : missingBars.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">Nenhum dado faltante detectado.</p>
           ) : (
-            <div className="h-[340px]">
+            <div className="h-[340px]" ref={missingChartRef}>
               <ResponsiveBar
                 data={missingBars}
                 keys={['percentage']}
@@ -360,17 +370,18 @@ export function AnalysisPage() {
 
       {/* ROW 3: Feature distributions */}
       {distributionFeats.length > 0 && (
-        <Card>
+        <Card className="card-hover card-shine">
           <CardHeader>
             <div className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4 text-primary" />
               <CardTitle>Distribuição dos Indicadores</CardTitle>
               <InfoTooltip content="Histogramas dos 7 indicadores educacionais do Passos Mágicos. Cada indicador mede uma dimensão do desenvolvimento do aluno." />
+              <span className="ml-auto"><ExportChartButton chartRef={distributionRef} filename="indicadores-distribuicao" /></span>
             </div>
             <CardDescription>Histogramas dos principais indicadores educacionais (2023)</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div ref={distributionRef} className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {distributionFeats.map((feat, idx) => (
                 <div key={feat.name} className="space-y-1">
                   <div className="flex items-center justify-between">
@@ -411,17 +422,18 @@ export function AnalysisPage() {
 
       {/* ROW 4: Correlation heatmap */}
       {heatmapData.length > 0 && (
-        <Card>
+        <Card className="card-hover card-shine">
           <CardHeader>
             <div className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-primary" />
               <CardTitle>Matriz de Correlação</CardTitle>
               <InfoTooltip content="Correlação de Pearson entre features base e o target. Valores próximos de -1 ou +1 indicam forte relação linear." />
+              <span className="ml-auto"><ExportChartButton chartRef={heatmapRef} filename="correlacao-heatmap" /></span>
             </div>
             <CardDescription>Correlação de Pearson entre indicadores e target</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-[420px]">
+            <div className="h-[420px]" ref={heatmapRef}>
               <ResponsiveHeatMap
                 data={heatmapData}
                 margin={{ top: 80, right: 30, bottom: 30, left: 100 }}

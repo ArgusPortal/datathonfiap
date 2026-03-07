@@ -9,7 +9,7 @@
  *  • System Status + SLO Compliance
  *  • Legendas didáticas para avaliação acadêmica
  */
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import {
   Activity,
   AlertTriangle,
@@ -41,8 +41,10 @@ import { HeroSection } from '@/components/shared/HeroSection'
 import { ImpactCard } from '@/components/shared/ImpactCard'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
 import { ODSList } from '@/components/shared/ODSBadge'
+import { GlossaryTip } from '@/components/shared/Glossary'
 import { ScoreDistribution } from '@/components/charts/ScoreDistribution'
 import { RiskPieChart } from '@/components/charts/RiskPieChart'
+import { ExportChartButton } from '@/components/shared/ExportChartButton'
 import api from '@/services/api'
 import { usePredictionStore } from '@/stores/predictionStore'
 import type {
@@ -112,6 +114,9 @@ export function DashboardPage() {
   const [inferenceEvents, setInferenceEvents] = useState<InferenceEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  const scoreChartRef = useRef<HTMLDivElement>(null)
+  const riskPieRef = useRef<HTMLDivElement>(null)
 
   const { predictions: storePredictions } = usePredictionStore()
 
@@ -262,25 +267,33 @@ export function DashboardPage() {
 
       {/* IMPACT CARDS */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-        <ImpactCard
-          icon={Users} value={kpiTotalScored} label="Alunos Avaliados" variant="blue"
-          tooltip="Total de alunos que passaram pelo modelo de predição. Cada avaliação gera um score de risco entre 0 e 1."
-        />
-        <ImpactCard
-          icon={AlertTriangle} value={Number((kpiHighRiskRate * 100).toFixed(1))} suffix="%" decimals={1}
-          label="Taxa de Alto Risco" variant="red"
-          tooltip="Percentual de alunos classificados como alto risco (score > 0.7). Meta institucional: reduzir para < 20%."
-        />
-        <ImpactCard
-          icon={Target} value={Number((kpiMeanScore * 100).toFixed(1))} suffix="%" decimals={1}
-          label="Score Médio de Risco" variant="orange"
-          tooltip="Média dos scores de risco. Quanto menor, melhor. Score = probabilidade de defasagem escolar."
-        />
-        <ImpactCard
-          icon={Brain} value={93.5} suffix="%" decimals={1}
-          label="Recall do Modelo" variant="purple"
-          tooltip="Recall = capacidade de identificar alunos em risco real. 93.5% significa que captura ~94 de cada 100 em risco."
-        />
+        <div className="stagger-1 animate-fade-in-up">
+          <ImpactCard
+            icon={Users} value={kpiTotalScored} label="Alunos Avaliados" variant="blue"
+            tooltip="Total de alunos que passaram pelo modelo de predição. Cada avaliação gera um score de risco entre 0 e 1."
+          />
+        </div>
+        <div className="stagger-2 animate-fade-in-up">
+          <ImpactCard
+            icon={AlertTriangle} value={Number((kpiHighRiskRate * 100).toFixed(1))} suffix="%" decimals={1}
+            label="Taxa de Alto Risco" variant="red"
+            tooltip="Percentual de alunos classificados como alto risco (score > 0.7). Meta institucional: reduzir para < 20%."
+          />
+        </div>
+        <div className="stagger-3 animate-fade-in-up">
+          <ImpactCard
+            icon={Target} value={Number((kpiMeanScore * 100).toFixed(1))} suffix="%" decimals={1}
+            label="Score Médio de Risco" variant="orange"
+            tooltip="Média dos scores de risco. Quanto menor, melhor. Score = probabilidade de defasagem escolar."
+          />
+        </div>
+        <div className="stagger-4 animate-fade-in-up">
+          <ImpactCard
+            icon={Brain} value={93.5} suffix="%" decimals={1}
+            label="Recall do Modelo" variant="purple"
+            tooltip="Recall = capacidade de identificar alunos em risco real. 93.5% significa que captura ~94 de cada 100 em risco."
+          />
+        </div>
       </div>
 
       {/* ODS DA ONU */}
@@ -368,12 +381,13 @@ export function DashboardPage() {
 
       {/* CHARTS */}
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
-        <Card className="card-hover">
+        <Card className="card-hover card-shine">
           <CardHeader>
             <div className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4 text-primary" />
               <CardTitle>Distribuição de Scores de Risco</CardTitle>
-              <InfoTooltip content="Histograma dos scores produzidos pelo HistGradientBoosting. Scores > 70% = alto risco de defasagem escolar." />
+              <InfoTooltip content="Histograma dos scores produzidos pelo RandomForest. Scores > 70% = alto risco de defasagem escolar." />
+              <span className="ml-auto"><ExportChartButton chartRef={scoreChartRef} filename="score-distribuicao" /></span>
             </div>
             <CardDescription className="mt-1">
               {storePredictions.length > 0
@@ -383,7 +397,9 @@ export function DashboardPage() {
           </CardHeader>
           <CardContent>
             {loading ? <Skeleton className="h-[250px]" /> : hasChartData ? (
-              <ScoreDistribution predictions={chartPredictions} />
+              <div ref={scoreChartRef}>
+                <ScoreDistribution predictions={chartPredictions} />
+              </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-[250px] text-muted-foreground">
                 <Sparkles className="h-8 w-8 mb-2 text-muted-foreground/40" />
@@ -394,18 +410,21 @@ export function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="card-hover">
+        <Card className="card-hover card-shine">
           <CardHeader>
             <div className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-primary" />
               <CardTitle>Classificação de Risco</CardTitle>
               <InfoTooltip content="Proporção por faixa: Baixo (<30%), Moderado (30–70%) e Alto (>70%). Faixas definidas pelo threshold calibrado." />
+              <span className="ml-auto"><ExportChartButton chartRef={riskPieRef} filename="classificacao-risco" /></span>
             </div>
             <CardDescription className="mt-1">Proporção por faixa — priorização de intervenções pedagógicas</CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? <Skeleton className="h-[280px]" /> : hasChartData ? (
-              <RiskPieChart predictions={chartPredictions} />
+              <div ref={riskPieRef}>
+                <RiskPieChart predictions={chartPredictions} />
+              </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-[280px] text-muted-foreground">
                 <Sparkles className="h-8 w-8 mb-2 text-muted-foreground/40" />
@@ -520,31 +539,31 @@ export function DashboardPage() {
 
       {/* INFO CARDS — Explicações acadêmicas */}
       <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
-        <Card className="card-hover">
-          <CardContent className="p-5">
+        <Card className="card-hover card-shine animate-fade-in-up stagger-1 overflow-visible">
+          <CardContent className="p-5 overflow-visible">
             <h3 className="font-semibold text-sm flex items-center gap-2 mb-2">
               <Target className="h-4 w-4 text-primary" />
               Objetivo do Modelo
             </h3>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Predizer risco de defasagem escolar para alunos da Passos Mágicos,
-              permitindo intervenção precoce. Utiliza <strong>HistGradientBoosting</strong> com 7 indicadores educacionais.
+              Predizer risco de <GlossaryTip term="Defasagem">defasagem escolar</GlossaryTip> para alunos da Passos Mágicos,
+              permitindo intervenção precoce. Utiliza <strong>RandomForest</strong> com 7 indicadores educacionais (<GlossaryTip term="IAN">IAN</GlossaryTip>, <GlossaryTip term="IDA">IDA</GlossaryTip>, <GlossaryTip term="IEG">IEG</GlossaryTip>, <GlossaryTip term="IAA">IAA</GlossaryTip>, <GlossaryTip term="IPS">IPS</GlossaryTip>, <GlossaryTip term="IPP">IPP</GlossaryTip>, <GlossaryTip term="IPV">IPV</GlossaryTip>).
             </p>
           </CardContent>
         </Card>
-        <Card className="card-hover">
-          <CardContent className="p-5">
+        <Card className="card-hover card-shine animate-fade-in-up stagger-2 overflow-visible">
+          <CardContent className="p-5 overflow-visible">
             <h3 className="font-semibold text-sm flex items-center gap-2 mb-2">
               <BarChart3 className="h-4 w-4 text-muted-foreground" />
               Performance do Modelo
             </h3>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              <strong>Recall: 93.5%</strong> · Precision: 69.9% · F2-Score: 87.6%.
-              Otimizado via F2-score para minimizar falsos negativos.
+              <strong><GlossaryTip term="Recall">Recall</GlossaryTip>: 91.9%</strong> · <GlossaryTip term="Precision">Precision</GlossaryTip>: 69.5% · <GlossaryTip term="F2-Score">F2-Score</GlossaryTip>: 86.4%.
+              Otimizado via F2-score para minimizar <GlossaryTip term="Falso Negativo (FN)">falsos negativos</GlossaryTip>.
             </p>
           </CardContent>
         </Card>
-        <Card className="card-hover border-green-200/50 dark:border-green-800/30">
+        <Card className="card-hover card-shine animate-fade-in-up stagger-3 border-green-200/50 dark:border-green-800/30">
           <CardContent className="p-5">
             <h3 className="font-semibold text-sm flex items-center gap-2 mb-2">
               <Gauge className="h-4 w-4 text-green-500" />

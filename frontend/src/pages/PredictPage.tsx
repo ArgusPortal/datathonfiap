@@ -11,6 +11,7 @@ import {
   Users as UsersIcon,
   Download,
   Lightbulb,
+  TrendingUp,
 } from 'lucide-react'
 import {
   Card,
@@ -178,6 +179,7 @@ export function PredictPage() {
     switch (group) {
       case 'performance': return <BookOpen className="h-4 w-4" />
       case 'demographic': return <UsersIcon className="h-4 w-4" />
+      case 'temporal': return <TrendingUp className="h-4 w-4" />
       case 'derived': return <Calculator className="h-4 w-4" />
       default: return null
     }

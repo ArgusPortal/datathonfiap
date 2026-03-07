@@ -280,6 +280,14 @@ async def get_metrics(format: str = "json"):
     return metrics.get_summary()
 
 
+@app.get("/metrics/history", tags=["Observability"])
+async def get_metrics_history(limit: int = Query(default=60, ge=1, le=120)):
+    """Return recent metrics snapshots for latency/traffic charts."""
+    if not METRICS_ENABLED:
+        return {"error": "Metrics disabled"}
+    return {"snapshots": metrics.get_history(limit)}
+
+
 @app.get("/slo", tags=["Observability"])
 async def get_slo_status():
     """

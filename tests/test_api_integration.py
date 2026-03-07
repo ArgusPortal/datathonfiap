@@ -27,20 +27,16 @@ def mock_metadata():
         "model_family": "rf",
         "calibration": "sigmoid",
         "expected_features": [
-            "fase_2023",
-            "iaa_2023",
+            "delta_iaa_2022_2023",
+            "delta_ian_2022_2023",
+            "delta_ieg_2022_2023",
+            "delta_ipv_2022_2023",
             "ian_2023",
             "ida_2023",
             "idade_2023",
-            "ieg_2023",
-            "instituicao_2023",
             "ipp_2023",
             "ips_2023",
-            "ipv_2023",
-            "max_indicador",
             "media_indicadores",
-            "min_indicador",
-            "range_indicadores",
             "std_indicadores",
         ],
         "threshold_policy": {"threshold_value": 0.5},
@@ -53,8 +49,8 @@ def mock_signature():
     """Signature mock."""
     return {
         "input_schema": [
-            {"name": "fase_2023", "type": "float64"},
-            {"name": "iaa_2023", "type": "float64"},
+            {"name": "ian_2023", "type": "float64"},
+            {"name": "ida_2023", "type": "float64"},
         ],
         "output_schema": [
             {"name": "risk_score", "type": "float64"},
@@ -150,20 +146,16 @@ class TestPredictEndpoint:
         return {
             "instances": [
                 {
-                    "fase_2023": 3.0,
-                    "iaa_2023": 7.5,
                     "ian_2023": 6.0,
                     "ida_2023": 5.5,
-                    "idade_2023": 12.0,
-                    "ieg_2023": 6.5,
-                    "instituicao_2023": "A",
                     "ipp_2023": 7.0,
                     "ips_2023": 6.8,
-                    "ipv_2023": 5.0,
-                    "max_indicador": 7.5,
+                    "idade_2023": 12.0,
+                    "delta_iaa_2022_2023": -1.5,
+                    "delta_ian_2022_2023": 0.5,
+                    "delta_ieg_2022_2023": 0.2,
+                    "delta_ipv_2022_2023": 0.3,
                     "media_indicadores": 6.3,
-                    "min_indicador": 5.0,
-                    "range_indicadores": 2.5,
                     "std_indicadores": 0.8,
                 }
             ]
@@ -243,9 +235,9 @@ class TestPredictEndpoint:
         """Deve aceitar batch de instâncias."""
         payload = {
             "instances": [
-                {"fase_2023": 1.0, "iaa_2023": 5.0},
-                {"fase_2023": 2.0, "iaa_2023": 6.0},
-                {"fase_2023": 3.0, "iaa_2023": 7.0},
+                {"ian_2023": 5.0, "ida_2023": 5.0},
+                {"ian_2023": 6.0, "ida_2023": 6.0},
+                {"ian_2023": 7.0, "ida_2023": 7.0},
             ]
         }
 
@@ -262,20 +254,16 @@ class TestPredictEndpoint:
             mock_manager.version = "v1.0.0-test"
             mock_manager.threshold = 0.5
             mock_manager.expected_features = [
-                "fase_2023",
-                "iaa_2023",
+                "delta_iaa_2022_2023",
+                "delta_ian_2022_2023",
+                "delta_ieg_2022_2023",
+                "delta_ipv_2022_2023",
                 "ian_2023",
                 "ida_2023",
                 "idade_2023",
-                "ieg_2023",
-                "instituicao_2023",
                 "ipp_2023",
                 "ips_2023",
-                "ipv_2023",
-                "max_indicador",
                 "media_indicadores",
-                "min_indicador",
-                "range_indicadores",
                 "std_indicadores",
             ]
 
@@ -314,7 +302,7 @@ class TestNoSensitiveDataInLogs:
 
     def test_no_ra_in_response(self, test_client):
         """RA não deve aparecer na resposta."""
-        payload = {"instances": [{"ra": "12345", "fase_2023": 3.0, "iaa_2023": 7.0}]}
+        payload = {"instances": [{"ra": "12345", "ian_2023": 6.0, "ida_2023": 7.0}]}
 
         with patch("app.main.model_manager") as mock_manager:
             mock_manager.model = MagicMock()
@@ -322,20 +310,16 @@ class TestNoSensitiveDataInLogs:
             mock_manager.version = "v1.0.0"
             mock_manager.threshold = 0.5
             mock_manager.expected_features = [
-                "fase_2023",
-                "iaa_2023",
+                "delta_iaa_2022_2023",
+                "delta_ian_2022_2023",
+                "delta_ieg_2022_2023",
+                "delta_ipv_2022_2023",
                 "ian_2023",
                 "ida_2023",
                 "idade_2023",
-                "ieg_2023",
-                "instituicao_2023",
                 "ipp_2023",
                 "ips_2023",
-                "ipv_2023",
-                "max_indicador",
                 "media_indicadores",
-                "min_indicador",
-                "range_indicadores",
                 "std_indicadores",
             ]
 
@@ -350,7 +334,7 @@ class TestNoSensitiveDataInLogs:
     def test_no_nome_in_response(self, test_client):
         """Nome não deve aparecer na resposta."""
         payload = {
-            "instances": [{"nome": "João Silva", "fase_2023": 3.0, "iaa_2023": 7.0}]
+            "instances": [{"nome": "João Silva", "ian_2023": 6.0, "ida_2023": 7.0}]
         }
 
         with patch("app.main.model_manager") as mock_manager:
@@ -359,20 +343,16 @@ class TestNoSensitiveDataInLogs:
             mock_manager.version = "v1.0.0"
             mock_manager.threshold = 0.5
             mock_manager.expected_features = [
-                "fase_2023",
-                "iaa_2023",
+                "delta_iaa_2022_2023",
+                "delta_ian_2022_2023",
+                "delta_ieg_2022_2023",
+                "delta_ipv_2022_2023",
                 "ian_2023",
                 "ida_2023",
                 "idade_2023",
-                "ieg_2023",
-                "instituicao_2023",
                 "ipp_2023",
                 "ips_2023",
-                "ipv_2023",
-                "max_indicador",
                 "media_indicadores",
-                "min_indicador",
-                "range_indicadores",
                 "std_indicadores",
             ]
 

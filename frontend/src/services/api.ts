@@ -62,6 +62,8 @@ export const api = {
 
   // Observability
   metrics: () => request<MetricsResponse>('/metrics?format=json'),
+  metricsHistory: (limit = 60) =>
+    request<{ snapshots: { time: string; timestamp: number; latency: number; requests: number; errors: number }[] }>(`/metrics/history?limit=${limit}`),
   slo: () => request<SLOResponse>('/slo'),
 
   // Artifacts

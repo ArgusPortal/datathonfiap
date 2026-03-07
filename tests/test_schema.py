@@ -20,29 +20,29 @@ class TestStudentFeatures:
         """Todos os campos devem ser opcionais."""
         features = StudentFeatures()
 
-        assert features.iaa_2023 is None
         assert features.ian_2023 is None
+        assert features.ida_2023 is None
 
     def test_accepts_valid_values(self):
         """Deve aceitar valores válidos."""
         features = StudentFeatures(
-            iaa_2023=7.5,
             ian_2023=6.0,
-            fase_2023="3",
+            ida_2023=7.5,
+            ips_2023=5.0,
         )
 
-        assert features.iaa_2023 == 7.5
         assert features.ian_2023 == 6.0
-        assert features.fase_2023 == "3"
+        assert features.ida_2023 == 7.5
+        assert features.ips_2023 == 5.0
 
     def test_allows_extra_fields(self):
         """Deve permitir campos extras (extra='allow')."""
         features = StudentFeatures(
-            iaa_2023=7.5,
+            ian_2023=7.5,
             extra_field="value",
         )
 
-        assert features.iaa_2023 == 7.5
+        assert features.ian_2023 == 7.5
 
 
 class TestPredictRequest:

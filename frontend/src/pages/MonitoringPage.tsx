@@ -35,6 +35,8 @@ import {
 import { StatCard } from '@/components/shared/StatCard'
 import { StatusBadge, SLOIndicator } from '@/components/shared/StatusBadge'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
+import { GlossaryTip } from '@/components/shared/Glossary'
+import { ExportChartButton } from '@/components/shared/ExportChartButton'
 import { LatencyChart, MetricsTimeline } from '@/components/charts/MetricsCharts'
 import { ResponsiveBar } from '@nivo/bar'
 import { useNivoTheme } from '@/components/charts/NivoTheme'
@@ -65,7 +67,7 @@ interface MetricsSnapshot {
   errors: number
 }
 
-const MAX_BUFFER = 30
+const MAX_BUFFER = 60
 
 // ──────────────────────────────────────────────
 // Helpers
@@ -197,6 +199,7 @@ export function MonitoringPage() {
   // Metrics circular buffer (useRef to avoid re-renders on push)
   const bufferRef = useRef<MetricsSnapshot[]>([])
   const [bufferVersion, setBufferVersion] = useState(0)
+  const psiBarRef = useRef<HTMLDivElement>(null)
 
   // Previous totals for delta calculation
   const prevTotalsRef = useRef<{ requests: number; errors: number } | null>(null)
@@ -285,11 +288,34 @@ export function MonitoringPage() {
     }
   }, [])
 
-  // Auto-refresh core metrics every 10s
+  // Load historical snapshots on mount, then auto-refresh every 10s
   useEffect(() => {
-    fetchCore()
+    let cancelled = false
+    async function init() {
+      try {
+        const res = await api.metricsHistory(MAX_BUFFER)
+        if (!cancelled && res.snapshots.length > 0) {
+          bufferRef.current = res.snapshots.map(s => ({
+            time: s.time,
+            latency: s.latency,
+            requests: s.requests,
+            errors: s.errors,
+          }))
+          // Set prev totals so first fetchCore push works
+          prevTotalsRef.current = {
+            requests: 0,
+            errors: 0,
+          }
+          setBufferVersion(v => v + 1)
+        }
+      } catch {
+        // history endpoint may not be available yet
+      }
+      if (!cancelled) fetchCore()
+    }
+    init()
     const interval = setInterval(fetchCore, 10000)
-    return () => clearInterval(interval)
+    return () => { cancelled = true; clearInterval(interval) }
   }, [fetchCore])
 
   // Fetch drift/audit on tab switch
@@ -477,7 +503,7 @@ export function MonitoringPage() {
                   <CardDescription>
                     {chartData.length === 0
                       ? 'Aguardando coleta de dados...'
-                      : `${chartData.length} amostras coletadas (máx. ${MAX_BUFFER})`}
+                      : `${chartData.length} amostras (máx. ${MAX_BUFFER}) — dados desde o startup`}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -537,7 +563,7 @@ export function MonitoringPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  Service Level Objectives
+                  <GlossaryTip term="SLO">Service Level Objectives</GlossaryTip>
                   <InfoTooltip content="SLOs definem metas de qualidade: latência p95 < 300ms e taxa de erro < 1%. Violações indicam degradação do serviço." />
                 </CardTitle>
                 <CardDescription>
@@ -723,11 +749,12 @@ export function MonitoringPage() {
                   <CardHeader>
                     <CardTitle className="text-base flex items-center gap-2">
                       <BarChart3 className="h-4 w-4 text-primary" />
-                      PSI por Feature
+                      <GlossaryTip term="PSI">PSI</GlossaryTip> por Feature
                       <InfoTooltip content="Population Stability Index — mede a mudança na distribuição de cada feature entre baseline (treino) e produção. PSI > 0.25 = drift significativo." />
+                      <span className="ml-auto"><ExportChartButton chartRef={psiBarRef} filename="psi-drift" /></span>
                     </CardTitle>
                     <CardDescription>
-                      Population Stability Index — mede a mudança na distribuição de cada feature
+                      <GlossaryTip term="PSI">Population Stability Index</GlossaryTip> — mede a mudança na distribuição de cada feature
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -736,7 +763,9 @@ export function MonitoringPage() {
                     ) : (
                       <>
                         {/* Nivo Bar Chart for PSI */}
-                        <PSIDriftBar features={drift.features} />
+                        <div ref={psiBarRef}>
+                          <PSIDriftBar features={drift.features} />
+                        </div>
 
                         <Separator className="my-4" />
 

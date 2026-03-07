@@ -40,6 +40,7 @@ import api from '@/services/api'
 import type { ModelComparisonData, ArtifactMetadata, MetadataResponse, FairnessAnalysis } from '@/types'
 import { formatPercentage } from '@/lib/utils'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
+import { GlossaryTip } from '@/components/shared/Glossary'
 import { BumpRanking, type BumpSerie } from '@/components/charts/BumpRanking'
 import { ROCCurve, type ROCPoint } from '@/components/charts/ROCCurve'
 import { FeatureImportance } from '@/components/charts/FeatureImportance'
@@ -76,15 +77,79 @@ function fmtDate(raw: string | null | undefined): string {
 
 // Simple markdown → HTML converter (handles headers, bold, lists, code)
 function renderMarkdown(md: string): string {
-  return md
-    .replace(/^### (.+)$/gm, '<h3 class="text-base font-semibold mt-4 mb-2">$1</h3>')
-    .replace(/^## (.+)$/gm, '<h2 class="text-lg font-bold mt-6 mb-2">$1</h2>')
-    .replace(/^# (.+)$/gm, '<h1 class="text-xl font-bold mt-6 mb-3">$1</h1>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/`([^`]+)`/g, '<code class="bg-muted px-1 py-0.5 rounded text-xs font-mono">$1</code>')
-    .replace(/^- (.+)$/gm, '<li class="ml-4 list-disc text-sm text-muted-foreground">$1</li>')
-    .replace(/\n{2,}/g, '<br/><br/>')
-    .replace(/\n/g, '<br/>')
+  // Process code blocks first (preserve content inside)
+  let result = md.replace(
+    /```[\s\S]*?```/g,
+    (block) => {
+      const content = block.replace(/^```\w*\n?/, '').replace(/\n?```$/, '')
+      return `<pre class="bg-muted/60 rounded-lg p-4 text-xs font-mono overflow-x-auto my-3 border">${content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`
+    },
+  )
+
+  // Tables: detect markdown table blocks and convert them
+  result = result.replace(
+    /(?:^|\n)((?:\|.+\|(?:\n|$))+)/g,
+    (_match, tableBlock: string) => {
+      const rows = tableBlock.trim().split('\n').filter(Boolean)
+      if (rows.length < 2) return tableBlock
+
+      // Check if second row is separator (|---|---|)
+      const isSeparator = /^\|[\s:-]+\|/.test(rows[1])
+      const dataRows = isSeparator ? [rows[0], ...rows.slice(2)] : rows
+
+      let html = '<div class="overflow-x-auto my-4"><table class="w-full text-sm border-collapse">'
+
+      dataRows.forEach((row, idx) => {
+        const cells = row.split('|').slice(1, -1).map(c => c.trim())
+        const isHeader = idx === 0 && isSeparator
+        const tag = isHeader ? 'th' : 'td'
+        const cellClass = isHeader
+          ? 'px-3 py-2 text-left font-semibold bg-muted/50 border-b-2 border-border text-xs uppercase tracking-wider'
+          : 'px-3 py-2 border-b border-border/50'
+        html += '<tr>'
+        cells.forEach(cell => {
+          // Process inline markdown within cells
+          const processed = cell
+            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+            .replace(/`([^`]+)`/g, '<code class="bg-muted px-1 py-0.5 rounded text-xs font-mono">$1</code>')
+          html += `<${tag} class="${cellClass}">${processed}</${tag}>`
+        })
+        html += '</tr>'
+      })
+
+      html += '</table></div>'
+      return html
+    },
+  )
+
+  // Horizontal rules
+  result = result.replace(/^---+$/gm, '<hr class="my-6 border-border/60" />')
+  // Italic note at end
+  result = result.replace(/^\*([^*]+)\*$/gm, '<p class="text-xs text-muted-foreground italic mt-4">$1</p>')
+
+  // Headings (order matters: ### before ## before #)
+  result = result.replace(/^### (.+)$/gm, '<h3 class="text-base font-semibold mt-5 mb-2 flex items-center gap-2">$1</h3>')
+  result = result.replace(/^## (.+)$/gm, '<h2 class="text-lg font-bold mt-8 mb-3 pb-1 border-b border-border/40">$1</h2>')
+  result = result.replace(/^# (.+)$/gm, '<h1 class="text-xl font-bold mt-4 mb-4">$1</h1>')
+
+  // Inline formatting
+  result = result.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+  result = result.replace(/`([^`]+)`/g, '<code class="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">$1</code>')
+
+  // Numbered lists
+  result = result.replace(/^(\d+)\. (.+)$/gm, '<li class="ml-5 list-decimal text-sm text-muted-foreground mb-1">$2</li>')
+  // Bullet lists
+  result = result.replace(/^- (.+)$/gm, '<li class="ml-5 list-disc text-sm text-muted-foreground mb-1">$1</li>')
+
+  // Wrap consecutive <li> items in <ul>/<ol>
+  result = result.replace(/((?:<li class="ml-5 list-disc[^>]*>.*?<\/li>\s*)+)/g, '<ul class="my-3 space-y-0.5">$1</ul>')
+  result = result.replace(/((?:<li class="ml-5 list-decimal[^>]*>.*?<\/li>\s*)+)/g, '<ol class="my-3 space-y-0.5">$1</ol>')
+
+  // Paragraphs
+  result = result.replace(/\n{2,}/g, '</p><p class="text-sm text-muted-foreground mb-2">')
+  result = result.replace(/\n/g, '<br/>')
+
+  return result
 }
 
 // ---------------------------------------------------------------------------
@@ -346,7 +411,7 @@ export function ModelPage() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Framework</span>
-                      <span>scikit-learn {artifactMeta?.sklearn_version ?? ''}</span>
+                      <span>scikit-learn {artifactMeta?.sklearn_version ?? artifactMeta?.libs_versions?.sklearn ?? ''}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Algoritmo</span>
@@ -358,7 +423,7 @@ export function ModelPage() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Calibração</span>
-                      <span>{metadata?.calibration ?? '—'}</span>
+                      <span>{artifactMeta?.calibration ?? metadata?.calibration ?? '—'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Threshold</span>
@@ -535,7 +600,7 @@ export function ModelPage() {
                     },
                     {
                       title: 'Amostra pequena',
-                      desc: `${best?.n_samples ?? '~765'} registros total — intervalos de confiança largos`,
+                      desc: `${best?.n_samples ?? '~153'} registros de teste — intervalos de confiança largos`,
                       severity: 'medium',
                     },
                   ].map((risk) => (
@@ -593,16 +658,16 @@ export function ModelPage() {
             ) : best ? (
               <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
                 {[
-                  { label: 'Recall', value: best.recall, key: true },
-                  { label: 'Precision', value: best.precision },
+                  { label: 'Recall', value: best.recall, key: true, term: 'Recall' },
+                  { label: 'Precision', value: best.precision, term: 'Precision' },
                   { label: 'F1-Score', value: best.f1 },
-                  { label: 'F2-Score', value: best.f2 },
-                  { label: 'PR-AUC', value: best.pr_auc },
-                  { label: 'Brier Score', value: best.brier_score, lower: true },
+                  { label: 'F2-Score', value: best.f2, term: 'F2-Score' },
+                  { label: 'PR-AUC', value: best.pr_auc, term: 'PR-AUC' },
+                  { label: 'Brier Score', value: best.brier_score, lower: true, term: 'Brier Score' },
                 ].map((m) => (
-                  <Card key={m.label}>
+                  <Card key={m.label} className="card-hover">
                     <CardContent className="p-4 text-center">
-                      <p className="text-xs text-muted-foreground">{m.label}</p>
+                      <p className="text-xs text-muted-foreground">{m.term ? <GlossaryTip term={m.term}>{m.label}</GlossaryTip> : m.label}</p>
                       <p className={`text-2xl font-bold mt-1 ${m.key ? 'text-primary' : ''}`}>
                         {m.lower ? m.value.toFixed(3) : formatPercentage(m.value, 1)}
                       </p>
@@ -646,8 +711,7 @@ export function ModelPage() {
                       Custo Assimétrico
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Não identificar um aluno em risco (FN) tem custo muito maior do que um falso
-                      alerta (FP).
+                      Não identificar um aluno em risco (<GlossaryTip term="Falso Negativo (FN)">FN</GlossaryTip>) tem custo muito maior do que um <GlossaryTip term="Falso Positivo (FP)">falso alerta (FP)</GlossaryTip>.
                     </p>
                   </div>
                   <div className="p-4 rounded-lg bg-muted/50">
@@ -707,7 +771,7 @@ export function ModelPage() {
                     <InfoTooltip content="ROC = Receiver Operating Characteristic. Mostra o trade-off entre TPR (Recall) e FPR. Quanto mais próxima do canto superior-esquerdo, melhor. AUC=1.0 é perfeito, AUC=0.5 é aleatório." />
                   </CardTitle>
                   <CardDescription>
-                    PR-AUC: {formatPercentage(best.pr_auc, 1)} · Recall: {formatPercentage(best.recall, 1)} · Curva sintética baseada nas métricas
+                    PR-AUC: {formatPercentage(best.pr_auc, 1)} · Recall: {formatPercentage(best.recall, 1)} · Curva sintética estimada a partir das métricas
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -730,7 +794,6 @@ export function ModelPage() {
                       ]
                       return pts
                     })()}
-                    auc={best.pr_auc}
                   />
                 </CardContent>
               </Card>
@@ -844,7 +907,7 @@ export function ModelPage() {
                         <span className="text-xs text-muted-foreground w-6">{i + 1}</span>
                         <span className="font-mono text-sm">{feat}</span>
                         <Badge variant="secondary" className="text-[10px] ml-auto">
-                          {feat.includes('instituicao') || feat.includes('fase')
+                          {feat.includes('instituicao')
                             ? 'categorical'
                             : 'numeric'}
                         </Badge>
@@ -1050,7 +1113,7 @@ export function ModelPage() {
                 </CardTitle>
                 <CardDescription>
                   Avaliação de equidade do modelo por subgrupos demográficos.
-                  Disparidade de recall mede a diferença entre o melhor e pior
+                  Disparidade de <GlossaryTip term="Recall">recall</GlossaryTip> mede a diferença entre o melhor e pior
                   recall entre subgrupos — valores menores indicam maior equidade.
                 </CardDescription>
               </CardHeader>
@@ -1266,7 +1329,7 @@ export function ModelPage() {
                             Criado em:{' '}
                             {fmtDate(artifactMeta?.created_at ?? metadata?.created_at)}
                           </p>
-                          <p>scikit-learn: {artifactMeta?.sklearn_version ?? '—'}</p>
+                          <p>scikit-learn: {artifactMeta?.sklearn_version ?? artifactMeta?.libs_versions?.sklearn ?? '—'}</p>
                         </div>
                       </div>
                     </div>
@@ -1308,7 +1371,7 @@ export function ModelPage() {
                   Relatório do Modelo
                 </CardTitle>
                 <CardDescription>
-                  Documento gerado automaticamente a partir do artefato model_report
+                  Documento gerado automaticamente — definição do problema, resultados, comparativo e limitações
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -1316,7 +1379,7 @@ export function ModelPage() {
                   <SkeletonRows rows={12} />
                 ) : report ? (
                   <div
-                    className="prose prose-sm dark:prose-invert max-w-none text-sm leading-relaxed"
+                    className="prose prose-sm dark:prose-invert max-w-none text-sm leading-relaxed max-h-[600px] overflow-y-auto pr-2"
                     dangerouslySetInnerHTML={{ __html: renderMarkdown(report) }}
                   />
                 ) : (

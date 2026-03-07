@@ -31,7 +31,7 @@ env/
 *~
 
 # Data files (keep only artifacts and processed data)
-data/
+data/*
 !data/processed/
 !data/processed/data_card.json
 !data/processed/modeling_dataset.parquet
@@ -40,7 +40,7 @@ data/
 *.xls
 
 # Logs (seed data is included, runtime logs generated in container)
-logs/
+logs/*
 !logs/drift_events.jsonl
 !logs/audit_trail.jsonl
 !logs/metrics_state.json

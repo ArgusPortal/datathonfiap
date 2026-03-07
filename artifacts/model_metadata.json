@@ -1,48 +1,91 @@
 {
-  "model_version": "v1.0.0",
-  "created_at": "2026-01-15T16:46:49.474045",
+  "model_version": "v1.2.0",
+  "created_at": "2026-03-07T10:18:13.924622",
   "seed": 42,
-  "sklearn_version": "1.8.0",
-  "pandas_version": "2.3.3",
-  "numpy_version": "1.26.4",
-  "target_definition": "em_risco = 1 se Defasagem < 0 (aluno atrasado)",
+  "target_mode": "binary_future_t_plus_1",
+  "target_definition": "em_risco=1 se defasagem<0 em t+1 (aluno atrasado)",
   "training_periods": [
-    "2023->2024"
+    "2023->2024 (val split interno)"
   ],
+  "test_period": "2023->2024 (holdout 20%)",
   "population_filter": "all_phases",
   "expected_features": [
-    "fase_2023",
-    "iaa_2023",
+    "delta_iaa_2022_2023",
+    "delta_ian_2022_2023",
+    "delta_ieg_2022_2023",
+    "delta_ipv_2022_2023",
     "ian_2023",
     "ida_2023",
     "idade_2023",
-    "ieg_2023",
-    "instituicao_2023",
     "ipp_2023",
     "ips_2023",
-    "ipv_2023",
     "media_indicadores",
-    "min_indicador",
     "std_indicadores"
   ],
   "blocked_features": [
     "ra",
-    "em_risco",
-    "defasagem",
-    "ponto_virada",
-    "pedra",
-    "fase_ideal",
-    "destaque_*",
-    "rec_*"
+    "nome",
+    "em_risco_*",
+    "defasagem_*",
+    "ponto_virada_*",
+    "pedra_*",
+    "fase_ideal_*"
   ],
+  "removed_features_v1_2": {
+    "negative_importance": [
+      "max_indicador",
+      "ipv_2023"
+    ],
+    "noise": [
+      "delta_ida_2022_2023",
+      "delta_ips_2022_2023",
+      "ano_ingresso_2023",
+      "ieg_2023",
+      "has_prev_year_data",
+      "iaa_2023",
+      "iaa_2023_missing",
+      "ida_2023_missing",
+      "ieg_2023_missing",
+      "ips_2023_missing",
+      "ipp_2023_missing",
+      "ipv_2023_missing",
+      "min_indicador",
+      "range_indicadores"
+    ],
+    "stable_low_importance": [
+      "genero_2023",
+      "instituicao_2023",
+      "fase_2023",
+      "fase_x_media",
+      "anos_pm_2023"
+    ]
+  },
+  "feature_selection_method": "ablation_experiment_5fold_cv",
+  "preprocessing_summary": [
+    "SimpleImputer(median) para numéricos",
+    "StandardScaler para numéricos"
+  ],
+  "model_family": "rf",
+  "calibration": "sigmoid",
   "threshold_policy": {
-    "objective": "max_recall",
-    "min_precision": null,
-    "threshold_value": 0.0011859301774256575
+    "objective": "max_f2",
+    "min_recall": 0.75,
+    "min_precision": 0.5,
+    "threshold_value": 0.2813911691047482
+  },
+  "libs_versions": {
+    "sklearn": "1.8.0",
+    "pandas": "2.3.3",
+    "numpy": "2.4.2",
+    "joblib": "1.5.3"
   },
   "assumptions": [
-    "Features de 2023 + deltas 2022→2023 predizem risco em 2024",
-    "Dados de 2022 usados para cálculo de deltas inter-anuais",
-    "Split train/test por holdout simples (20%)"
-  ]
+    "11 features selecionadas via ablation experiment (VOLATILE_ONLY)",
+    "Features de 2023 + deltas 2022->2023 predizem risco em 2024",
+    "Sem backtest multi-ano (apenas 2023->2024)",
+    "Split holdout simples com min_precision=0.50",
+    "Calibração sigmoid aplicada",
+    "Seleção de threshold via max F2 com constraints"
+  ],
+  "sklearn_version": "1.8.0"
 }

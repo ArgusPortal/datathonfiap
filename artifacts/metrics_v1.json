@@ -1,61 +1,61 @@
 {
-  "created_at": "2026-02-07T18:56:04.016327",
-  "best_model": "hist_gb",
-  "threshold": 0.34989875458273784,
+  "created_at": "2026-03-07T10:18:13.923754",
+  "best_model": "rf",
+  "threshold": 0.2813911691047482,
   "validation_metrics": {
     "recall": 0.9591836734693877,
-    "precision": 0.6911764705882353,
-    "f1": 0.8034188034188035,
-    "f2": 0.8901515151515151,
+    "precision": 0.734375,
+    "f1": 0.831858407079646,
+    "f2": 0.9038461538461539,
     "confusion_matrix": [
       [
-        53,
-        21
+        57,
+        17
       ],
       [
         2,
         47
       ]
     ],
-    "true_negatives": 53,
-    "false_positives": 21,
+    "true_negatives": 57,
+    "false_positives": 17,
     "false_negatives": 2,
     "true_positives": 47,
-    "pr_auc": 0.8073765252584636,
-    "threshold": 0.34989875458273784,
-    "fpr": 0.28378378378378377,
-    "brier_score": 0.13392545835456168,
-    "calibration_error": 0.10164410256498968,
-    "model_name": "hist_gb"
+    "pr_auc": 0.8444816645387625,
+    "threshold": 0.2813911691047482,
+    "fpr": 0.22972972972972974,
+    "brier_score": 0.11528943313123492,
+    "calibration_error": 0.11516989340637092,
+    "model_name": "rf"
   },
   "test_metrics": {
-    "recall": 0.9354838709677419,
-    "precision": 0.6987951807228916,
-    "f1": 0.8,
-    "f2": 0.8761329305135952,
+    "recall": 0.9193548387096774,
+    "precision": 0.6951219512195121,
+    "f1": 0.7916666666666666,
+    "f2": 0.8636363636363636,
     "confusion_matrix": [
       [
         66,
         25
       ],
       [
-        4,
-        58
+        5,
+        57
       ]
     ],
     "true_negatives": 66,
     "false_positives": 25,
-    "false_negatives": 4,
-    "true_positives": 58,
-    "pr_auc": 0.8302558893817735,
+    "false_negatives": 5,
+    "true_positives": 57,
+    "pr_auc": 0.8352202382983418,
     "n_samples": 153,
     "n_positive": 62,
     "n_negative": 91,
     "baseline_rate": 0.40522875816993464,
-    "model_name": "hist_gb",
-    "brier_score": 0.13162929645602361,
-    "calibration_error": 0.10627705936738308,
-    "threshold": 0.34989875458273784
+    "model_name": "rf",
+    "brier_score": 0.12805315399843317,
+    "calibration_error": 0.07488035969501586,
+    "threshold": 0.2813911691047482
   },
   "calibration": "sigmoid"
 }

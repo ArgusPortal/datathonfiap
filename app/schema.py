@@ -11,34 +11,30 @@ from app.config import EXTRA_FEATURE_POLICY
 
 class StudentFeatures(BaseModel):
     """
-    Features de entrada para um estudante.
+    Features de entrada para um estudante (v1.2.0 — 11 features VOLATILE_ONLY).
     Todos os campos são opcionais para permitir flexibilidade.
     """
 
     model_config = ConfigDict(extra="allow")
 
-    # Indicadores de desempenho
-    iaa_2023: Optional[float] = None  # Autoavaliação
+    # Indicadores de desempenho (4 dos 7 PEDE — selecionados por ablation)
     ian_2023: Optional[float] = None  # Aprendizagem
     ida_2023: Optional[float] = None  # Desenvolvimento Acadêmico
-    ieg_2023: Optional[float] = None  # Engajamento
     ipp_2023: Optional[float] = None  # Psicopedagógico
     ips_2023: Optional[float] = None  # Psicossocial
-    ipv_2023: Optional[float] = None  # Ponto de Virada
 
-    # Fase e idade
-    fase_2023: Optional[str] = None  # Fase é categórica (ex: "4", "7")
+    # Demográfico
     idade_2023: Optional[float] = None
 
-    # Instituição
-    instituicao_2023: Optional[str] = None
+    # Deltas temporais 2022→2023
+    delta_iaa_2022_2023: Optional[float] = None
+    delta_ian_2022_2023: Optional[float] = None
+    delta_ieg_2022_2023: Optional[float] = None
+    delta_ipv_2022_2023: Optional[float] = None
 
     # Features derivadas
     media_indicadores: Optional[float] = None
     std_indicadores: Optional[float] = None
-    max_indicador: Optional[float] = None
-    min_indicador: Optional[float] = None
-    range_indicadores: Optional[float] = None
 
 
 class PredictRequest(BaseModel):

@@ -209,8 +209,8 @@ export function GlossaryButton() {
         Glossário
       </Button>
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setOpen(false)}>
-          <div className="w-full max-w-xl mx-4" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-fade-in" onClick={() => setOpen(false)}>
+          <div className="w-full max-w-xl mx-4 animate-scale-in" onClick={(e) => e.stopPropagation()}>
             <GlossaryPanel onClose={() => setOpen(false)} />
           </div>
         </div>

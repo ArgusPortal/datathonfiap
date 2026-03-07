@@ -78,7 +78,7 @@ export function ImpactCard({
   return (
     <div
       className={cn(
-        'relative rounded-xl border p-5 transition-all duration-300 hover:shadow-lg hover:-translate-y-1',
+        'relative rounded-xl border p-5 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 card-shine',
         styles.bg,
         styles.border,
         className,

@@ -122,7 +122,7 @@ export interface FeatureMetadata {
   max?: number
   step?: number
   options?: { value: string; label: string }[]
-  group: 'performance' | 'demographic' | 'derived'
+  group: 'performance' | 'demographic' | 'derived' | 'temporal'
 }
 
 // --- Artifact types ---
@@ -192,16 +192,34 @@ export interface ArtifactMetadata {
   model_version: string
   created_at: string
   seed: number
-  sklearn_version: string
+  sklearn_version?: string
   target_definition: string
+  target_mode?: string
   training_periods: string[]
+  test_period?: string
   population_filter: string
   expected_features: string[]
   blocked_features: string[]
+  removed_features_v1_2?: {
+    negative_importance: string[]
+    noise: string[]
+    stable_low_importance: string[]
+  }
+  feature_selection_method?: string
+  preprocessing_summary?: string[]
+  model_family?: string
+  calibration?: string
   threshold_policy: {
     objective: string
+    min_recall?: number
     min_precision: number | null
     threshold_value: number
+  }
+  libs_versions?: {
+    sklearn: string
+    pandas: string
+    numpy: string
+    joblib: string
   }
   assumptions: string[]
 }

@@ -192,8 +192,8 @@ export function Layout() {
 
       {/* Keyboard shortcuts modal */}
       {showShortcuts && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowShortcuts(false)}>
-          <div className="w-full max-w-sm mx-4 rounded-lg border bg-card p-6 shadow-lg" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-fade-in" onClick={() => setShowShortcuts(false)}>
+          <div className="w-full max-w-sm mx-4 rounded-lg border bg-card p-6 shadow-lg animate-scale-in" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-sm flex items-center gap-2">
                 <Keyboard className="h-4 w-4 text-primary" />

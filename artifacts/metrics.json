@@ -1,93 +1,61 @@
 {
-  "created_at": "2026-01-15T16:46:49.473441",
-  "best_model": "baseline1_logistic",
-  "threshold": 0.0011859301774256575,
-  "baselines": {
-    "baseline0_naive": {
-      "recall": 0.0,
-      "precision": 0.0,
-      "f1": 0.0,
-      "f2": 0.0,
-      "confusion_matrix": [
-        [
-          91,
-          0
-        ],
-        [
-          62,
-          0
-        ]
+  "created_at": "2026-03-07T10:18:13.923754",
+  "best_model": "rf",
+  "threshold": 0.2813911691047482,
+  "validation_metrics": {
+    "recall": 0.9591836734693877,
+    "precision": 0.734375,
+    "f1": 0.831858407079646,
+    "f2": 0.9038461538461539,
+    "confusion_matrix": [
+      [
+        57,
+        17
       ],
-      "true_negatives": 91,
-      "false_positives": 0,
-      "false_negatives": 62,
-      "true_positives": 0,
-      "pr_auc": 0.40522875816993464,
-      "n_samples": 153,
-      "n_positive": 62,
-      "n_negative": 91,
-      "baseline_rate": 0.40522875816993464,
-      "model_name": "baseline0_naive",
-      "threshold": 0.5
-    },
-    "baseline1_logistic": {
-      "recall": 1.0,
-      "precision": 0.40522875816993464,
-      "f1": 0.5767441860465117,
-      "f2": 0.773067331670823,
-      "confusion_matrix": [
-        [
-          0,
-          91
-        ],
-        [
-          0,
-          62
-        ]
-      ],
-      "true_negatives": 0,
-      "false_positives": 91,
-      "false_negatives": 0,
-      "true_positives": 62,
-      "pr_auc": 0.8916346634952326,
-      "n_samples": 153,
-      "n_positive": 62,
-      "n_negative": 91,
-      "baseline_rate": 0.40522875816993464,
-      "model_name": "baseline1_logistic",
-      "threshold": 0.0011859301774256575
-    },
-    "baseline2_rf": {
-      "recall": 1.0,
-      "precision": 0.40522875816993464,
-      "f1": 0.5767441860465117,
-      "f2": 0.773067331670823,
-      "confusion_matrix": [
-        [
-          0,
-          91
-        ],
-        [
-          0,
-          62
-        ]
-      ],
-      "true_negatives": 0,
-      "false_positives": 91,
-      "false_negatives": 0,
-      "true_positives": 62,
-      "pr_auc": 0.8472889568689425,
-      "n_samples": 153,
-      "n_positive": 62,
-      "n_negative": 91,
-      "baseline_rate": 0.40522875816993464,
-      "model_name": "baseline2_rf",
-      "threshold": 0.00019268396479022113
-    }
+      [
+        2,
+        47
+      ]
+    ],
+    "true_negatives": 57,
+    "false_positives": 17,
+    "false_negatives": 2,
+    "true_positives": 47,
+    "pr_auc": 0.8444816645387625,
+    "threshold": 0.2813911691047482,
+    "fpr": 0.22972972972972974,
+    "brier_score": 0.11528943313123492,
+    "calibration_error": 0.11516989340637092,
+    "model_name": "rf"
   },
-  "notes": [
-    "Recall otimizado como métrica principal",
-    "Threshold selecionado em dados de treino",
-    "Dataset limitado a 2023→2024 (sem backtest multi-ano)"
-  ]
+  "test_metrics": {
+    "recall": 0.9193548387096774,
+    "precision": 0.6951219512195121,
+    "f1": 0.7916666666666666,
+    "f2": 0.8636363636363636,
+    "confusion_matrix": [
+      [
+        66,
+        25
+      ],
+      [
+        5,
+        57
+      ]
+    ],
+    "true_negatives": 66,
+    "false_positives": 25,
+    "false_negatives": 5,
+    "true_positives": 57,
+    "pr_auc": 0.8352202382983418,
+    "n_samples": 153,
+    "n_positive": 62,
+    "n_negative": 91,
+    "baseline_rate": 0.40522875816993464,
+    "model_name": "rf",
+    "brier_score": 0.12805315399843317,
+    "calibration_error": 0.07488035969501586,
+    "threshold": 0.2813911691047482
+  },
+  "calibration": "sigmoid"
 }

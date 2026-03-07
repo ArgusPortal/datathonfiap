@@ -31,12 +31,12 @@ datathonfiap/
 
 ## Modelo de ML
 
-- **Algoritmo**: HistGradientBoostingClassifier + CalibratedClassifierCV
-- **Versão**: v1.1.0 (34 features, threshold 0.350)
+- **Algoritmo**: RandomForestClassifier + CalibratedClassifierCV
+- **Versão**: v1.2.0 (11 features, threshold 0.2814)
 - **Target**: `em_risco_2024` (binário)
 - **Métrica primária**: F2-score (prioriza recall sobre precision)
 - **Constraints**: recall ≥ 75%, precision ≥ 50%
-- **Features**: indicadores PEDE (iaa, ian, ida, ieg, ipp, ips, ipv) + fase + idade + instituição + features derivadas (deltas, médias, std, range)
+- **Features**: 4 indicadores PEDE (ian, ida, ipp, ips) + idade + 4 deltas temporais (iaa, ian, ieg, ipv) + 2 derivadas (media, std)
 
 ### Pipeline de treinamento (`src/train.py`)
 

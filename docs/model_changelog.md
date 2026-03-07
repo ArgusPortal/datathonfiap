@@ -2,45 +2,44 @@
 
 ## Histórico de Versões
 
-### v1.2.0 (2026-02-07) - Current Champion
+### v1.2.0 (2026-03-07) - Current Champion
 
 **Status:** ✅ Production
 
 **Changes:**
-- **Novo modelo HistGradientBoosting** com calibração sigmoid
-- **Feature engineering expandido:**
-  - 34 features após engenharia (+10 vs v1.1)
-  - 6 delta features temporais (variação 2022→2023 para IAN, IDA, IEG, IAA, IPS, IPV)
-  - 6 missing indicator flags
-  - Features de agregação: media, min, max, std, range, fase×media
-  - Features demográficas: genero, ano_ingresso, anos_pm
-- **Threshold otimizado:** 0.350 (via max F2 com min_recall≥0.75, min_precision≥0.50)
-- **Novo módulo de regras de negócio** (`src/business_rules.py`):
-  - Validação de indicadores INDE/PEDE
-  - Cálculo de IAN, IDA, INDE conforme regras oficiais
-  - Classificação por faixas de Pedra (Quartzo/Ágata/Ametista/Topázio)
-- **End-to-end analysis notebook** com comparação de 11 modelos
-  - CatBoost: melhor ROC-AUC (0.928) e PR-AUC (0.895)
-  - HistGradientBoosting: melhor equilíbrio recall/precision em produção
-- **382 testes unitários** (100% passing)
-- **Novos artefatos visuais:** SHAP analysis, calibration curves, confusion matrices, learning curves
+- **Feature selection via ablation experiment** (5-fold CV):
+  - Testados 5 subconjuntos de features: BASELINE (32), STABLE_ONLY (21), VOLATILE_ONLY (11), NO_BINARY (26), TOP_15 (15)
+  - **VOLATILE_ONLY (11 features) venceu**: F2=0.8688±0.008 vs Baseline F2=0.8588±0.008
+  - Removidas 21 features de ruído, importância negativa e baixa estabilidade
+- **Modelo RandomForest** com calibração sigmoid (venceu hist_gb na validação com feature set reduzido)
+- **11 features selecionadas:**
+  - Indicadores PEDE: `ian_2023`, `ida_2023`, `ipp_2023`, `ips_2023`
+  - Deltas temporais: `delta_iaa_2022_2023`, `delta_ian_2022_2023`, `delta_ieg_2022_2023`, `delta_ipv_2022_2023`
+  - Demográfico: `idade_2023`
+  - Derivadas: `media_indicadores`, `std_indicadores`
+- **Features removidas (21):**
+  - Importância negativa: `max_indicador`, `ipv_2023`
+  - Ruído/redundância: `delta_ida_2022_2023`, `delta_ips_2022_2023`, `iaa_2023`, `ieg_2023`, missing flags, `min_indicador`, `range_indicadores`, `ano_ingresso_2023`, `has_prev_year_data`
+  - Estáveis/baixa importância: `genero_2023`, `instituicao_2023`, `fase_2023`, `fase_x_media`, `anos_pm_2023`
+- **Threshold otimizado:** 0.2814 (via max F2 com min_recall≥0.75, min_precision≥0.50)
+- **510 testes unitários** (100% passing, 84% coverage)
 
 **Metrics:**
-| Metric | v1.1.0 | v1.2.0 (val) | v1.2.0 (test) | Delta |
-|--------|--------|-------------|--------------|-------|
-| Recall | 100% | 95.9% | 93.5% | -6.5% |
-| Precision | 40.8% | 69.1% | 69.9% | +29.1% |
-| PR-AUC | 0.86 | 0.807 | 0.830 | -0.03 |
-| F1 | 0.579 | 0.803 | 0.800 | +0.22 |
-| F2 | - | 0.890 | 0.876 | new |
-| Brier | - | 0.134 | 0.132 | new |
-| Features | 24 | 34 | 34 | +10 |
+| Metric | v1.1.0 (32 feat) | v1.2.0 (11 feat) | Delta |
+|--------|-----------------|------------------|-------|
+| Recall | 93.5% | 91.9% | -1.6% |
+| Precision | 69.9% | 69.5% | -0.4% |
+| F1 | 0.800 | 0.792 | -0.008 |
+| F2 | 0.876 | 0.864 | -0.012 |
+| PR-AUC | 0.830 | 0.835 | +0.005 |
+| Brier | 0.132 | 0.128 | -0.004 |
+| Features | 32 | 11 | -21 |
 
 **Training Data:**
 - Dataset: data/processed/modeling_dataset.parquet
 - Samples: 765 (train 612, test 153)
 - Positive rate: 40.5%
-- Features base: 19 → Features engenharia: 34
+- Features: 11 (selecionadas de 32 via ablation experiment)
 
 **Artifacts (Development):**
 - Model: `artifacts/model_v1.joblib`
@@ -60,7 +59,7 @@
 **Nota:** Registry normaliza nomes removendo sufixo `_v1` para padronização
 
 **Approved by:** ML Team Lead
-**Deploy date:** 2026-02-07
+**Deploy date:** 2026-03-07
 
 ---
 
