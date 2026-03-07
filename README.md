@@ -42,6 +42,7 @@
 - [Qualidade](#-qualidade)
 - [Governança](#-governança)
 - [Documentação](#-documentação)
+- [Frontend](#%EF%B8%8F-frontend)
 - [Autor](#-autor)
 
 ---
@@ -538,14 +539,14 @@ pip-audit -r requirements.txt
 bandit -r app/ src/
 
 # Scan de container
-docker run --rm aquasec/trivy image datathon-api:v1
+docker run --rm aquasec/trivy image passos-magicos-fullstack
 ```
 
 </details>
 
 ---
 
-## �️ Frontend
+## 🖥️ Frontend
 
 Interface web completa com **7 páginas** para visualização, predição e monitoramento:
 
@@ -568,7 +569,7 @@ cd frontend && npm install && npm run dev
 
 ---
 
-## �📜 Licença
+## 📜 Licença
 
 Este projeto foi desenvolvido exclusivamente para fins acadêmicos como parte da **Especialização em Machine Learning Engineering da FIAP**.
 
