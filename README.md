@@ -149,6 +149,18 @@ curl http://localhost:8080/api/health
 
 </div>
 
+### ☁️ Produção (Azure Container Instances)
+
+<div align="center">
+
+| | Link |
+|:---|:---|
+| **🌐 Aplicação** | http://datathonfiap-passosmagicos.cqb0bcfzdwcng0e2.brazilsouth.azurecontainer.io |
+| **📡 API** | http://datathonfiap-passosmagicos.cqb0bcfzdwcng0e2.brazilsouth.azurecontainer.io/api/docs |
+| **❤️ Health** | http://datathonfiap-passosmagicos.cqb0bcfzdwcng0e2.brazilsouth.azurecontainer.io/api/health |
+
+</div>
+
 ---
 
 ## 🏛️ Arquitetura

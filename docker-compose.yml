@@ -44,6 +44,7 @@ services:
 
   # ---- Full-stack (1 container: nginx + uvicorn) ----
   fullstack:
+    image: argussportal/passos-magicos-fullstack:latest
     build:
       context: .
       dockerfile: Dockerfile.fullstack
