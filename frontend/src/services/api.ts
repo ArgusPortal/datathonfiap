@@ -14,6 +14,7 @@ import type {
 } from '@/types'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
+const API_KEY = import.meta.env.VITE_API_KEY || 'passos-magicos-2026-fiap'
 
 class ApiError extends Error {
   constructor(
@@ -32,6 +33,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(url, {
     headers: {
       'Content-Type': 'application/json',
+      'X-API-Key': API_KEY,
       ...options?.headers,
     },
     ...options,

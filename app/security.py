@@ -31,6 +31,11 @@ PUBLIC_ENDPOINTS: Set[str] = {
     "/docs",
     "/openapi.json",
     "/redoc",
+    "/artifacts/metrics",
+    "/artifacts/metadata",
+    "/artifacts/fairness",
+    "/artifacts/report",
+    "/analysis/eda",
 }
 
 
@@ -131,7 +136,10 @@ class SecurityMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next: Callable):
         request_id = getattr(request.state, "request_id", None)
-        path = request.url.path
+        # Strip root_path prefix (set by uvicorn --root-path) to match PUBLIC_ENDPOINTS
+        root_path = request.scope.get("root_path", "")
+        raw_path = request.scope.get("path", request.url.path)
+        path = raw_path[len(root_path):] if root_path and raw_path.startswith(root_path) else raw_path
 
         # Skip auth for public endpoints
         if path in PUBLIC_ENDPOINTS:

@@ -38,7 +38,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/app \
     PORT=8000 \
     LOG_LEVEL=INFO \
-    API_KEYS="" \
+    API_KEYS="passos-magicos-2026-fiap" \
     RATE_LIMIT_RPM=60 \
     MAX_BODY_BYTES=262144 \
     REQUEST_TIMEOUT_MS=3000 \
@@ -82,9 +82,11 @@ COPY logs/metrics_state.json ./logs/metrics_state.json
 RUN chown appuser:appgroup /app/logs/*.jsonl /app/logs/*.json
 
 # ---- Nginx config ----
-RUN cat > /etc/nginx/sites-available/default << 'NGINX_CONF'
+# Remove default site to avoid conflicts; write to conf.d/ which is always included
+RUN rm -f /etc/nginx/sites-enabled/default /etc/nginx/sites-available/default && \
+    cat > /etc/nginx/conf.d/app.conf << 'NGINX_CONF'
 server {
-    listen 80;
+    listen 80 default_server;
     server_name _;
 
     # Serve frontend SPA
@@ -144,7 +146,7 @@ stderr_logfile=/dev/stderr
 stderr_logfile_maxbytes=0
 
 [program:uvicorn]
-command=uvicorn app.main:app --host 0.0.0.0 --port %(ENV_PORT)s --workers 1
+command=uvicorn app.main:app --host 0.0.0.0 --port %(ENV_PORT)s --workers 1 --root-path /api
 directory=/app
 user=appuser
 autostart=true
