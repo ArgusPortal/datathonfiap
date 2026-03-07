@@ -92,7 +92,7 @@ class RateLimiter:
         self._refill(bucket)
         return int(bucket["tokens"])
 
-    def reset(self, key: str = None) -> None:
+    def reset(self, key: Optional[str] = None) -> None:
         """Reset bucket(s) - useful for testing."""
         if key:
             if key in self._buckets:
@@ -129,7 +129,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
     - Request size limiting
     """
 
-    def __init__(self, app, api_keys: Set[str] = None):
+    def __init__(self, app, api_keys: Optional[Set[str]] = None):
         super().__init__(app)
         self.api_keys = api_keys if api_keys is not None else _parse_api_keys()
         self.auth_enabled = len(self.api_keys) > 0
@@ -139,7 +139,11 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         # Strip root_path prefix (set by uvicorn --root-path) to match PUBLIC_ENDPOINTS
         root_path = request.scope.get("root_path", "")
         raw_path = request.scope.get("path", request.url.path)
-        path = raw_path[len(root_path):] if root_path and raw_path.startswith(root_path) else raw_path
+        path = (
+            raw_path[len(root_path) :]
+            if root_path and raw_path.startswith(root_path)
+            else raw_path
+        )
 
         # Skip auth for public endpoints
         if path in PUBLIC_ENDPOINTS:
