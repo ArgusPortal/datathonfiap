@@ -9,7 +9,8 @@
 [![scikit-learn](https://img.shields.io/badge/scikit--learn-F7931E?style=for-the-badge&logo=scikit-learn&logoColor=white)](https://scikit-learn.org)
 [![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://docker.com)
 
-[![Tests](https://img.shields.io/badge/Tests-382%20passed-success?style=flat-square)](tests/)
+[![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=white)](https://react.dev)
+[![Tests](https://img.shields.io/badge/Tests-510%20passed-success?style=flat-square)](tests/)
 [![Coverage](https://img.shields.io/badge/Coverage-81%25-brightgreen?style=flat-square)](htmlcov/)
 [![License](https://img.shields.io/badge/License-Academic-blue?style=flat-square)](#-licença)
 
@@ -68,24 +69,25 @@ Um sistema completo de **Machine Learning** que:
 </td>
 <td width="40%">
 
-### 📈 Métricas do Modelo (test)
+### 📈 Métricas do Modelo v1.2.0
 
 | Métrica | Valor |
 |:--------|:-----:|
-| **Recall** | 93.5% |
-| **F2-Score** | 0.876 |
-| **Precision** | 69.9% |
+| **Recall** | 91.9% |
+| **F2-Score** | 0.864 |
+| **Precision** | 69.5% |
 | **PR-AUC** | 0.830 |
 | **Brier** | 0.132 |
-| **Threshold** | 0.350 |
+| **Threshold** | 0.281 |
 
 ### 🏗️ Stack
 
 | Camada | Tecnologia |
 |:-------|:-----------|
-| ML | scikit-learn, HistGB |
+| ML | scikit-learn, RandomForest |
 | API | FastAPI |
-| Deploy | Docker |
+| Frontend | React 18 + Tailwind + Nivo |
+| Deploy | Docker (fullstack) |
 | CI/CD | GitHub Actions |
 
 </td>
@@ -123,22 +125,26 @@ pip install -r requirements.txt
 uvicorn app.main:app --port 8000
 ```
 
-### 🐳 Com Docker
+### 🐳 Com Docker (Fullstack — Frontend + API)
 
 ```bash
-# Build da imagem
-docker build -t datathon-api:v1 .
+# Build da imagem fullstack (React + FastAPI + Nginx)
+docker build -f Dockerfile.fullstack \
+  --build-arg GIT_SHA=$(git rev-parse --short HEAD) \
+  -t passos-magicos-fullstack .
 
 # Execute o container
-docker run -d -p 8000:8000 --name datathon-api datathon-api:v1
+docker run -d -p 8080:80 --name passos-magicos passos-magicos-fullstack
 
 # Verifique
-curl http://localhost:8000/health
+curl http://localhost:8080/api/health
 ```
 
 <div align="center">
 
-**🌐 Acesse a documentação interativa:** http://localhost:8000/docs
+**🌐 Acesse a aplicação:** http://localhost:8080
+
+**📡 API docs:** http://localhost:8080/api/docs
 
 </div>
 
@@ -153,7 +159,7 @@ curl http://localhost:8000/health
 │                                                                              │
 │   ┌──────────┐     ┌──────────┐     ┌──────────┐     ┌──────────┐          │
 │   │  Dados   │────▶│ Pipeline │────▶│  Modelo  │────▶│   API    │          │
-│   │  PEDE    │     │    ML    │     │  v1.1.0  │     │ FastAPI  │          │
+│   │  PEDE    │     │    ML    │     │  v1.2.0  │     │ FastAPI  │          │
 │   └──────────┘     └──────────┘     └──────────┘     └────┬─────┘          │
 │                                                           │                 │
 │                    ┌──────────────────────────────────────┼────────────┐   │
@@ -181,37 +187,34 @@ curl http://localhost:8000/health
 datathonfiap/
 ├── 📁 app/                    # API FastAPI
 │   ├── main.py               # Endpoints principais
+│   ├── schema.py             # Pydantic models
 │   ├── security.py           # Auth & Rate Limiting
 │   ├── privacy.py            # PII handling
-│   └── metrics.py            # Observability
+│   ├── metrics.py            # Observability & SLOs
+│   ├── audit.py              # Audit trail (JSONL persistido)
+│   ├── drift_store.py        # PSI drift detection
+│   └── observability.py      # Structured logging
+├── 📁 frontend/               # React 18 + TypeScript + Vite
+│   └── src/
+│       ├── pages/            # 7 páginas (Dashboard, Model, Monitoring, etc.)
+│       ├── components/       # Charts (Nivo, Recharts), shared, layout, ui
+│       ├── services/api.ts   # Cliente HTTP tipado
+│       └── types/index.ts    # Interfaces TS
 ├── 📁 src/                    # Pipeline ML
 │   ├── make_dataset.py       # Ingestão de dados
-│   ├── train.py              # Treinamento
-│   ├── evaluate.py           # Avaliação
-│   ├── business_rules.py     # Validação regras INDE/PEDE
-│   ├── feature_engineering.py# Feature engineering
-│   ├── registry.py           # Model Registry
+│   ├── feature_engineering.py# Feature engineering (11 features)
+│   ├── train.py              # Treinamento (RF + Calibração)
+│   ├── evaluate.py           # Avaliação (F2, recall, calibração)
+│   ├── registry.py           # Model Registry versionado
 │   └── retrain.py            # Retraining pipeline
-├── 📁 monitoring/             # Monitoramento
-│   ├── drift_report.py       # Relatório de drift
-│   ├── inference_store.py    # Armazenamento
-│   └── retention.py          # Política de retenção
-├── 📁 tests/                  # 382 testes automatizados
-├── 📁 docs/                   # Documentação completa
-├── 📁 artifacts/              # Modelo serializado (dev)
-│   ├── model_v1.joblib
-│   ├── model_metadata_v1.json
-│   ├── model_signature_v1.json
-│   └── metrics_v1.json
+├── 📁 tests/                  # 510 testes automatizados
+├── 📁 docs/                   # 30+ documentos
+├── 📁 artifacts/              # Modelo serializado
 ├── 📁 models/registry/        # Versões registradas
-│   ├── champion.json
-│   └── v1.2.0/
-│       ├── model.joblib       # Normalizado (sem _v1)
-│       ├── model_metadata.json
-│       ├── model_signature.json
-│       └── metrics.json
-├── 🐳 Dockerfile              # Container hardened
-└── 📄 requirements.txt        # Dependências
+├── 📁 logs/                   # drift_events.jsonl, audit, metrics
+├── 🐳 Dockerfile.fullstack    # Multi-stage (Node + Python + Nginx)
+├── 🐳 Dockerfile              # API-only container
+└── 📄 requirements.txt        # Dependências Python
 ```
 
 ---
@@ -225,44 +228,34 @@ datathonfiap/
 | `GET` | `/health` | Health check | ❌ |
 | `GET` | `/ready` | Readiness probe | ❌ |
 | `GET` | `/metadata` | Info do modelo | ❌ |
-| `POST` | `/predict` | Predição | ✅ |
-| `GET` | `/metrics` | Métricas | ✅ |
+| `POST` | `/predict` | Predição (single ou batch) | ✅ |
+| `GET` | `/metrics` | Métricas Prometheus/JSON | ✅ |
+| `GET` | `/metrics/history` | Histórico de snapshots | ✅ |
 | `GET` | `/slo` | Status SLOs | ✅ |
+| `GET` | `/drift/status` | PSI drift por feature | ✅ |
+| `GET` | `/audit/recent` | Audit trail | ✅ |
+| `GET` | `/inference/history` | Histórico de inferências | ✅ |
+| `GET` | `/artifacts/metrics` | Comparação de modelos | ❌ |
+| `GET` | `/artifacts/fairness` | Análise de fairness | ❌ |
 
 ### 🔮 Exemplo de Predição
 
 ```bash
-curl -X POST http://localhost:8000/predict \
+curl -X POST http://localhost:8080/api/predict \
   -H "Content-Type: application/json" \
-  -H "X-API-Key: sua-chave" \
   -d '{
     "instances": [{
-      "fase_2023": 3,
-      "iaa_2023": 6.5,
       "ian_2023": 7.2,
       "ida_2023": 5.8,
-      "idade_2023": 14,
-      "ieg_2023": 6,
-      "instituicao_2023": 1,
       "ipp_2023": 7.5,
-      "ips_2023": 8,
-      "ipv_2023": 6.2,
-      "genero_2023": 1,
-      "ano_ingresso_2023": 2020,
-      "anos_pm_2023": 3,
-      "delta_ian_2022_2023": 0.5,
-      "delta_ida_2022_2023": 0.3,
-      "delta_ieg_2022_2023": -0.2,
+      "ips_2023": 8.0,
+      "idade_2023": 14,
       "delta_iaa_2022_2023": 0.1,
-      "delta_ips_2022_2023": 0.4,
+      "delta_ian_2022_2023": 0.5,
+      "delta_ieg_2022_2023": -0.2,
       "delta_ipv_2022_2023": 0.0,
-      "has_prev_year_data": 1,
       "media_indicadores": 6.8,
-      "min_indicador": 5,
-      "max_indicador": 8,
-      "std_indicadores": 0.9,
-      "range_indicadores": 3,
-      "fase_x_media": 20.4
+      "std_indicadores": 0.9
     }]
   }'
 ```
@@ -289,7 +282,7 @@ curl -X POST http://localhost:8000/predict \
 ```
 ┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐
 │ INGEST  │───▶│ TARGET  │───▶│FEATURES │───▶│  TRAIN  │───▶│ DEPLOY  │
-│  PEDE   │    │ t + 1   │    │  34 feat │    │ HistGB  │    │  API    │
+│  PEDE   │    │ t + 1   │    │ 11 feat │    │   RF    │    │  API    │
 └─────────┘    └─────────┘    └─────────┘    └─────────┘    └─────────┘
 ```
 
@@ -301,43 +294,29 @@ curl -X POST http://localhost:8000/predict \
 |:------|:----------|
 | **1. Ingest** | Leitura do dataset PEDE + normalização |
 | **2. Target** | Construção do target binário (defasagem t+1) |
-| **3. Features** | 34 features: indicadores educacionais + deltas temporais + flags de missing + agregações |
+| **3. Features** | 11 features selecionadas por ablation: 4 PEDE + idade + 4 deltas + 2 derivadas |
 | **4. Split** | Validação temporal (treino 2023 → validação 2024) |
-| **5. Train** | HistGradientBoosting + calibração sigmoid |
-| **6. Threshold** | Otimizado para max F2 com recall ≥ 0.75 (threshold=0.35) |
-| **7. Deploy** | Serialização joblib + API FastAPI |
+| **5. Train** | RandomForestClassifier + CalibratedClassifierCV (isotonic) |
+| **6. Threshold** | Otimizado para max F2 com recall ≥ 0.75 (threshold=0.2814) |
+| **7. Deploy** | Serialização joblib + API FastAPI + Frontend React |
 
-### 📊 Features do Modelo
+### 📊 Features do Modelo (v1.2.0 — 11 features)
 
-| Feature | Descrição |
-|:--------|:----------|
-| `fase_2023` | Fase escolar (1-9) |
-| `iaa_2023` | Índice de Autoavaliação |
-| `ian_2023` | Índice de Adequação ao Nível |
-| `ida_2023` | Índice de Desenvolvimento Acadêmico |
-| `idade_2023` | Idade do aluno |
-| `ieg_2023` | Índice de Engajamento |
-| `ipp_2023` | Índice de Performance Pedagógica |
-| `ips_2023` | Índice de Performance Social |
-| `ipv_2023` | Índice de Ponto de Virada |
-| `instituicao_2023` | Instituição de ensino (código) |
-| `genero_2023` | Gênero do aluno |
-| `ano_ingresso_2023` | Ano de ingresso no programa |
-| `anos_pm_2023` | Tempo no programa Passos Mágicos |
-| `delta_ian_2022_2023` | Variação IAN entre 2022→2023 |
-| `delta_ida_2022_2023` | Variação IDA entre 2022→2023 |
-| `delta_ieg_2022_2023` | Variação IEG entre 2022→2023 |
-| `delta_iaa_2022_2023` | Variação IAA entre 2022→2023 |
-| `delta_ips_2022_2023` | Variação IPS entre 2022→2023 |
-| `delta_ipv_2022_2023` | Variação IPV entre 2022→2023 |
-| `has_prev_year_data` | Flag: aluno tem dados do ano anterior |
-| `*_missing` | Flags de missing para cada indicador |
-| `media_indicadores` | Média dos indicadores |
-| `min_indicador` | Valor mínimo entre indicadores |
-| `max_indicador` | Valor máximo entre indicadores |
-| `std_indicadores` | Desvio padrão dos indicadores |
-| `range_indicadores` | Range (max - min) dos indicadores |
-| `fase_x_media` | Interação fase × média |
+Selecionadas via **ablation experiment** (VOLATILE_ONLY — maior poder preditivo individual):
+
+| Grupo | Feature | Descrição | Range |
+|:------|:--------|:----------|:-----:|
+| **PEDE** | `ian_2023` | Adequação ao Nível | 0–10 |
+| | `ida_2023` | Desenvolvimento Acadêmico | 0–10 |
+| | `ipp_2023` | Performance Psicopedagógica | 0–10 |
+| | `ips_2023` | Performance Psicossocial | 0–10 |
+| **Demo** | `idade_2023` | Idade do aluno | 6–20 |
+| **Deltas** | `delta_iaa_2022_2023` | Δ Autoavaliação 2022→2023 | -10–10 |
+| | `delta_ian_2022_2023` | Δ Adequação ao Nível | -10–10 |
+| | `delta_ieg_2022_2023` | Δ Engajamento | -10–10 |
+| | `delta_ipv_2022_2023` | Δ Ponto de Virada | -10–10 |
+| **Derivadas** | `media_indicadores` | Média dos 7 indicadores PEDE | 0–10 |
+| | `std_indicadores` | Desvio padrão dos indicadores | 0–5 |
 
 ---
 
@@ -372,7 +351,7 @@ python -m monitoring.drift_report --model_version v1.2.0 --last_n_days 7
 
 | Métrica | Valor | Status |
 |:--------|:-----:|:------:|
-| **Testes** | 382 | ✅ |
+| **Testes** | 510 | ✅ |
 | **Cobertura** | 81% | ✅ |
 | **Meta** | 80% | ✅ |
 
@@ -566,7 +545,30 @@ docker run --rm aquasec/trivy image datathon-api:v1
 
 ---
 
-## 📜 Licença
+## �️ Frontend
+
+Interface web completa com **7 páginas** para visualização, predição e monitoramento:
+
+| Página | Descrição |
+|:-------|:----------|
+| **Dashboard** | Visão geral, métricas do modelo, distribuição de risco |
+| **Modelo** | Model card, performance, features, ética, fairness, governança |
+| **Monitoramento** | SLO compliance, drift PSI, latência, audit trail |
+| **Predição** | Formulário de predição individual + batch CSV + preenchimento aleatório |
+| **Alunos** | Tabela de inferências históricas |
+| **Análise** | EDA com visualizações interativas (Nivo) |
+| **Sobre** | ODS, equipe, contexto do projeto |
+
+**Stack frontend:** React 18 · TypeScript · Vite · Tailwind CSS · shadcn/ui · Nivo · Recharts · Lucide icons
+
+```bash
+# Desenvolvimento local
+cd frontend && npm install && npm run dev
+```
+
+---
+
+## �📜 Licença
 
 Este projeto foi desenvolvido exclusivamente para fins acadêmicos como parte da **Especialização em Machine Learning Engineering da FIAP**.
 

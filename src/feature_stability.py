@@ -9,7 +9,7 @@ Uso:
 """
 
 import logging
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 import numpy as np
 import pandas as pd
@@ -66,7 +66,7 @@ def compute_cross_fold_stability(
     model,
     n_splits: int = 5,
     seed: int = 42,
-) -> Dict[str, Dict[str, float]]:
+) -> Dict[str, Dict[str, Any]]:
     """
     Avalia estabilidade de importância de features entre folds de cross-validation.
 

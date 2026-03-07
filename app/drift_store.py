@@ -82,7 +82,7 @@ def aggregate_batch_stats(instances: List[Dict[str, Any]]) -> Dict[str, Any]:
         return {"n_instances": 0}
 
     all_missing = []
-    feature_bins = {}
+    feature_bins: dict[str, dict[str, int]] = {}
 
     for inst in instances:
         stats = compute_feature_stats(inst)
