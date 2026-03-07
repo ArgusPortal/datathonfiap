@@ -30,7 +30,7 @@ export function Footer() {
           </div>
           <span className="text-[10px] opacity-70">
             <GraduationCap className="h-2.5 w-2.5 inline mr-0.5" />
-            Transformando dados em oportunidades educacionais
+            Desenvolvido por: Argus Portal · Pós-Graduação em Machine Learning Engineering (MLET5) — FIAP
           </span>
         </div>
 

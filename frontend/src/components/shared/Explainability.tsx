@@ -318,9 +318,9 @@ export function BusinessRulesCard() {
           <div className="flex items-center justify-center flex-wrap gap-2">
             {[
               { label: 'Indicadores\n(IAN, IEG, etc.)', emoji: '📋' },
-              { label: 'Modelo ML\n(HistGradientBoosting)', emoji: '🧠' },
+              { label: 'Modelo ML\n(RandomForest + Calibração)', emoji: '🧠' },
               { label: 'Score\nde Risco', emoji: '📊' },
-              { label: 'Threshold\n(0.3499)', emoji: '🎚️' },
+              { label: 'Threshold\n(0.2814)', emoji: '🎚️' },
               { label: 'Classificação\n(Risco/Seguro)', emoji: '🏷️' },
               { label: 'Ação\nPedagógica', emoji: '🎯' },
             ].map((step, i, arr) => (

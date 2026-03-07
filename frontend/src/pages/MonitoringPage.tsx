@@ -221,7 +221,7 @@ export function MonitoringPage() {
 
         // Build snapshot and push to circular buffer
         const now = new Date()
-        const time = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`
+        const time = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'America/Sao_Paulo' })
 
         const prev = prevTotalsRef.current
         const reqDelta = prev ? Math.max(0, metricsData.requests.total - prev.requests) : 0
@@ -295,12 +295,19 @@ export function MonitoringPage() {
       try {
         const res = await api.metricsHistory(MAX_BUFFER)
         if (!cancelled && res.snapshots.length > 0) {
-          bufferRef.current = res.snapshots.map(s => ({
-            time: s.time,
-            latency: s.latency,
-            requests: s.requests,
-            errors: s.errors,
-          }))
+          bufferRef.current = res.snapshots.map(s => {
+            // Convert UTC time (HH:MM:SS) from server to local BRT
+            const [hh, mm, ss] = s.time.split(':').map(Number)
+            const utcDate = new Date()
+            utcDate.setUTCHours(hh, mm, ss, 0)
+            const localTime = utcDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'America/Sao_Paulo' })
+            return {
+              time: localTime,
+              latency: s.latency,
+              requests: s.requests,
+              errors: s.errors,
+            }
+          })
           // Set prev totals so first fetchCore push works
           prevTotalsRef.current = {
             requests: 0,
@@ -372,7 +379,7 @@ export function MonitoringPage() {
         </div>
         <div className="flex items-center gap-3">
           <span className="text-xs text-muted-foreground">
-            Atualizado: {lastRefresh.toLocaleTimeString('pt-BR')}
+            Atualizado: {lastRefresh.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
           </span>
           <Button variant="outline" size="sm" onClick={handleRefresh}>
             <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
@@ -996,7 +1003,7 @@ export function MonitoringPage() {
                   <StatCard
                     title="Startup"
                     value={typeof auditSummary.startup_time === 'string'
-                      ? new Date(auditSummary.startup_time).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+                      ? new Date(auditSummary.startup_time).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'America/Sao_Paulo' })
                       : '-'}
                     icon={<Clock className="h-4 w-4" />}
                   />
@@ -1049,7 +1056,7 @@ export function MonitoringPage() {
                           {filteredAudit.map((record, i) => (
                             <tr key={`${record.timestamp}-${i}`} className="border-b last:border-0 hover:bg-muted/30">
                               <td className="py-2 pr-4 font-mono text-xs whitespace-nowrap">
-                                {new Date(record.timestamp).toLocaleString('pt-BR')}
+                                {new Date(record.timestamp).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'America/Sao_Paulo' })}
                               </td>
                               <td className="py-2 px-4">
                                 <Badge variant="secondary" className="text-[10px]">

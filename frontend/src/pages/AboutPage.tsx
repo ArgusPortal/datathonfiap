@@ -42,12 +42,12 @@ const TIMELINE = [
   { year: '1992', event: 'Fundação da Associação Passos Mágicos por Dimetri Ivanoff em Embu-Guaçu, SP.', icon: Heart },
   { year: '2016', event: 'Expansão do modelo de educação para mais de 1.000 alunos atendidos.', icon: Users },
   { year: '2020', event: 'Início da coleta de dados longitudinais padronizados (INDE, IAA, IEG, etc).', icon: Database },
-  { year: '2024', event: 'Datathon FIAP — desenvolvimento do modelo preditivo de defasagem.', icon: BarChart3 },
-  { year: '2025', event: 'Deploy do sistema fullstack com monitoramento MLOps e dashboard.', icon: Server },
+  { year: '2025', event: 'Datathon FIAP — desenvolvimento do modelo preditivo de defasagem.', icon: BarChart3 },
+  { year: '2026', event: 'Deploy do sistema fullstack com monitoramento MLOps e dashboard.', icon: Server },
 ]
 
 const TECH_STACK = [
-  { category: 'Backend', items: ['Python 3.11', 'FastAPI', 'scikit-learn', 'HistGradientBoosting', 'Uvicorn'] },
+  { category: 'Backend', items: ['Python 3.11', 'FastAPI', 'scikit-learn', 'RandomForest + Calibração', 'Uvicorn'] },
   { category: 'Frontend', items: ['React 18', 'TypeScript 5', 'Vite 6', 'Tailwind CSS', 'Nivo.rocks', 'Radix UI'] },
   { category: 'MLOps', items: ['Drift Detection (PSI)', 'SLO Framework', 'Prometheus Metrics', 'Inference Logging'] },
   { category: 'Infra', items: ['Docker Multi-stage', 'Nginx', 'LGPD Compliance', 'Rate Limiting', 'CORS'] },
@@ -55,7 +55,7 @@ const TECH_STACK = [
 
 const ARCHITECTURE = [
   { label: 'Ingestão', desc: 'CSV → Preprocessing → Feature Engineering', icon: Database, color: 'text-passos-500' },
-  { label: 'Treinamento', desc: 'StratifiedKFold → HistGBT → Threshold Calibration', icon: Cpu, color: 'text-magic-500' },
+  { label: 'Treinamento', desc: 'StratifiedKFold → RandomForest → Calibração Sigmoid', icon: Cpu, color: 'text-magic-500' },
   { label: 'Servindo', desc: 'FastAPI → /predict → Score + Risco + SHAP', icon: Server, color: 'text-green-500' },
   { label: 'Monitoramento', desc: 'Drift PSI · SLO · Métricas · Audit Trail', icon: Target, color: 'text-amber-500' },
   { label: 'Interface', desc: 'React Dashboard → Nivo Charts → PDF Export', icon: BarChart3, color: 'text-red-500' },
@@ -72,7 +72,7 @@ export function AboutPage() {
       <HeroSection
         title="Sobre o Projeto"
         subtitle="Transformando dados educacionais em oportunidades — Tecnologia e Machine Learning a serviço da Associação Passos Mágicos."
-        badge="Datathon FIAP 2025"
+        badge="Datathon FIAP 2026"
         compact
       />
 
@@ -136,7 +136,7 @@ export function AboutPage() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Este sistema foi desenvolvido no contexto do <strong>Datathon FIAP 2025</strong>,
+              Este sistema foi desenvolvido no contexto do <strong>Datathon FIAP 2026</strong>,
               com o objetivo de aplicar técnicas de Machine Learning para predizer o risco de
               <strong> defasagem escolar</strong> dos alunos da Passos Mágicos. A predição
               antecipada permite intervenção pedagógica precoce, otimizando recursos e
@@ -145,11 +145,11 @@ export function AboutPage() {
             <div className="mt-4 space-y-2">
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Sparkles className="h-3.5 w-3.5 text-magic-500" />
-                Modelo: HistGradientBoosting (scikit-learn)
+                Modelo: RandomForestClassifier + CalibratedClassifierCV (scikit-learn)
               </div>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Target className="h-3.5 w-3.5 text-amber-500" />
-                Target: Regressão de 2+ pontos no INDE entre anos
+                Target: em_risco_2024 (classificação binária, threshold 0.2814)
               </div>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Shield className="h-3.5 w-3.5 text-green-500" />
@@ -245,10 +245,13 @@ export function AboutPage() {
           <div className="flex items-center gap-3">
             <GraduationCap className="h-5 w-5 text-passos-500" />
             <div>
-              <p className="text-sm font-semibold">Datathon FIAP 2025 — Passos Mágicos</p>
+              <p className="text-sm font-semibold">Datathon FIAP 2026 — Passos Mágicos</p>
               <p className="text-xs text-muted-foreground">
-                Projeto acadêmico desenvolvido como parte do programa de Pós-Graduação em Data Analytics da FIAP.
+                Projeto acadêmico desenvolvido como parte do programa de Pós-Graduação em Machine Learning Engineering da FIAP (MLET5).
                 Todos os dados são tratados em conformidade com a LGPD.
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Desenvolvido por: <strong>Argus Portal</strong>
               </p>
             </div>
           </div>

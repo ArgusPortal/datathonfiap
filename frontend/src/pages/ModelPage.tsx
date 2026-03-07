@@ -1190,7 +1190,11 @@ export function ModelPage() {
                     <FairnessTable
                       title="Instituição"
                       description="Métricas por tipo de instituição de ensino"
-                      group={fairness.subgroups.instituicao}
+                      group={Object.fromEntries(
+                        Object.entries(fairness.subgroups.instituicao).filter(
+                          ([key]) => ['Privada', 'Privada_Apadrinhamento', 'Publica', '_disparity'].includes(key)
+                        )
+                      ) as typeof fairness.subgroups.instituicao}
                       icon="🏫"
                     />
 
