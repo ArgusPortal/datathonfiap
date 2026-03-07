@@ -5,8 +5,6 @@ Redirects drift_store to a temporary file so tests don't pollute
 the real logs/drift_events.jsonl used by Docker builds.
 """
 
-import tempfile
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest

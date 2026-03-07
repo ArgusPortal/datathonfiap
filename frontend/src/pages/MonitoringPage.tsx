@@ -985,7 +985,7 @@ export function MonitoringPage() {
                 <div className="grid gap-4 grid-cols-2 sm:grid-cols-4">
                   <StatCard
                     title="Total de Registros"
-                    value={auditRecords.length}
+                    value={typeof auditSummary.total_records === 'number' ? auditSummary.total_records : auditRecords.length}
                     icon={<FileText className="h-4 w-4" />}
                   />
                   <StatCard
@@ -993,16 +993,18 @@ export function MonitoringPage() {
                     value={auditActions.length - 1}
                     icon={<Hash className="h-4 w-4" />}
                   />
-                  {Object.entries(auditSummary)
-                    .slice(0, 2)
-                    .map(([key, val]) => (
-                      <StatCard
-                        key={key}
-                        title={key}
-                        value={String(val)}
-                        icon={<Activity className="h-4 w-4" />}
-                      />
-                    ))}
+                  <StatCard
+                    title="Startup"
+                    value={typeof auditSummary.startup_time === 'string'
+                      ? new Date(auditSummary.startup_time).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+                      : '-'}
+                    icon={<Clock className="h-4 w-4" />}
+                  />
+                  <StatCard
+                    title="Git SHA"
+                    value={typeof auditSummary.git_sha === 'string' ? auditSummary.git_sha : '-'}
+                    icon={<Database className="h-4 w-4" />}
+                  />
                 </div>
 
                 {/* Filter + table */}
