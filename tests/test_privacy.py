@@ -13,7 +13,10 @@ from app.privacy import (
     PrivacyContext,
     PII_FIELDS,
     SAFE_FIELDS,
+    log_safe,
 )
+
+import logging
 
 
 class TestHashIdentifier:
@@ -189,6 +192,14 @@ class TestAggregateFeatures:
 
         assert "instituicao_2023" not in result
 
+    def test_safe_string_values_included(self):
+        """Short safe strings without PII should be included."""
+        features = {"fase_2023": "Alfa", "idade_2023": 14}
+        result = aggregate_features(features)
+
+        assert result["fase_2023"] == "Alfa"
+        assert result["idade_2023"] == 14
+
 
 class TestPrivacyContext:
     """Tests for PrivacyContext class."""
@@ -249,3 +260,36 @@ class TestPiiFieldsConfig:
         """PII_FIELDS and SAFE_FIELDS should not overlap."""
         overlap = PII_FIELDS & SAFE_FIELDS
         assert len(overlap) == 0
+
+
+class TestLogSafe:
+    """Tests for log_safe function."""
+
+    def test_logs_without_data(self):
+        """Should log message without data."""
+        logger = logging.getLogger("test_privacy_safe")
+        log_safe(logger, logging.INFO, "test message")
+
+    def test_logs_with_safe_data(self):
+        """Should log message with sanitized data."""
+        logger = logging.getLogger("test_privacy_safe")
+        data = {"ian_2023": 7.5, "nome": "secret"}
+        log_safe(logger, logging.WARNING, "prediction done", data)
+
+
+class TestSanitizeDictStringValues:
+    """Tests for sanitize_dict_for_logging with string values."""
+
+    def test_non_pii_string_preserved(self):
+        """Non-PII strings should be preserved."""
+        data = {"model_version": "v1.2.0", "status": "ok"}
+        result = sanitize_dict_for_logging(data, redact_pii_fields=False)
+        assert result["model_version"] == "v1.2.0"
+        assert result["status"] == "ok"
+
+    def test_nested_dict_sanitized(self):
+        """Nested dicts should be sanitized recursively."""
+        data = {"outer": {"nome": "John", "score": 10}}
+        result = sanitize_dict_for_logging(data, redact_pii_fields=True)
+        assert result["outer"]["nome"] == "[REDACTED]"
+        assert result["outer"]["score"] == 10

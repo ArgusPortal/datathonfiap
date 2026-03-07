@@ -15,6 +15,7 @@ from monitoring.retention import (  # noqa: E402
     get_cutoff_date,
     filter_jsonl_file,
     cleanup_old_logs,
+    cleanup_old_files_by_mtime,
 )
 
 
@@ -240,3 +241,86 @@ class TestRetentionIntegration:
                 remaining = [json.loads(line) for line in f]
                 assert len(remaining) == 3
                 assert all(r["id"] in [3, 4, 5] for r in remaining)
+
+
+class TestCleanupOldFilesByMtime:
+    """Tests for cleanup_old_files_by_mtime."""
+
+    def test_nonexistent_directory(self):
+        """Should return skipped=True for nonexistent directory."""
+        result = cleanup_old_files_by_mtime(
+            Path("/nonexistent/dir"), retention_days=30
+        )
+        assert result["skipped"] is True
+        assert result["removed"] == []
+        assert result["retained"] == []
+
+    def test_retain_recent_files(self):
+        """Should retain recently modified files."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            d = Path(tmpdir)
+            (d / "recent.log").write_text("data")
+
+            result = cleanup_old_files_by_mtime(d, retention_days=30)
+
+            assert result["skipped"] is False
+            assert len(result["removed"]) == 0
+            assert len(result["retained"]) == 1
+
+    def test_dry_run_keeps_files(self):
+        """Dry run should not delete files."""
+        import os
+        import time
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            d = Path(tmpdir)
+            old_file = d / "old.log"
+            old_file.write_text("old data")
+            # Set modification time to 60 days ago
+            old_ts = time.time() - (60 * 86400)
+            os.utime(old_file, (old_ts, old_ts))
+
+            result = cleanup_old_files_by_mtime(d, retention_days=30, dry_run=True)
+
+            assert len(result["removed"]) == 1
+            assert old_file.exists()  # File not actually deleted
+
+    def test_remove_old_files(self):
+        """Should remove files older than retention period."""
+        import os
+        import time
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            d = Path(tmpdir)
+            old_file = d / "old.log"
+            old_file.write_text("old data")
+            old_ts = time.time() - (60 * 86400)
+            os.utime(old_file, (old_ts, old_ts))
+
+            result = cleanup_old_files_by_mtime(d, retention_days=30, dry_run=False)
+
+            assert len(result["removed"]) == 1
+            assert not old_file.exists()
+
+
+class TestFilterJsonlMalformedRecords:
+    """Tests for malformed records in filter_jsonl_file."""
+
+    def test_keeps_malformed_lines(self):
+        """Should keep lines that can't be parsed as JSON."""
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".jsonl", delete=False
+        ) as f:
+            f.write("not valid json\n")
+            new_time = datetime.now(timezone.utc).isoformat()
+            f.write(json.dumps({"timestamp": new_time, "data": "ok"}) + "\n")
+            temp_path = Path(f.name)
+
+        try:
+            cutoff = get_cutoff_date(30)
+            result = filter_jsonl_file(temp_path, cutoff, dry_run=False)
+
+            assert result["total"] == 2
+            assert result["retained"] >= 1
+        finally:
+            temp_path.unlink(missing_ok=True)

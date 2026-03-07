@@ -2,6 +2,7 @@
 Testes para monitoring/performance_drift.py.
 """
 
+import json
 import pytest
 import pandas as pd
 import numpy as np
@@ -188,3 +189,113 @@ class TestLabelsLoading:
         loaded = load_labels_store(labels_path)
 
         assert loaded.empty
+
+    def test_load_labels_jsonl(self, tmp_path):
+        """Testa carregamento de labels em JSONL."""
+        from monitoring.performance_drift import load_labels_store
+
+        labels_path = tmp_path / "labels.jsonl"
+        with open(labels_path, "w") as f:
+            for rid, label in [("a", 1), ("b", 0), ("c", 1)]:
+                f.write(json.dumps({"request_id": rid, "label": label}) + "\n")
+
+        loaded = load_labels_store(labels_path)
+
+        assert len(loaded) == 3
+        assert "label" in loaded.columns
+
+    def test_load_labels_unsupported_format(self, tmp_path):
+        """Testa formato não suportado retorna DataFrame vazio."""
+        from monitoring.performance_drift import load_labels_store
+
+        labels_path = tmp_path / "labels.txt"
+        labels_path.write_text("data")
+
+        loaded = load_labels_store(labels_path)
+        assert loaded.empty
+
+
+class TestLoadInferenceStore:
+    """Testes para load_inference_store."""
+
+    def test_nonexistent_dir(self, tmp_path):
+        """Retorna DataFrame vazio para diretório inexistente."""
+        from monitoring.performance_drift import load_inference_store
+
+        result = load_inference_store(
+            tmp_path / "nonexistent",
+            datetime(2024, 1, 1),
+            datetime(2024, 12, 31),
+        )
+        assert result.empty
+
+    def test_no_matching_partitions(self, tmp_path):
+        """Retorna DataFrame vazio se nenhuma partição no período."""
+        from monitoring.performance_drift import load_inference_store
+
+        store = tmp_path / "inference"
+        store.mkdir()
+        # Create partition outside range
+        part = store / "dt=2023-01-01"
+        part.mkdir()
+        df = pd.DataFrame({"request_id": ["r1"], "risk_score": [0.5]})
+        df.to_parquet(part / "data.parquet")
+
+        result = load_inference_store(
+            store, datetime(2024, 1, 1), datetime(2024, 12, 31)
+        )
+        assert result.empty
+
+    def test_load_matching_partitions(self, tmp_path):
+        """Carrega dados de partições dentro do período."""
+        from monitoring.performance_drift import load_inference_store
+
+        store = tmp_path / "inference"
+        store.mkdir()
+        part = store / "dt=2024-06-15"
+        part.mkdir()
+        df = pd.DataFrame({"request_id": ["r1", "r2"], "risk_score": [0.5, 0.8]})
+        df.to_parquet(part / "data.parquet")
+
+        result = load_inference_store(
+            store, datetime(2024, 1, 1), datetime(2024, 12, 31)
+        )
+        assert len(result) == 2
+        assert "request_id" in result.columns
+
+    def test_invalid_partition_name(self, tmp_path):
+        """Ignora partições com nome inválido."""
+        from monitoring.performance_drift import load_inference_store
+
+        store = tmp_path / "inference"
+        store.mkdir()
+        (store / "dt=invalid-date").mkdir()
+
+        result = load_inference_store(
+            store, datetime(2024, 1, 1), datetime(2024, 12, 31)
+        )
+        assert result.empty
+
+
+class TestAnalyzePerformanceFull:
+    """Testes para analyze_performance com dados suficientes."""
+
+    def test_analyze_with_sufficient_data(self):
+        """Testa análise com dados suficientes para calcular métricas."""
+        from monitoring.performance_drift import analyze_performance
+
+        n = 60
+        inference_df = pd.DataFrame({
+            "request_id": [f"r{i}" for i in range(n)],
+            "risk_score": np.random.RandomState(42).rand(n),
+            "risk_label": np.random.RandomState(42).randint(0, 2, n),
+        })
+        labels_df = pd.DataFrame({
+            "request_id": [f"r{i}" for i in range(n)],
+            "label": np.random.RandomState(42).randint(0, 2, n),
+        })
+
+        result = analyze_performance(inference_df, labels_df)
+        assert result["status"] in ("green", "red")
+        assert "metrics" in result
+        assert "recall" in result["metrics"]

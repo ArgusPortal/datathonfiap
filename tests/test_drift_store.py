@@ -401,3 +401,39 @@ class TestDriftStore:
             )
 
         assert drift_store.event_count() == 3
+
+    def test_read_events_malformed_line(self, drift_store):
+        """Should skip malformed JSON lines in log file."""
+        # Write valid event first
+        drift_store.log_event(
+            request_id="valid",
+            model_version="v1.0.0",
+            instances=[{"feat1": 1.0}],
+            predictions=[{"risk_score": 0.5, "risk_label": 0}],
+        )
+        # Append malformed line
+        with open(drift_store.log_path, "a", encoding="utf-8") as f:
+            f.write("not valid json\n")
+
+        events = drift_store.read_events()
+        assert len(events) == 1
+        assert events[0]["request_id"] == "valid"
+
+    def test_write_event_failure(self, tmp_path):
+        """Should handle write failures gracefully."""
+        log_path = tmp_path / "readonly" / "drift.jsonl"
+        store = DriftStore(log_path)
+
+        # Make directory readonly to trigger write failure
+        log_path.parent.chmod(0o444)
+
+        try:
+            # Should not raise, just log warning
+            store.log_event(
+                request_id="test",
+                model_version="v1.0.0",
+                instances=[{"feat1": 1.0}],
+                predictions=[{"risk_score": 0.5, "risk_label": 0}],
+            )
+        finally:
+            log_path.parent.chmod(0o755)

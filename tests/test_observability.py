@@ -174,3 +174,33 @@ class TestTimer:
 
         with Timer() as timer:
             assert isinstance(timer, Timer)
+
+
+class TestTimedInference:
+    """Tests for timed_inference decorator."""
+
+    def test_returns_result_and_time(self):
+        """Decorator should return (result, elapsed_ms) tuple."""
+        from app.observability import timed_inference
+
+        @timed_inference
+        def dummy_func(x):
+            return x * 2
+
+        result, elapsed = dummy_func(5)
+        assert result == 10
+        assert elapsed >= 0
+
+    def test_measures_elapsed_time(self):
+        """Decorator should measure execution time."""
+        from app.observability import timed_inference
+        import time
+
+        @timed_inference
+        def slow_func():
+            time.sleep(0.01)
+            return "done"
+
+        result, elapsed = slow_func()
+        assert result == "done"
+        assert elapsed >= 10

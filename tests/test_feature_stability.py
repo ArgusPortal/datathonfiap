@@ -536,3 +536,21 @@ class TestGenerateStabilityReport:
     def test_report_is_nonempty(self, stability_df):
         report = generate_stability_report(stability_df)
         assert len(report) > 50, "Report should be a substantial Markdown document"
+
+    @pytest.mark.unit
+    def test_report_with_negative_importance(self):
+        """Report should include negative importance section."""
+        df = pd.DataFrame(
+            {
+                "feature": ["good_feat", "bad_feat"],
+                "perm_importance": [0.1, -0.05],
+                "temporal_psi": [0.02, 0.01],
+                "missing_rate": [0.0, 0.0],
+                "quadrant": ["ROBUST", "STABLE"],
+                "action": ["keep", "remove"],
+            }
+        )
+        report = generate_stability_report(df)
+        assert "Importância Negativa" in report
+        assert "bad_feat" in report
+        assert "Remover imediatamente" in report
