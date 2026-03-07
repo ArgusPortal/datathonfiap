@@ -348,13 +348,12 @@ class MetricsStore:
             self.predictions_total.inc(state.get("predictions_total", 0))
             self.predictions_positive.inc(state.get("predictions_positive", 0))
             self.predictions_negative.inc(state.get("predictions_negative", 0))
-            self.requests_total.inc(state.get("requests_total", 0))
-            self.requests_success.inc(state.get("requests_success", 0))
-            self.requests_error.inc(state.get("requests_error", 0))
+            # Only restore prediction counters (business metrics).
+            # Request/error counters are operational and reset each run
+            # to avoid stale error_rate on fresh startups.
             logger.info(
-                "Loaded persisted metrics: %d predictions, %d requests",
+                "Loaded persisted metrics: %d predictions",
                 state.get("predictions_total", 0),
-                state.get("requests_total", 0),
             )
         except Exception:
             logger.debug("Failed to load persisted metrics", exc_info=True)

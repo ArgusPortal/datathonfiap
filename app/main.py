@@ -182,9 +182,9 @@ async def logging_middleware(request: Request, call_next):
         response = await call_next(request)
         latency_ms = (time.time() - start_time) * 1000
 
-        # Phase 8: Record metrics
+        # Phase 8: Record metrics (only 5xx count as errors for SLO)
         if METRICS_ENABLED:
-            success = response.status_code < 400
+            success = response.status_code < 500
             metrics.record_request(latency_ms, success)
 
         # Log fim do request

@@ -318,11 +318,15 @@ export function MonitoringPage() {
     return () => { cancelled = true; clearInterval(interval) }
   }, [fetchCore])
 
-  // Fetch drift/audit on tab switch
+  // Fetch drift on tab switch (only once until data arrives)
   useEffect(() => {
     if (activeTab === 'drift' && !drift && !driftLoading) fetchDrift()
-    if (activeTab === 'audit' && !auditLoading) fetchAudit()
-  }, [activeTab, drift, driftLoading, auditLoading, fetchDrift, fetchAudit])
+  }, [activeTab, drift, driftLoading, fetchDrift])
+
+  // Fetch audit every time tab switches to audit
+  useEffect(() => {
+    if (activeTab === 'audit') fetchAudit()
+  }, [activeTab, fetchAudit])
 
   // ──────────────────────────────
   // Derived data
