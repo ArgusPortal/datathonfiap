@@ -12,6 +12,7 @@ import {
   Download,
   Lightbulb,
   TrendingUp,
+  Dices,
 } from 'lucide-react'
 import {
   Card,
@@ -66,6 +67,41 @@ export function PredictPage() {
       ...prev,
       [key]: value === '' ? null : isNaN(Number(value)) ? value : Number(value),
     }))
+  }
+
+  const handleRandomFill = () => {
+    const rand = (min: number, max: number) => Math.random() * (max - min) + min
+    const round = (v: number, d: number) => Number(v.toFixed(d))
+
+    // Generate all 7 PEDE indicators (realistic 2-9 range)
+    // to compute consistent media/std derived features
+    const all7 = {
+      iaa: round(rand(2, 9), 1),
+      ian: round(rand(2, 9), 1),
+      ida: round(rand(2, 9), 1),
+      ieg: round(rand(2, 9), 1),
+      ipp: round(rand(2, 9), 1),
+      ips: round(rand(2, 9), 1),
+      ipv: round(rand(2, 9), 1),
+    }
+
+    const vals = Object.values(all7)
+    const mean = vals.reduce((a, b) => a + b, 0) / vals.length
+    const std = Math.sqrt(vals.reduce((s, v) => s + (v - mean) ** 2, 0) / vals.length)
+
+    setFormData({
+      ian_2023: all7.ian,
+      ida_2023: all7.ida,
+      ipp_2023: all7.ipp,
+      ips_2023: all7.ips,
+      idade_2023: Math.floor(rand(7, 19)),
+      delta_iaa_2022_2023: round(rand(-3, 3), 1),
+      delta_ian_2022_2023: round(rand(-3, 3), 1),
+      delta_ieg_2022_2023: round(rand(-3, 3), 1),
+      delta_ipv_2022_2023: round(rand(-3, 3), 1),
+      media_indicadores: round(mean, 2),
+      std_indicadores: round(std, 2),
+    })
   }
 
   const handleAutoFillDerived = () => {
@@ -278,19 +314,31 @@ export function PredictPage() {
                 },
               )}
 
-              <Button
-                onClick={handleSinglePredict}
-                disabled={loading}
-                className="w-full sm:w-auto"
-                size="lg"
-              >
-                {loading ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <Brain className="h-4 w-4 mr-2" />
-                )}
-                Avaliar Risco
-              </Button>
+              <div className="flex flex-wrap gap-3">
+                <Button
+                  onClick={handleSinglePredict}
+                  disabled={loading}
+                  className="w-full sm:w-auto"
+                  size="lg"
+                >
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Brain className="h-4 w-4 mr-2" />
+                  )}
+                  Avaliar Risco
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleRandomFill}
+                  disabled={loading}
+                  className="w-full sm:w-auto"
+                  size="lg"
+                >
+                  <Dices className="h-4 w-4 mr-2" />
+                  Preencher Aleatório
+                </Button>
+              </div>
             </div>
 
             {/* Results sidebar */}

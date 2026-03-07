@@ -180,7 +180,7 @@ class AuditTrail:
         records = self._records
         if action:
             records = [r for r in records if r["action"] == action]
-        return list(reversed(records[:limit]))
+        return list(reversed(records[-limit:]))
 
     def get_summary(self) -> Dict:
         """Get audit summary."""

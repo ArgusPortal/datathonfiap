@@ -321,8 +321,8 @@ export function MonitoringPage() {
   // Fetch drift/audit on tab switch
   useEffect(() => {
     if (activeTab === 'drift' && !drift && !driftLoading) fetchDrift()
-    if (activeTab === 'audit' && auditRecords.length === 0 && !auditLoading) fetchAudit()
-  }, [activeTab, drift, driftLoading, auditRecords.length, auditLoading, fetchDrift, fetchAudit])
+    if (activeTab === 'audit' && !auditLoading) fetchAudit()
+  }, [activeTab, drift, driftLoading, auditLoading, fetchDrift, fetchAudit])
 
   // ──────────────────────────────
   // Derived data
