@@ -121,21 +121,22 @@ def cleanup_old_logs(
         f"Retention policy: {retention_days} days, cutoff date: {cutoff.isoformat()}"
     )
 
-    summary = {
+    files: dict[str, dict] = {}
+    summary: dict[str, object] = {
         "retention_days": retention_days,
         "cutoff_date": cutoff.isoformat(),
         "dry_run": dry_run,
-        "files": {},
+        "files": files,
     }
 
     for target in RETENTION_TARGETS:
         filepath = base_dir / target
         result = filter_jsonl_file(filepath, cutoff, dry_run=dry_run)
-        summary["files"][target] = result
+        files[target] = result
 
     # Calculate totals
-    total_removed = sum(f["removed"] for f in summary["files"].values())
-    total_retained = sum(f["retained"] for f in summary["files"].values())
+    total_removed = sum(f["removed"] for f in files.values())
+    total_retained = sum(f["retained"] for f in files.values())
 
     summary["totals"] = {
         "removed": total_removed,

@@ -285,15 +285,19 @@ class TestAnalyzePerformanceFull:
         from monitoring.performance_drift import analyze_performance
 
         n = 60
-        inference_df = pd.DataFrame({
-            "request_id": [f"r{i}" for i in range(n)],
-            "risk_score": np.random.RandomState(42).rand(n),
-            "risk_label": np.random.RandomState(42).randint(0, 2, n),
-        })
-        labels_df = pd.DataFrame({
-            "request_id": [f"r{i}" for i in range(n)],
-            "label": np.random.RandomState(42).randint(0, 2, n),
-        })
+        inference_df = pd.DataFrame(
+            {
+                "request_id": [f"r{i}" for i in range(n)],
+                "risk_score": np.random.RandomState(42).rand(n),
+                "risk_label": np.random.RandomState(42).randint(0, 2, n),
+            }
+        )
+        labels_df = pd.DataFrame(
+            {
+                "request_id": [f"r{i}" for i in range(n)],
+                "label": np.random.RandomState(42).randint(0, 2, n),
+            }
+        )
 
         result = analyze_performance(inference_df, labels_df)
         assert result["status"] in ("green", "red")

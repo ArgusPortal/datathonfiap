@@ -248,9 +248,7 @@ class TestCleanupOldFilesByMtime:
 
     def test_nonexistent_directory(self):
         """Should return skipped=True for nonexistent directory."""
-        result = cleanup_old_files_by_mtime(
-            Path("/nonexistent/dir"), retention_days=30
-        )
+        result = cleanup_old_files_by_mtime(Path("/nonexistent/dir"), retention_days=30)
         assert result["skipped"] is True
         assert result["removed"] == []
         assert result["retained"] == []
@@ -308,9 +306,7 @@ class TestFilterJsonlMalformedRecords:
 
     def test_keeps_malformed_lines(self):
         """Should keep lines that can't be parsed as JSON."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".jsonl", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".jsonl", delete=False) as f:
             f.write("not valid json\n")
             new_time = datetime.now(timezone.utc).isoformat()
             f.write(json.dumps({"timestamp": new_time, "data": "ok"}) + "\n")
